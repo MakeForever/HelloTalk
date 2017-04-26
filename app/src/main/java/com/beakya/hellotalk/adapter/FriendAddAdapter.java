@@ -1,0 +1,145 @@
+package com.beakya.hellotalk.adapter;
+
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.utils.Utils;
+
+import java.util.Arrays;
+
+
+/**
+ * Created by cheolho on 2017. 4. 10..
+ */
+
+public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.ViewHolder> {
+    public static final String TAG = FriendAddAdapter.class.getSimpleName();
+
+
+    Context context;
+    com.beakya.hellotalk.objs.Friend[] friends;
+    public FriendAddAdapter(Context context) {
+        this.context = context;
+    }
+
+    @Override
+    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from( context );
+        View view = inflater.inflate(R.layout.search_user_detail_item, parent, false);
+        FriendAddAdapter.ViewHolder viewHolder = new FriendAddAdapter.ViewHolder(view);
+        return viewHolder;
+    }
+
+    @Override
+    public void onBindViewHolder(ViewHolder holder, int position) {
+        com.beakya.hellotalk.objs.Friend friend = friends[position];
+        String name = friend.getName();
+        String email = friend.getId();
+        boolean isAdded = friend.isAdded();
+        Bitmap profile = friend.getProfileImage();
+//        holder.bind( name, email, bitmapImg );
+        holder.bind( name, email, isAdded, profile);
+    }
+
+    @Override
+    public int getItemCount() {
+        if(friends == null)
+            return 0;
+        else return friends.length;
+    }
+
+    public void swapData(com.beakya.hellotalk.objs.Friend[] data) {
+        this.friends = data;
+        notifyDataSetChanged();
+    }
+
+    class ViewHolder extends  RecyclerView.ViewHolder {
+
+        private TextView nameTextView;
+        private TextView emailTextView;
+        private ImageView userProfileImage;
+        private Button addButton;
+        private boolean mBoolean = false;
+        private Bitmap mBitmap = null;
+        private Context mContext;
+        public ViewHolder(final View v) {
+            super(v);
+            mContext = v.getContext();
+            nameTextView = (TextView) v.findViewById(R.id.textView_name);
+            emailTextView = (TextView) v.findViewById(R.id.textView_email);
+            userProfileImage = (ImageView) v.findViewById(R.id.user_profile_image_view);
+            //TODO : 나중에 고칠거
+            addButton = (Button) v.findViewById(R.id.friend_add_button);
+            addButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ContentResolver resolver = v.getContext().getContentResolver();
+                    String id = emailTextView.getText().toString();
+                    String name = nameTextView.getText().toString();
+                    if( !mBoolean ) {
+                        ContentValues values = new ContentValues();
+                        values.put(TalkContract.Friend.USER_ID, id);
+                        values.put(TalkContract.Friend.USER_NAME, name);
+                        resolver.insert(TalkContract.Friend.CONTENT_URI, values);
+                        if( mBitmap != null) {
+                            Utils.saveToInternalStorage(mContext, mBitmap,
+                                    mContext.getString(R.string.setting_friends_profile_img_name),
+                                    mContext.getString(R.string.setting_profile_img_extension),
+                                    Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), id }));
+                        }
+                        changeButtonText("삭제");
+                        mBoolean = true;
+                    } else {
+                        Uri uri = TalkContract.Friend.CONTENT_URI.buildUpon().appendPath("test").build();
+                        resolver.delete(uri,
+                                TalkContract.Friend.USER_ID+ "=?",new String[]{ id });
+                        if( mBitmap != null ) {
+                            Utils.deleteFile(mContext,
+                                    mContext.getString(R.string.setting_friends_profile_img_name),
+                                    mContext.getString(R.string.setting_profile_img_extension),
+                                    Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), id }));
+                        }
+                        changeButtonText("추가");
+                        mBoolean = false;
+                    }
+                }
+            });
+
+        }
+
+
+        public void bind( String name, String email, boolean isAdded, Bitmap profileImg ) {
+            nameTextView.setText(name);
+            emailTextView.setText(email);
+            mBoolean = isAdded;
+            mBitmap = profileImg;
+            if( mBitmap != null ) {
+                userProfileImage.setImageBitmap(mBitmap);
+            } else {
+                userProfileImage.setImageResource(R.mipmap.default_profile_img);
+            }
+            if( !isAdded ) {
+                changeButtonText("추가");
+            } else {
+                changeButtonText("삭제");
+            }
+            Log.d(TAG, "bind: " + isAdded);
+        }
+        private void changeButtonText(String value) {
+            addButton.setText(value);
+        }
+    }
+}

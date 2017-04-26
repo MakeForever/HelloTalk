@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">HelloTalk</string>
+    <string name="test_name_value">Park chul ho</string>
+    <string name="test_email_value">beak_ya@naver.com</string>
+
+
+    <string name="user_info">user_info</string>
+    <string name="token">token</string>
+    <string name="user_id">id</string>
+    <string name="user_name">name</string>
+    <string name="user_img_boolean">img_set</string>
+
+
+    <string name="email_hint">please enter your email</string>
+    <string name="hello_talk">Hello Talk</string>
+    <string name="sign_up">sign_up</string>
+    <string name="sign_up_string">Already a member? Login</string>
+    <string name="male">male</string>
+    <string name="female">female</string>
+    <string name="login_dialog_title">축하합니다!</string>
+    <string name="login_dialog_content">이제 이메일 인증을 하면 로그인 가능합니다</string>
+    <string name="image_selection_button">이미지 선택</string>
+    <string name="image_selection_disable">선택하지 않으면 기본이미지로 선택됩니다</string>
+
+
+    <string name="image_chooser_title">이미지 선택</string>
+
+    <string name="search_toggle_button_on">삭제</string>
+    <string name="search_toggle_button_off">추가</string>
+    <string name="next">다음</string>
+    <string name="title_activity_main2">Main2Activity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="setting_profile_img_name">myProfile</string>
+    <string name="setting_profile_img_extension">png</string>
+    <string name="setting_profile_img_directory">profile</string>
+
+    <string name="setting_friends_img_directory">friends</string>
+    <string name="setting_friends_profile_img_name">basic</string>
+</resources>

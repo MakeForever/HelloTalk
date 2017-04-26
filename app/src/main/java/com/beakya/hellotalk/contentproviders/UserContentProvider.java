@@ -1,0 +1,158 @@
+package com.beakya.hellotalk.contentproviders;
+
+import android.content.ContentProvider;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.UriMatcher;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.Log;
+
+import com.beakya.hellotalk.database.DbHelper;
+import com.beakya.hellotalk.database.TalkContract;
+
+import static com.beakya.hellotalk.database.TalkContract.Friend.FRIENDS_PATH;
+
+/**
+ * Created by cheolho on 2017. 3. 24..
+ */
+
+public class UserContentProvider extends ContentProvider {
+    public static final String TAG = UserContentProvider.class.getSimpleName();
+    public static final int USERS = 100;
+    public static final int USER_WITH_ID = 101;
+    public static final UriMatcher sUriMatcher = buildUriMatcher();
+    private DbHelper mDbHelper;
+
+    @Override
+    public boolean onCreate() {
+        Context mContext = getContext();
+        mDbHelper = new DbHelper(mContext);
+        return true;
+    }
+
+    public static UriMatcher buildUriMatcher() {
+        UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH, USERS);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH + "/*", USER_WITH_ID);
+        return uriMatcher;
+    }
+
+    @Nullable
+    @Override
+    public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+        Cursor cursor;
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+        switch (sUriMatcher.match(uri)) {
+            case USERS :
+                cursor = db.query(TalkContract.Friend.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
+            default :
+                throw new RuntimeException("Uri not matched");
+        }
+
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
+    }
+
+    @Nullable
+    @Override
+    public String getType(@NonNull Uri uri) {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        Uri returnUri; // URI to be returned
+        switch (sUriMatcher.match(uri)) {
+            case USERS :
+                long id = db.insert(TalkContract.Friend.TABLE_NAME, null, values);
+                if( id > 0 ) {
+                    returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
+                                                                    .appendPath(TalkContract.Friend.FRIENDS_PATH).build(), id);
+                } else {
+                    throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+        getContext().getContentResolver().notifyChange(uri, null);
+        return returnUri;
+    }
+
+    @Override
+    public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+        final SQLiteDatabase db = mDbHelper.getWritableDatabase();
+
+        int match = sUriMatcher.match(uri);
+        // Keep track of the number of deleted tasks
+        int tasksDeleted; // starts as 0
+
+        // Write the code to delete a single row of data
+        // [Hint] Use selections to delete an item by its row ID
+        switch (match) {
+            // Handle USER_WITH_ID single item case, recognized by the ID included in the URI path
+            case USER_WITH_ID:
+                // Get the task ID from the URI path
+                // Use selections/selectionArgs to filter for this ID
+                tasksDeleted = db.delete(TalkContract.Friend.TABLE_NAME, selection, selectionArgs);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+
+        // Notify the resolver of a change and return the number of items deleted
+        if (tasksDeleted != 0) {
+            // A task was deleted, set notification
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+
+        // Return the number of tasks deleted
+        return tasksDeleted;
+    }
+
+    @Override
+    public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
+        return 0;
+    }
+
+    @Override
+    public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        switch (sUriMatcher.match(uri)) {
+            case USERS :
+                int insertedRow = 0;
+                try {
+                    db.beginTransaction();
+                    for ( ContentValues value : values ) {
+                        db.insert(TalkContract.Friend.TABLE_NAME, null, value);
+                        insertedRow++;
+                    }
+                    db.setTransactionSuccessful();
+                    if( insertedRow > 0 ) {
+                        getContext().getContentResolver().notifyChange( uri, null );
+                    }
+                } catch ( Exception e ) {
+                    Log.d(TAG, "bulkInsert: " + e);
+                } finally {
+                    db.endTransaction();
+                }
+                return insertedRow;
+            default :
+                return super.bulkInsert( uri, values );
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        mDbHelper.close();
+        super.shutdown();
+    }
+}

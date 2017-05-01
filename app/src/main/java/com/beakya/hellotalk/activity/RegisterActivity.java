@@ -28,6 +28,7 @@ import java.io.IOException;
 import retrofit2.Call;
 import retrofit2.Response;
 
+import static com.beakya.hellotalk.activity.LoginActivity.RESULT_CODE;
 import static com.beakya.hellotalk.retrofit.RetrofitCreator.retrofit;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -41,7 +42,6 @@ public class RegisterActivity extends AppCompatActivity {
     private RadioButton femaleRadioButton;
     private RadioButton maleRadioButton;
     private ProgressBar progressBar;
-    private TextView loginLink;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate: ");
@@ -56,21 +56,13 @@ public class RegisterActivity extends AppCompatActivity {
         femaleRadioButton = (RadioButton) findViewById(R.id.sign_up_rb_female);
         maleRadioButton = (RadioButton) findViewById(R.id.sign_up_rb_male);
         progressBar = (ProgressBar) findViewById(R.id.sign_up_progressBar);
-        loginLink = (TextView) findViewById(R.id.sign_up_link_login);
         mSignUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 registerUser();
             }
         });
-        loginLink.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent RegisterIntent = new Intent(RegisterActivity.this, LoginActivity.class);
-                startActivity(RegisterIntent);
-                finish();
-            }
-        });
+
     }
 
     @Override
@@ -192,9 +184,9 @@ public class RegisterActivity extends AppCompatActivity {
                     snackbar.show();
                 }
             } else {
-                Intent mainIntent = new Intent(RegisterActivity.this, LoginActivity.class);
+                Intent mainIntent = new Intent();
                 mainIntent.putExtra("result", 1);
-                startActivity(mainIntent);
+                setResult(RESULT_OK, mainIntent);
                 finish();
             }
         }

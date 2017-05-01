@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.objs.Friend;
 import com.beakya.hellotalk.utils.Utils;
 
 import java.util.Arrays;
@@ -30,7 +31,7 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
 
 
     Context context;
-    com.beakya.hellotalk.objs.Friend[] friends;
+    Friend[] friends;
     public FriendAddAdapter(Context context) {
         this.context = context;
     }
@@ -45,7 +46,7 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        com.beakya.hellotalk.objs.Friend friend = friends[position];
+        Friend friend = friends[position];
         String name = friend.getName();
         String email = friend.getId();
         boolean isAdded = friend.isAdded();
@@ -91,9 +92,9 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                     String name = nameTextView.getText().toString();
                     if( !mBoolean ) {
                         ContentValues values = new ContentValues();
-                        values.put(TalkContract.Friend.USER_ID, id);
-                        values.put(TalkContract.Friend.USER_NAME, name);
-                        resolver.insert(TalkContract.Friend.CONTENT_URI, values);
+                        values.put(TalkContract.User.USER_ID, id);
+                        values.put(TalkContract.User.USER_NAME, name);
+                        resolver.insert(TalkContract.User.CONTENT_URI, values);
                         if( mBitmap != null) {
                             Utils.saveToInternalStorage(mContext, mBitmap,
                                     mContext.getString(R.string.setting_friends_profile_img_name),
@@ -103,9 +104,9 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                         changeButtonText("삭제");
                         mBoolean = true;
                     } else {
-                        Uri uri = TalkContract.Friend.CONTENT_URI.buildUpon().appendPath("test").build();
+                        Uri uri = TalkContract.User.CONTENT_URI.buildUpon().appendPath("test").build();
                         resolver.delete(uri,
-                                TalkContract.Friend.USER_ID+ "=?",new String[]{ id });
+                                TalkContract.User.USER_ID+ "=?",new String[]{ id });
                         if( mBitmap != null ) {
                             Utils.deleteFile(mContext,
                                     mContext.getString(R.string.setting_friends_profile_img_name),

@@ -18,6 +18,7 @@ import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.FriendAddAdapter;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.events.MessageEvent;
+import com.beakya.hellotalk.objs.Friend;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -28,7 +29,7 @@ import org.json.JSONObject;
 
 import io.socket.client.Socket;
 
-import static com.beakya.hellotalk.database.TalkContract.Friend.USER_ID;
+import static com.beakya.hellotalk.database.TalkContract.User.USER_ID;
 
 public class FriendAddActivity extends AppCompatActivity {
     public static final String TAG = FriendAddActivity.class.getSimpleName();
@@ -104,12 +105,12 @@ public class FriendAddActivity extends AppCompatActivity {
     public void onMessageEvent(MessageEvent<JSONObject> event) {
 //        Toast.makeText(this, event.getMessage(), Toast.LENGTH_SHORT).show();
         JSONObject obj = event.getStorage();
-        com.beakya.hellotalk.objs.Friend[] friends;
-        Uri targetUri = TalkContract.BASE_URI.buildUpon().appendEncodedPath(TalkContract.Friend.FRIENDS_PATH).build();
+        Friend[] friends;
+        Uri targetUri = TalkContract.BASE_URI.buildUpon().appendEncodedPath(TalkContract.User.FRIENDS_PATH).build();
         try {
             JSONArray array = obj.getJSONArray("data");
             Log.d(TAG, "onMessageEvent: " + array);
-            friends = new com.beakya.hellotalk.objs.Friend[array.length()];
+            friends = new Friend[array.length()];
             for ( int i = 0; i< array.length(); i++) {
                 JSONObject o = array.getJSONObject(i);
 
@@ -119,7 +120,7 @@ public class FriendAddActivity extends AppCompatActivity {
                     byte[] imageBytes = Base64.decode(imgStringData, Base64.DEFAULT);
                     decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                 }
-                com.beakya.hellotalk.objs.Friend friend = new com.beakya.hellotalk.objs.Friend(o.getString("id"), o.getString("name"), decodedImage);
+                Friend friend = new Friend(o.getString("id"), o.getString("name"), decodedImage);
                 ContentResolver resolver = getContentResolver();
                 Cursor cursor = resolver.query(targetUri, null, USER_ID+"=?", new String[]{o.getString("id")}, null );
                 if( cursor.getCount() > 0 ) {

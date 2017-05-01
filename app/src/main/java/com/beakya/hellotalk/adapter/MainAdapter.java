@@ -1,6 +1,7 @@
 package com.beakya.hellotalk.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
@@ -9,8 +10,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.utils.Utils;
 
@@ -23,12 +26,15 @@ import java.util.Arrays;
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
     private Cursor mCursor;
     private Context mContext;
-    public MainAdapter(Context context ) {
+    private mOnClickListener mListener;
+    public MainAdapter(Context context, mOnClickListener listener ) {
         mContext = context;
+        mListener = listener;
     }
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        LayoutInflater inflater = LayoutInflater.from( mContext );
+        Context context = parent.getContext();
+        LayoutInflater inflater = LayoutInflater.from( context );
         View view = inflater.inflate(R.layout.user_detail_item, parent, false);
         ViewHolder viewHolder = new ViewHolder(view);
         return viewHolder;
@@ -37,8 +43,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         mCursor.moveToPosition(position);
-        String name = mCursor.getString(mCursor.getColumnIndex(TalkContract.Friend.USER_NAME));
-        String email = mCursor.getString(mCursor.getColumnIndex(TalkContract.Friend.USER_ID));
+        String name = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_NAME));
+        String email = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_ID));
         Bitmap bitmapImg = Utils.getImageBitmap(mContext,
                 mContext.getString(R.string.setting_friends_profile_img_name),
                 mContext.getString(R.string.setting_profile_img_extension),
@@ -60,7 +66,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         private TextView nameTextView;
         private TextView emailTextView;
         private ImageView userProfileImage;
@@ -69,6 +75,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
             nameTextView = (TextView) itemView.findViewById(R.id.textView_name);
             emailTextView = (TextView) itemView.findViewById(R.id.textView_email);
             userProfileImage = (ImageView) itemView.findViewById(R.id.user_profile_image_view);
+            itemView.setOnClickListener(this);
         }
 
         public void bind( String name, String email, Bitmap image ) {
@@ -81,5 +88,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
             }
         }
 
+        @Override
+        public void onClick(View v) {
+            mListener.onListItemClick(emailTextView.getText().toString());
+        }
+    }
+    public interface mOnClickListener {
+        void onListItemClick( String tableName );
     }
 }

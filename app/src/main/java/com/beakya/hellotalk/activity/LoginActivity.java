@@ -2,9 +2,11 @@ package com.beakya.hellotalk.activity;
 
 import android.app.Application;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.Snackbar;
@@ -17,6 +19,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
@@ -28,6 +31,7 @@ import com.beakya.hellotalk.retrofit.LoginRequestBody;
 import com.beakya.hellotalk.retrofit.LoginService;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
+import com.beakya.hellotalk.utils.Utils;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -35,8 +39,11 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
+import retrofit2.Callback;
 import retrofit2.Response;
 
 import static com.beakya.hellotalk.retrofit.RetrofitCreator.retrofit;
@@ -49,7 +56,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextView signUpTextView;
     private ConstraintLayout login_area;
     private ProgressBar login_progressBar;
-
+    public static int RESULT_CODE = 100;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate: ");
@@ -74,19 +81,19 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent RegisterIntent = new Intent(LoginActivity.this, RegisterActivity.class);
-                startActivity(RegisterIntent);
-                finish();
+                startActivityForResult(RegisterIntent, RESULT_CODE);
             }
         });
-        Intent intent = getIntent();
-        int resultInt = intent.getIntExtra("result", 0);
-        if(resultInt == 1) {
-            showLocationDialog();
-            intent.putExtra("result", 0);
-        }
-
     }
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && requestCode == RESULT_CODE) {
+            if (data.hasExtra("result")) {
+                showLocationDialog();
+            }
+        }
+    }
     private void showLocationDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
         builder.setTitle(getString(R.string.login_dialog_title));
@@ -109,13 +116,10 @@ public class LoginActivity extends AppCompatActivity {
         if(!validate())
             return;
 
-        LoginAsyncTask loginAsyncTask = new LoginAsyncTask();
         LoginRequestBody body = new LoginRequestBody();
         body.setName(emailEditText.getText().toString());
         body.setPassword(passwordEditText.getText().toString());
-
-
-        loginAsyncTask.execute(body);
+        loginRetrofit(body);
 
     }
 
@@ -154,88 +158,82 @@ public class LoginActivity extends AppCompatActivity {
         login_area.setVisibility(View.VISIBLE);
     }
 
-    private class LoginAsyncTask extends AsyncTask<LoginRequestBody, Void, Response<LoginResponseBody>> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            loginInvisible();
-        }
 
-        @Override
-        protected Response<LoginResponseBody> doInBackground(LoginRequestBody... params) {
-            LoginRequestBody body = params[0];
-            LoginService loginService = retrofit.create(LoginService.class);
-            Call<LoginResponseBody> call = loginService.repoTest(body);
-            Response<LoginResponseBody> result = null;
-            try {
-                result = call.execute();
-            } catch (IOException e) {
-                e.printStackTrace();
+    private void loginRetrofit( LoginRequestBody body ) {
+
+        loginInvisible();
+
+        LoginService loginService = retrofit.create(LoginService.class);
+        Call<LoginResponseBody> call = loginService.repoTest(body);
+        call.enqueue(new Callback<LoginResponseBody>() {
+            @Override
+            public void onResponse(Call<LoginResponseBody> call, Response<LoginResponseBody> response) {
+
+                if ( response.isSuccessful() ) {
+                    LoginResponseBody body = response.body();
+                    int login = body.getLogin();
+                    boolean isFirstLogin = false;
+                    if( login == 0) {
+                        isFirstLogin = true;
+                    }
+
+                    String fileName = getString(R.string.setting_profile_img_name);
+                    String extension = getString(R.string.setting_profile_img_extension);
+                    String directory = getString(R.string.setting_profile_img_directory);
+                    Context context = LoginActivity.this;
+                    Bitmap mBitmap = Utils.decodeImgStringBase64(body.getImg());
+                    Utils.saveToInternalStorage(context, mBitmap, fileName, extension, Arrays.asList(directory));
+
+
+                    SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.user_info), MODE_PRIVATE);
+                    SharedPreferences.Editor editor = tokenStorage.edit();
+                    editor.putString(getString(R.string.token), body.getToken());
+                    editor.putString(getString(R.string.user_id), emailEditText.getText().toString());
+                    editor.putString(getString(R.string.user_name), body.getName());
+                    editor.putBoolean(getString(R.string.user_img_boolean), isFirstLogin);
+                    editor.commit();
+                    Intent socketIntent = new Intent(LoginActivity.this, SocketService.class);
+                    socketIntent.setAction(SocketTask.ACTION_SOCKET_CREATE);
+                    startService(socketIntent);
+
+
+
+                    Log.d(TAG, "is firstLogin: " + response.body().getLogin());
+                    Intent mainIntent;
+                    if( isFirstLogin ) {
+                        mainIntent = new Intent(LoginActivity.this, ImageSelectionActivity.class);
+                    } else {
+                        mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+                    }
+
+                    startActivity(mainIntent);
+                    finish();
+                }
+                if( !response.isSuccessful() && response.errorBody() != null ) {
+                    loginVisible();
+                    LoginResponseBody restError = null;
+                    try {
+                        restError = (LoginResponseBody) retrofit.responseBodyConverter(
+                                LoginResponseBody.class, LoginResponseBody.class.getAnnotations()).convert(response.errorBody());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    if( restError != null ) {
+                        Snackbar snackbar = Snackbar.make(login_area, restError.getMessage(), Snackbar.LENGTH_LONG);
+                        snackbar.show();
+                    }
+                }
+
             }
-            return result;
-        }
 
-        @Override
-        protected void onPostExecute( Response<LoginResponseBody> result ) {
-            super.onPostExecute(result);
-            loginVisible();
-
-            if( result != null && !result.isSuccessful() && result.errorBody() != null ) {
-                LoginResponseBody restError = null;
-                try {
-                    restError = (LoginResponseBody) retrofit.responseBodyConverter(
-                            LoginResponseBody.class, LoginResponseBody.class.getAnnotations()).convert(result.errorBody());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                if( restError != null ) {
-                    Snackbar snackbar = Snackbar.make(login_area, restError.getMessage(), Snackbar.LENGTH_LONG);
-                    snackbar.show();
-                }
-            } else {
-                //TODO : 회원정보 저장 할것
-
-                int login = result.body().getLogin();
-                boolean isFirstLogin = false;
-                if( login == 0) {
-                    isFirstLogin = true;
-                }
-                SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.user_info), MODE_PRIVATE);
-                SharedPreferences.Editor editor = tokenStorage.edit();
-                editor.putString(getString(R.string.token), result.body().getToken());
-                editor.putString(getString(R.string.user_id), emailEditText.getText().toString());
-                editor.putBoolean(getString(R.string.user_img_boolean), isFirstLogin);
-                editor.commit();
-//                Intent intent = new Intent(LoginActivity.this, SocketService.class);
-//                intent.setAction(SocketTask.ACTION_SOCKET_CREATE);
-//                startService(intent);
-
-                Intent mainIntent;
-                Log.d(TAG, "onPostExecute: " + result.body().getLogin());
-
-                isFirstLogin = true;
-
-                if( isFirstLogin ) {
-                    mainIntent = new Intent(LoginActivity.this, ImageSelectionActivity.class);
-                } else {
-                    mainIntent = new Intent(LoginActivity.this, MainActivity.class);
-                }
-                startActivity(mainIntent);
-                finish();
+            @Override
+            public void onFailure(Call<LoginResponseBody> call, Throwable t) {
+                loginVisible();
+                Log.d("Error", t.getMessage());
+                Snackbar snackbar = Snackbar.make(login_area, getString(R.string.error_connection_timeout), Snackbar.LENGTH_LONG);
+                snackbar.show();
             }
-        }
-
-        @Override
-        protected void onCancelled(Response<LoginResponseBody> contributor) {
-            super.onCancelled(contributor);
-            loginVisible();
-        }
-
-        @Override
-        protected void onCancelled() {
-            super.onCancelled();
-            loginVisible();
-        }
+        });
     }
 
     @Override

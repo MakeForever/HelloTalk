@@ -69,6 +69,14 @@ public class SocketCreator {
                 EventBus.getDefault().post(new MessageEvent<JSONObject>(message, list));
             }
         });
+        socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "call: disconnected");
+            }
+
+        });
         return socket;
     }
 

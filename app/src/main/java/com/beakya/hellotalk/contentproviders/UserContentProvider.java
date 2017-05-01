@@ -15,7 +15,10 @@ import android.util.Log;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 
-import static com.beakya.hellotalk.database.TalkContract.Friend.FRIENDS_PATH;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+
+import static com.beakya.hellotalk.database.TalkContract.User.FRIENDS_PATH;
 
 /**
  * Created by cheolho on 2017. 3. 24..
@@ -25,6 +28,11 @@ public class UserContentProvider extends ContentProvider {
     public static final String TAG = UserContentProvider.class.getSimpleName();
     public static final int USERS = 100;
     public static final int USER_WITH_ID = 101;
+    public static final int CHAT_LIST = 200;
+    public static final int CHAT_MEMBERS = 300;
+    public static final int CHAT = 400;
+    public static final int CHAT_TABLE = 401;
+    public static final int CHAT_CREATE_TABLE = 402;
     public static final UriMatcher sUriMatcher = buildUriMatcher();
     private DbHelper mDbHelper;
 
@@ -35,27 +43,35 @@ public class UserContentProvider extends ContentProvider {
         return true;
     }
 
-    public static UriMatcher buildUriMatcher() {
+    private static UriMatcher buildUriMatcher() {
+
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH, USERS);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH + "/*", USER_WITH_ID);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatList.PATH +"/*", CHAT_LIST);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRoomMembers.PATH, CHAT_MEMBERS);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.CHAT_CREATE_PATH + "/*", CHAT_CREATE_TABLE);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.CHAT_TABLE_PATH, CHAT);
         return uriMatcher;
     }
 
     @Nullable
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
-        Cursor cursor;
+        Cursor cursor = null;
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         switch (sUriMatcher.match(uri)) {
             case USERS :
-                cursor = db.query(TalkContract.Friend.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor = db.query(TalkContract.User.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
+            case CHAT_LIST :
+                cursor = db.query(TalkContract.ChatList.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             default :
                 throw new RuntimeException("Uri not matched");
         }
-
-        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        if( cursor != null )
+            cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
     }
 
@@ -69,21 +85,38 @@ public class UserContentProvider extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        Uri returnUri; // URI to be returned
+        Uri returnUri = null; // URI to be returned
+        long id;
         switch (sUriMatcher.match(uri)) {
             case USERS :
-                long id = db.insert(TalkContract.Friend.TABLE_NAME, null, values);
+                id = db.insert(TalkContract.User.TABLE_NAME, null, values);
                 if( id > 0 ) {
                     returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
-                                                                    .appendPath(TalkContract.Friend.FRIENDS_PATH).build(), id);
+                                                                    .appendPath(TalkContract.User.FRIENDS_PATH).build(), id);
                 } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 }
+                break;
+
+            case CHAT :
+                String tableName = getTableNameFromUri( uri );
+                id = db.insert(tableName, null, values);
+                if( id > 0 ) {
+                    returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
+                            .appendPath(TalkContract.Chat.CHAT_TABLE_PATH).appendPath(tableName).build(), id);
+                } else {
+                    throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
+                break;
+            case CHAT_CREATE_TABLE:
+                    String table = values.getAsString("table");
+                    db.execSQL(TalkContract.Chat.generateTableCreateStatement(table));
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
+        if( returnUri != null);
         return returnUri;
     }
 
@@ -94,15 +127,24 @@ public class UserContentProvider extends ContentProvider {
         int match = sUriMatcher.match(uri);
         // Keep track of the number of deleted tasks
         int tasksDeleted; // starts as 0
-
         // Write the code to delete a single row of data
         // [Hint] Use selections to delete an item by its row ID
         switch (match) {
+
+            case USERS:
+                tasksDeleted = db.delete(TalkContract.User.TABLE_NAME, null, null);
+                break;
             // Handle USER_WITH_ID single item case, recognized by the ID included in the URI path
             case USER_WITH_ID:
                 // Get the task ID from the URI path
                 // Use selections/selectionArgs to filter for this ID
-                tasksDeleted = db.delete(TalkContract.Friend.TABLE_NAME, selection, selectionArgs);
+                tasksDeleted = db.delete(TalkContract.User.TABLE_NAME, selection, selectionArgs);
+                break;
+            case CHAT_LIST:
+                tasksDeleted = db.delete(TalkContract.ChatList.TABLE_NAME, selection, selectionArgs);
+                break;
+            case CHAT_MEMBERS:
+                tasksDeleted = db.delete(TalkContract.ChatRoomMembers.TABLE_NAME, selection, selectionArgs);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -132,7 +174,7 @@ public class UserContentProvider extends ContentProvider {
                 try {
                     db.beginTransaction();
                     for ( ContentValues value : values ) {
-                        db.insert(TalkContract.Friend.TABLE_NAME, null, value);
+                        db.insert(TalkContract.User.TABLE_NAME, null, value);
                         insertedRow++;
                     }
                     db.setTransactionSuccessful();
@@ -154,5 +196,15 @@ public class UserContentProvider extends ContentProvider {
     public void shutdown() {
         mDbHelper.close();
         super.shutdown();
+    }
+    private String getTableNameFromUri( Uri uri ) {
+        String[] split = uri.toString().split("/");
+        String tableName = null;
+        try {
+            tableName = URLDecoder.decode(split[split.length-1], "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return tableName;
     }
 }

@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -55,11 +56,14 @@ public class ImageSelectionActivity extends AppCompatActivity {
     private TextView alertView;
     private ProgressBar progressBar;
     private Menu menu;
+    private Toolbar mToolbar;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_selection);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
         imagePicker = new ImagePicker();
 
         profileView = (ImageView) findViewById(R.id.default_profile_image_view);

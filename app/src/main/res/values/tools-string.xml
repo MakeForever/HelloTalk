@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tools_email_example">beak_ya@naver.com</string>
+    <string name="tools_name_example">박철호</string>
+</resources>

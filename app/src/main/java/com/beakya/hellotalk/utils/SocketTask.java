@@ -48,10 +48,9 @@ public class SocketTask {
         }
     }
     private static void disconnectSocket(Context context) {
-        if ( Utils.checkToken(context) ) {
-            MyApp app = Utils.getMyApp(context);
-            app.disconnectSocket();
-        }
+        MyApp app = Utils.getMyApp(context);
+        app.disconnectSocket();
+
     }
     private static void createSocketTask(Context context) {
         if( Utils.checkToken(context) ) {

@@ -219,8 +219,9 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onListItemClick( String tableName ) {
+    public void onListItemClick( String userId ) {
         Intent intent = new Intent( this, ChatActivity.class );
+        String tableName = Utils.sha256(userId);
         intent.putExtra("TableName", tableName);
         startActivity(intent);
     }

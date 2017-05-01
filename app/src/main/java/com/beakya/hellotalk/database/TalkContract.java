@@ -32,26 +32,29 @@ public class TalkContract {
     public static final class Chat implements BaseColumns{
 
         public static Uri generateCreateTableUri ( String tableName ) {
-            return BASE_URI.buildUpon().appendPath(CHAT_CREATE_PATH).appendPath(tableName).build();
+            return BASE_URI.buildUpon().appendPath(PATH).appendPath(tableName).build();
         }
-        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(Chat.CHAT_CREATE_PATH).build();
-        public static final String CHAT_CREATE_PATH = "create_chat";
-        public static final String CHAT_TABLE_PATH = "chat";
+
+        public static final String TYPE_TEXT = "text";
+        public static final String TYPE_IMAGE = "image";
+
+        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(Chat.PATH).build();
+        public static final String TABLE_NAME = "chat";
+        public static final String PATH = TABLE_NAME;
         public static final String SPEAKER = "speaker";
         public static final String MESSAGE_TYPE = "message_type";
         public static final String MESSAGE_CONTENT = "message_content";
         public static final String SPEAKING_TIME = "speaking_time";
-        public static String generateTableCreateStatement ( String tableName ) {
-            return " CREATE TABLE [" + tableName + "] ( " +
+        public static final String CHAT_TABLE_CREATE_STATEMENT =
+                " CREATE TABLE [" + TABLE_NAME + "] ( " +
                             _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                            ChatList.CHAT_LIST_ID + " TEXT , " +
                             SPEAKER + " TEXT , " +
                             MESSAGE_CONTENT + " TEXT , " +
                             MESSAGE_TYPE + " TEXT , " +
                             SPEAKING_TIME + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP " +
                             " ); ";
-        }
     }
-
     public static final class ChatList {
         public static final String TABLE_NAME = "chat_list";
         public static final String PATH = TABLE_NAME;

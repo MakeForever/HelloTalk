@@ -31,8 +31,6 @@ public class UserContentProvider extends ContentProvider {
     public static final int CHAT_LIST = 200;
     public static final int CHAT_MEMBERS = 300;
     public static final int CHAT = 400;
-    public static final int CHAT_TABLE = 401;
-    public static final int CHAT_CREATE_TABLE = 402;
     public static final UriMatcher sUriMatcher = buildUriMatcher();
     private DbHelper mDbHelper;
 
@@ -48,10 +46,9 @@ public class UserContentProvider extends ContentProvider {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH, USERS);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH + "/*", USER_WITH_ID);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatList.PATH +"/*", CHAT_LIST);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatList.PATH, CHAT_LIST);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRoomMembers.PATH, CHAT_MEMBERS);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.CHAT_CREATE_PATH + "/*", CHAT_CREATE_TABLE);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.CHAT_TABLE_PATH, CHAT);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.PATH, CHAT);
         return uriMatcher;
     }
 
@@ -64,8 +61,14 @@ public class UserContentProvider extends ContentProvider {
             case USERS :
                 cursor = db.query(TalkContract.User.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
+            case CHAT :
+                cursor = db.query(TalkContract.Chat.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
             case CHAT_LIST :
                 cursor = db.query(TalkContract.ChatList.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                break;
+            case CHAT_MEMBERS :
+                cursor = db.query(TalkContract.ChatRoomMembers.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             default :
                 throw new RuntimeException("Uri not matched");
@@ -99,18 +102,31 @@ public class UserContentProvider extends ContentProvider {
                 break;
 
             case CHAT :
-                String tableName = getTableNameFromUri( uri );
-                id = db.insert(tableName, null, values);
+                id = db.insert(TalkContract.Chat.TABLE_NAME, null, values);
                 if( id > 0 ) {
                     returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
-                            .appendPath(TalkContract.Chat.CHAT_TABLE_PATH).appendPath(tableName).build(), id);
+                            .appendPath(TalkContract.Chat.PATH).build(), id);
                 } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 }
                 break;
-            case CHAT_CREATE_TABLE:
-                    String table = values.getAsString("table");
-                    db.execSQL(TalkContract.Chat.generateTableCreateStatement(table));
+            case CHAT_LIST :
+                id = db.insert(TalkContract.ChatList.TABLE_NAME, null, values);
+                if( id > 0 ) {
+                    returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
+                            .appendPath(TalkContract.Chat.PATH).build(), id);
+                } else {
+                    throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
+                break;
+            case CHAT_MEMBERS :
+                id = db.insert(TalkContract.ChatRoomMembers.TABLE_NAME, null, values);
+                if( id > 0 ) {
+                    returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
+                            .appendPath(TalkContract.ChatRoomMembers.PATH).build(), id);
+                } else {
+                    throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -145,6 +161,9 @@ public class UserContentProvider extends ContentProvider {
                 break;
             case CHAT_MEMBERS:
                 tasksDeleted = db.delete(TalkContract.ChatRoomMembers.TABLE_NAME, selection, selectionArgs);
+                break;
+            case CHAT :
+                tasksDeleted = db.delete(TalkContract.Chat.TABLE_NAME, selection, selectionArgs);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -196,15 +215,5 @@ public class UserContentProvider extends ContentProvider {
     public void shutdown() {
         mDbHelper.close();
         super.shutdown();
-    }
-    private String getTableNameFromUri( Uri uri ) {
-        String[] split = uri.toString().split("/");
-        String tableName = null;
-        try {
-            tableName = URLDecoder.decode(split[split.length-1], "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        return tableName;
     }
 }

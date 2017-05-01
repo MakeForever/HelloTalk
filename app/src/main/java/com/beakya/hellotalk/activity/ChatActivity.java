@@ -2,9 +2,10 @@ package com.beakya.hellotalk.activity;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.net.Uri;
+import android.database.Cursor;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,7 +21,8 @@ public class ChatActivity extends AppCompatActivity {
 
     private Button button;
     private EditText contentEditText;
-    private String userId = null;
+    private String tableName = null;
+    private boolean isCreatedChat = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,25 +31,35 @@ public class ChatActivity extends AppCompatActivity {
         contentEditText = (EditText) findViewById(R.id.chat_content_edit_text);
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            userId = extras.getString("TableName");
+            tableName = extras.getString("TableName");
+            ContentResolver resolver = getContentResolver();
+            Cursor cursor = resolver.query(TalkContract.ChatList.CONTENT_URI, null, TalkContract.ChatList.CHAT_LIST_ID + "= ?", new String[]{ tableName }, null);
+            if( cursor.getCount() > 0 ) {
+                isCreatedChat = true;
+            }
         }
+
+
+
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 ContentResolver resolver = getContentResolver();
-                String tableName = Utils.sha256(userId);
-                Uri uri = TalkContract.Chat.generateCreateTableUri(tableName);
-                resolver.query( uri, null, null, null, null );
+                if( !isCreatedChat ) {
+                    ContentValues chatListParams = new ContentValues();
+                    chatListParams.put("chat_list_id", tableName );
+                    resolver.insert(TalkContract.ChatList.CONTENT_URI, chatListParams);
+                    isCreatedChat = true;
+                }
 
+                ContentValues chatParams = new ContentValues();
+                chatParams.put(TalkContract.ChatList.CHAT_LIST_ID, tableName);
+                chatParams.put(TalkContract.Chat.SPEAKER, "me");
+                chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, contentEditText.getText().toString());
+                chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
+                resolver.insert(TalkContract.Chat.CONTENT_URI, chatParams);
 
-                ContentValues table = new ContentValues();
-                table.put("table", tableName );
-                table.put("chat_list_id", tableName );
-
-                resolver.insert(TalkContract.Chat.CONTENT_URI, table);
-
-                //TODO: 테이블을 만들고 chatlist에 해당 테이블명을 insert한것까지 했다. 해당 테이블에 데이터를 직접 넣어야 한다.
             }
         });
     }

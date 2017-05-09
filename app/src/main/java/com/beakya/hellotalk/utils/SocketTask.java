@@ -57,7 +57,7 @@ public class SocketTask {
             String token = Utils.getToken(context);
             try {
                 Log.d(TAG, "createSocketTask: ");
-                Socket socket = SocketCreator.createSocket(token);
+                Socket socket = new SocketCreator(context).createSocket(token);
                 MyApp app = Utils.getMyApp(context);
                 app.setSocket(socket);
                 socket.connect();

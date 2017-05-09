@@ -17,7 +17,7 @@
         android:layout_marginLeft="8dp"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="18dp" />
 
     <TextView
         android:id="@+id/textView_email"
@@ -43,5 +43,5 @@
         app:civ_border_width="1dp"
         app:civ_border_color="@color/colorAccent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="-12dp" />
+        android:layout_marginTop="10dp" />
 </android.support.constraint.ConstraintLayout>

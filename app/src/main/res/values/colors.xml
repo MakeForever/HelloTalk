@@ -4,4 +4,5 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="default_profile_img_background">#F0AFCC</color>
+    <color name="swipe_item_red">#FF3333</color>
 </resources>

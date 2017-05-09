@@ -1,9 +1,12 @@
 package com.beakya.hellotalk.utils;
 
+import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 
 import com.beakya.hellotalk.events.MessageEvent;
 import com.beakya.hellotalk.events.UserInfoEvent;
+import com.beakya.hellotalk.services.ChatService;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
@@ -20,14 +23,19 @@ import io.socket.emitter.Emitter;
  */
 
 public class SocketCreator {
-    private static final String TAG = SocketCreator.class.getSimpleName();
-    private static final String IP = "http://192.168.0.102:8888";
-    public static IO.Options getOptions(String token) {
+    private final String TAG = SocketCreator.class.getSimpleName();
+    private final String IP = "http://192.168.0.102:8888";
+    private Context context;
+    public SocketCreator(Context context) {
+        this.context = context;
+    }
+
+    public IO.Options getOptions(String token) {
         IO.Options options = new IO.Options();
         options.query = "token=" + token;
         return options;
     }
-    public static Socket createSocket(String token) throws URISyntaxException {
+    public Socket createSocket(String token) throws URISyntaxException {
         IO.Options options = getOptions(token);
         Socket socket;
         socket = IO.socket(IP, options);
@@ -69,13 +77,52 @@ public class SocketCreator {
                 EventBus.getDefault().post(new MessageEvent<JSONObject>(message, list));
             }
         });
-        socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+        // 처음 채팅이 왔을때 초기화해야 한다
+        socket.on("receive_chat", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject data = (JSONObject) args[0];
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("data", data.toString());
+                intent.setAction(ChatTask.ACTION_STORAGE_CHAT_DATA);
+                context.startService(intent);
+            }
+        });
+        //내가 보낸 채팅의 결과값을 받을때
+        socket.on("chat_result", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "socket invite_result call");
+                JSONObject data = (JSONObject) args[0];
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("data", data.toString());
+                intent.setAction(ChatTask.ACTION_CHAT_SEND_RESULT);
+                context.startService(intent);
+            }
+        });
+        socket.on("invite_user_to_room", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
 
+            }
+        });
+        socket.on("leave_room", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+            }
+        });
+        socket.on("enter_room", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+            }
+        });
+        socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 Log.d(TAG, "call: disconnected");
             }
-
         });
         return socket;
     }

@@ -31,6 +31,7 @@ public class UserContentProvider extends ContentProvider {
     public static final int CHAT_LIST = 200;
     public static final int CHAT_MEMBERS = 300;
     public static final int CHAT = 400;
+    public static final int CHAT_ITEM = 401;
     public static final UriMatcher sUriMatcher = buildUriMatcher();
     private DbHelper mDbHelper;
 
@@ -49,6 +50,7 @@ public class UserContentProvider extends ContentProvider {
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatList.PATH, CHAT_LIST);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRoomMembers.PATH, CHAT_MEMBERS);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.PATH, CHAT);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.PATH + "/#", CHAT_ITEM);
         return uriMatcher;
     }
 
@@ -181,7 +183,30 @@ public class UserContentProvider extends ContentProvider {
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
-        return 0;
+        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+        int rowUpdated = 0;
+        switch( sUriMatcher.match(uri) ) {
+            case USERS :
+                rowUpdated = db.update(TalkContract.User.TABLE_NAME, values, selection, selectionArgs);
+
+                break;
+            case CHAT_ITEM :
+                String Segment = uri.getLastPathSegment();
+                rowUpdated = db.update(TalkContract.Chat.TABLE_NAME, values, selection, selectionArgs);
+                break;
+            case CHAT_LIST :
+                rowUpdated = db.update(TalkContract.ChatList.TABLE_NAME, values, selection, selectionArgs);
+                break;
+            case CHAT :
+                rowUpdated = db.update(TalkContract.Chat.TABLE_NAME, values, selection, selectionArgs);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+        if ( rowUpdated != 0 ) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return rowUpdated;
     }
 
     @Override

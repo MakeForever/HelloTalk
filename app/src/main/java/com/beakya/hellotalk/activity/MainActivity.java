@@ -4,12 +4,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -28,7 +33,9 @@ import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.MainAdapter;
+import com.beakya.hellotalk.adapter.ViewPagerAdapter;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.fragment.MainFragment;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
@@ -36,29 +43,28 @@ import com.beakya.hellotalk.utils.Utils;
 import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements
-        LoaderManager.LoaderCallbacks<Cursor>,
-        MainAdapter.mOnClickListener,
+
         NavigationView.OnNavigationItemSelectedListener {
-    private MainAdapter mUserAdapter;
-    private RecyclerView mRecyclerView;
-    private FloatingActionButton faButton;
+
     private NavigationView mNavigationView;
     private DrawerLayout mDrawer;
     private Toolbar mToolbar;
     private ImageView navigationDrawerImageView;
     private TextView headerNameTextView;
     private TextView headerEmailTextView;
-    private static final int ID_USER_CURSOR_LOADER = 1;
+    private ViewPager viewPager;
+    MenuItem prevMenuItem;
+    BottomNavigationView bottomNavigationView;
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         boolean token = Utils.checkToken(this);
         if( !token ) {
             Intent loginIntent = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(loginIntent);
             finish();
         }
-        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -66,9 +72,57 @@ public class MainActivity extends AppCompatActivity implements
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         View headerView = navigationView.getHeaderView(0);
+
         navigationDrawerImageView = (ImageView) headerView.findViewById(R.id.navigation_header_image_view);
         headerNameTextView = (TextView) headerView.findViewById(R.id.navigation_header_name_text_view);
         headerEmailTextView = (TextView) headerView.findViewById(R.id.navigation_header_email_text_view);
+        viewPager = (ViewPager) findViewById(R.id.viewpager);
+
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                if( prevMenuItem != null ) {
+                    prevMenuItem.setChecked( false );
+                } else {
+                    bottomNavigationView.getMenu().getItem(0).setChecked( false );
+                }
+                bottomNavigationView.getMenu().getItem( position ).setChecked( true );
+                prevMenuItem = bottomNavigationView.getMenu().getItem( position );
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+
+            }
+        });
+
+        setupViewPager( viewPager );
+        bottomNavigationView = (BottomNavigationView)findViewById(R.id.bottom_navigation);
+//        bottomNavigationView.setOnNavigationItemSelectedListener(
+//                new BottomNavigationView.OnNavigationItemSelectedListener() {
+//                    @Override
+//                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+//                        switch (item.getItemId()) {
+//                            case R.id.action_call:
+//                                viewPager.setCurrentItem(0);
+//                                break;
+//                            case R.id.action_chat:
+//                                viewPager.setCurrentItem(1);
+//                                break;
+//                            case R.id.action_contact:
+//                                viewPager.setCurrentItem(2);
+//                                break;
+//                        }
+//                        return false;
+//                    }
+//                });
+
+
         SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.user_info), MODE_PRIVATE);
         String myName = userInfoStorage.getString(getString(R.string.user_name), null);
         String myId = userInfoStorage.getString((getString(R.string.user_id)), null);
@@ -78,9 +132,7 @@ public class MainActivity extends AppCompatActivity implements
         if( myId != null ) {
             headerEmailTextView.setText(myId);
         }
-        mRecyclerView = (RecyclerView) findViewById(R.id.friends_recyclerView);
-        faButton = (FloatingActionButton) findViewById(R.id.fab);
-
+//
         String fileName = getString(R.string.setting_profile_img_name);
         String extension = getString(R.string.setting_profile_img_extension);
         String directory = getString(R.string.setting_profile_img_directory);
@@ -90,12 +142,9 @@ public class MainActivity extends AppCompatActivity implements
             navigationDrawerImageView.setImageBitmap(profileBitmap);
         }
 
-        faButton.setImageResource(R.drawable.ic_add_black_24dp);
-        mUserAdapter = new MainAdapter(this, this);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        mRecyclerView.setAdapter(mUserAdapter);
+//
 
-        getSupportLoaderManager().initLoader(ID_USER_CURSOR_LOADER, null, this);
+
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -104,56 +153,12 @@ public class MainActivity extends AppCompatActivity implements
         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
         mNavigationView.setNavigationItemSelectedListener(this);
 
-        faButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, FriendAddActivity.class);
-                startActivity(intent);
-            }
-        });
 
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
-            @Override
-            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-                return false;
-            }
-
-            // Called when a user swipes left or right on a ViewHolder
-            @Override
-            public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
-                // Here is where you'll implement swipe to delete
-
-                // COMPLETED (1) Construct the URI for the item to delete
-                //[Hint] Use getTag (from the adapter code) to get the id of the swiped item
-                // Retrieve the id of the task to delete
-                Log.d(TAG, "onSwiped: " + swipeDir);
-            }
-        }).attachToRecyclerView(mRecyclerView);
     }
 
 
 
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        switch ( id ) {
-            case ID_USER_CURSOR_LOADER:
-                return new CursorLoader( this, TalkContract.User.CONTENT_URI, null, null, null, null );
-            default :
-                throw new RuntimeException("Loader Not Implemented: " + id);
-        }
-    }
 
-
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        mUserAdapter.swapCursor(data);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-        mUserAdapter.swapCursor(null);
-    }
 
     @Override
     public void onBackPressed() {
@@ -207,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements
             socketIntent.setAction(SocketTask.ACTION_SOCKET_DISCONNECT);
             startService(socketIntent);
             boolean success = Utils.logout(this);
-            if( true ) {
+            if( success ) {
                 Intent intent = new Intent(this, LoginActivity.class);
                 startActivity(intent);
                 finish();
@@ -218,11 +223,10 @@ public class MainActivity extends AppCompatActivity implements
         return true;
     }
 
-    @Override
-    public void onListItemClick( String userId ) {
-        Intent intent = new Intent( this, ChatActivity.class );
-        String tableName = Utils.sha256(userId);
-        intent.putExtra("TableName", tableName);
-        startActivity(intent);
+    private void setupViewPager( ViewPager viewPager ) {
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        MainFragment mainFragment = new MainFragment();
+        adapter.addFragment(mainFragment);
+        viewPager.setAdapter(adapter);
     }
 }

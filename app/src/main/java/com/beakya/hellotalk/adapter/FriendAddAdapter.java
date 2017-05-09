@@ -51,8 +51,9 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
         String email = friend.getId();
         boolean isAdded = friend.isAdded();
         Bitmap profile = friend.getProfileImage();
-//        holder.bind( name, email, bitmapImg );
         holder.bind( name, email, isAdded, profile);
+
+
     }
 
     @Override
@@ -94,6 +95,9 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                         ContentValues values = new ContentValues();
                         values.put(TalkContract.User.USER_ID, id);
                         values.put(TalkContract.User.USER_NAME, name);
+                        if ( mBitmap != null) {
+                            values.put(TalkContract.User.USER_HAVE_PROFILE_IMAGE, true);
+                        }
                         resolver.insert(TalkContract.User.CONTENT_URI, values);
                         if( mBitmap != null) {
                             Utils.saveToInternalStorage(mContext, mBitmap,
@@ -101,20 +105,10 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                                     mContext.getString(R.string.setting_profile_img_extension),
                                     Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), id }));
                         }
-                        changeButtonText("삭제");
+                        addButton.setText("X");
+                        addButton.setVisibility(View.INVISIBLE);
+                        addButton.setEnabled(false);
                         mBoolean = true;
-                    } else {
-                        Uri uri = TalkContract.User.CONTENT_URI.buildUpon().appendPath("test").build();
-                        resolver.delete(uri,
-                                TalkContract.User.USER_ID+ "=?",new String[]{ id });
-                        if( mBitmap != null ) {
-                            Utils.deleteFile(mContext,
-                                    mContext.getString(R.string.setting_friends_profile_img_name),
-                                    mContext.getString(R.string.setting_profile_img_extension),
-                                    Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), id }));
-                        }
-                        changeButtonText("추가");
-                        mBoolean = false;
                     }
                 }
             });
@@ -132,10 +126,15 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
             } else {
                 userProfileImage.setImageResource(R.mipmap.default_profile_img);
             }
-            if( !isAdded ) {
-                changeButtonText("추가");
+            if( isAdded ) {
+//                changeButtonText("추가");
+                addButton.setText("X");
+                addButton.setVisibility(View.INVISIBLE);
+                addButton.setEnabled(false);
             } else {
-                changeButtonText("삭제");
+                addButton.setText("추가");
+                addButton.setVisibility(View.VISIBLE);
+                addButton.setEnabled(true);
             }
             Log.d(TAG, "bind: " + isAdded);
         }

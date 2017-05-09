@@ -50,7 +50,7 @@ public class ExampleInstrumentedTest {
 //
 //        value.put( TalkContract.Friend.USER_ID, "beak_ya@naver.com" );
 //        value.put( TalkContract.Friend.USER_NAME, "박철호" );
-//        value.put( TalkContract.Friend.USER_PROFILE_IMAGE_PATH, byteArray );
+//        value.put( TalkContract.Friend.USER_HAVE_PROFILE_IMAGE, byteArray );
 //        ContentValues[] result = new ContentValues[1];
 //        result = values.toArray(result);
 //        int insertResult = appContext.getContentResolver().bulkInsert(

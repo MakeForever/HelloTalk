@@ -35,4 +35,7 @@
 
 
     <string name="navigation_drawer_action_logout">logout</string>
+
+    <string name="socket_send_chat">send_chat</string>
+    <string name="invite_send_chat">invite_socket_chat</string>
 </resources>

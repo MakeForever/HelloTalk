@@ -1,6 +1,7 @@
 package com.beakya.hellotalk.utils;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -8,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -17,17 +19,24 @@ import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
 import static android.content.Context.MODE_PRIVATE;
+import static android.content.Context.POWER_SERVICE;
 
 /**
  * Created by cheolho on 2017. 4. 8..
@@ -144,39 +153,21 @@ public class Utils {
     public static boolean logout( Context c ){
         ContentResolver resolver = c.getContentResolver();
         int userDeletedRow = resolver.delete(TalkContract.User.CONTENT_URI, null, null);
+        int chatDeletedRow = resolver.delete( TalkContract.Chat.CONTENT_URI, null, null );
+        int chatListDeletedRow = resolver.delete( TalkContract.ChatList.CONTENT_URI, null, null );
+        int chatMembersDeleteRow = resolver.delete(TalkContract.ChatRoomMembers.CONTENT_URI, null, null);
         boolean imageDeleteResult = dropAllProfileImg(c);
-        boolean dropTableResult = dropChatListTables(c);
-        if ( userDeletedRow != -1 && dropTableResult && imageDeleteResult ) {
+        if ( userDeletedRow != -1 && imageDeleteResult ) {
             SharedPreferences storage = c.getSharedPreferences(c.getString(R.string.user_info), MODE_PRIVATE);
             boolean result = storage.edit().clear().commit();
 
-            Log.d(TAG, "logout: " + userDeletedRow + " : " + dropTableResult+ " : " + result + " : " + imageDeleteResult);
+            Log.d(TAG, "userDeletedRow : " + userDeletedRow + " chatDeletedRow : " + chatDeletedRow + " chatListDeletedRow : " + chatListDeletedRow + " chatMembersDeleteRow : " + chatMembersDeleteRow);
 
             return result;
         }
         return false;
     }
-    public static boolean dropChatListTables( Context c ) {
-        String dropSqlStart = "DROP TABLE IF EXISTS ' ";
-        String dropSqlEnd = " ' ";
-        DbHelper helper = new DbHelper(c);
-        SQLiteDatabase db = helper.getWritableDatabase();
-        ContentResolver resolver = c.getContentResolver();
-        try {
-            Cursor cursor = resolver.query(TalkContract.ChatList.CONTENT_URI, new String[]{ TalkContract.ChatList.CHAT_LIST_ID }, null, null, null);
-            while( cursor.moveToNext() ) {
-                db.execSQL(dropSqlStart + cursor.getString(cursor.getColumnIndex(TalkContract.ChatList.CHAT_LIST_ID)) + dropSqlEnd);
-            }
-            int result = resolver.delete(TalkContract.ChatList.CONTENT_URI, null, null);
-            if( result == -1 ) {
 
-            }
-            return true;
-        } catch ( Exception e ) {
-            e.printStackTrace();
-            return false;
-        }
-    }
     public static boolean dropAllProfileImg( Context c ) {
         String myProfileDirectory = c.getString(R.string.setting_profile_img_directory);
         String FriendsFileDirectory = c.getString(R.string.setting_friends_img_directory);
@@ -203,5 +194,61 @@ public class Utils {
         } catch(Exception ex){
             throw new RuntimeException(ex);
         }
+    }
+    public static ContentValues bundleToContentValues( Bundle bundle ) {
+        ContentValues returnValue = new ContentValues();
+        if( bundle != null ) {
+            for(String key : bundle.keySet()) {
+                Object object = bundle.get(key);
+                Log.d(TAG, "bundleToContentValues: " + object.getClass().getName());
+                switch( object.getClass().getName() ) {
+                    case "java.lang.String" :
+                        returnValue.put( key, ( String ) object );
+                        break;
+                }
+            }
+        }
+        return returnValue;
+    }
+
+    public static void ChatInitialize(Context context, String tableName,int chatType, ArrayList<String> memberList ) {
+        ContentResolver resolver = context.getContentResolver();
+        ContentValues chatListParams = new ContentValues();
+        chatListParams.put(TalkContract.ChatList.CHAT_LIST_ID, tableName );
+        chatListParams.put(TalkContract.ChatList.CHAT_TYPE, chatType );
+        ArrayList<ContentValues> chatMemberContentValues = new ArrayList<ContentValues>();
+        for( String id : memberList ) {
+            ContentValues chatMembers = new ContentValues();
+            chatMembers.put(TalkContract.ChatList.CHAT_LIST_ID, tableName);
+            chatMembers.put(TalkContract.User.USER_ID, id);
+            chatMemberContentValues.add( chatMembers );
+        }
+
+        for( ContentValues value : chatMemberContentValues ) {
+            resolver.insert(TalkContract.ChatRoomMembers.CONTENT_URI, value);
+        }
+        resolver.insert(TalkContract.ChatList.CONTENT_URI, chatListParams);
+    }
+    public static ArrayList<String> JSONArrayToArrayList( JSONArray json ) throws JSONException {
+        ArrayList<String> result = new ArrayList<>();
+        for ( int i = 0; i < json.length(); i++ ) {
+            result.add(json.getString(i));
+        }
+        return result;
+    }
+
+    public static String ChatTableNameCreator(List<String> list ) {
+        StringBuilder builder = new StringBuilder();
+        Collections.sort(list, new Comparator<String>() {
+            @Override
+            public int compare(String s1, String s2) {
+                return s1.compareToIgnoreCase(s2);
+            }
+        });
+        for(String value : list) {
+            Log.d(TAG, "ChatTableNameCreator: " + value);
+            builder.append(value);
+        }
+        return sha256(builder.toString());
     }
 }

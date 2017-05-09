@@ -44,7 +44,7 @@ public class DummyData {
 
                 value.put( TalkContract.User.USER_ID, "beak_ya@naver.com" );
                 value.put( TalkContract.User.USER_NAME, "박철호" );
-//                value.put( TalkContract.User.USER_PROFILE_IMAGE_PATH, byteArray );
+//                value.put( TalkContract.User.USER_HAVE_PROFILE_IMAGE, byteArray );
                 values.add(value);
                 ContentValues[] result = new ContentValues[1];
                 result = values.toArray(result);

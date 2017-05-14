@@ -22,7 +22,6 @@ import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.utils.Utils;
 import com.daimajia.swipe.SwipeLayout;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -154,16 +153,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
                 @Override
                 public void onClick(View v) {
                     ContentResolver resolver = mContext.getContentResolver();
-//                    Cursor cursor = resolver.query(TalkContract.ChatList.CONTENT_URI, null, TalkContract.ChatList.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
+//                    Cursor cursor = resolver.query(TalkContract.ChatRoom.CONTENT_URI, null, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
 //                    cursor.moveToFirst();
-                    SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.user_info), MODE_PRIVATE);
+                    SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE);
                     String myId = tokenStorage.getString( mContext.getString(R.string.user_id), null );
                     String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] { email, myId }));
                     Log.d(TAG, "chatTableName: " + chatTableName);
                     if( chatTableName != null ) {
-                        int deletedRow1 = resolver.delete(TalkContract.ChatList.CONTENT_URI, TalkContract.ChatList.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
-                        int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatList.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
-                        int deletedRow3 = resolver.delete(TalkContract.ChatRoomMembers.CONTENT_URI, TalkContract.ChatList.CHAT_LIST_ID + "=?", new String[] {chatTableName});
+                        int deletedRow1 = resolver.delete(TalkContract.ChatRoom.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
+                        int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
+                        int deletedRow3 = resolver.delete(TalkContract.Chat_User_Rooms.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[] {chatTableName});
                         Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
                     }
 

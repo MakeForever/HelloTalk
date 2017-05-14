@@ -12,21 +12,16 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.FriendAddActivity;
 import com.beakya.hellotalk.activity.FriendDetailActivity;
 import com.beakya.hellotalk.adapter.MainAdapter;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.utils.Utils;
-
-import java.util.ArrayList;
 
 /**
  * Created by goodlife on 2017. 5. 4..
@@ -61,7 +56,7 @@ public class MainFragment extends Fragment implements
         Log.d(TAG, "onCreateView: onCreateView");
         context = getActivity().getApplicationContext();
         View view = inflater.inflate(R.layout.app_bar_main, container, false);
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.friends_recyclerView);
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.my_recycler_view);
         faButton = (FloatingActionButton) view.findViewById(R.id.fab);
         faButton.setImageResource(R.drawable.ic_add_black_24dp);
         mUserAdapter = new MainAdapter( context, this );

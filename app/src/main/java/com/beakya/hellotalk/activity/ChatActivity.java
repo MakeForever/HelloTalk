@@ -63,23 +63,19 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
 
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
-        SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.user_info), MODE_PRIVATE);
+        SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myId = tokenStorage.getString( getString(R.string.user_id), null );
 
         button = (Button) findViewById(R.id.chat_send_button);
         contentEditText = (EditText) findViewById(R.id.chat_content_edit_text);
 
-        chatRecyclerView = (RecyclerView) findViewById(R.id.chat_recyclerView);
-        chatAdapter = new ChatAdapter();
-        chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        chatRecyclerView.setAdapter(chatAdapter);
+
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             receiveList = extras.getStringArrayList("receiveList");
             chatType = extras.getInt("chatType");
-            chatTableName = extras.getString(TalkContract.ChatList.CHAT_LIST_ID);
-            receiverId = extras.getString("receiver");
+            chatTableName = extras.getString(TalkContract.ChatRoom.CHAT_LIST_ID);
 
             if( chatTableName == null ) {
                 chatTableName = Utils.sha256(System.currentTimeMillis() + myId);
@@ -88,22 +84,29 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             if ( chatTableName != null ) {
                 ContentResolver resolver = getContentResolver();
                 Cursor chatCursor = resolver.query(
-                        TalkContract.ChatList.CONTENT_URI,
-                        new String[] { TalkContract.ChatList.CHAT_TYPE, TalkContract.ChatList.IS_SYNCHRONIZED },
-                        TalkContract.ChatList.CHAT_LIST_ID + " = ?", new String[] {chatTableName},
+                        TalkContract.ChatRoom.CONTENT_URI,
+                        new String[] { TalkContract.ChatRoom.CHAT_TYPE, TalkContract.ChatRoom.IS_SYNCHRONIZED },
+                        TalkContract.ChatRoom.CHAT_LIST_ID + " = ?", new String[] {chatTableName},
                         null);
                 if (chatCursor.getCount() > 0 ) {
                     chatCursor.moveToFirst();
-                    isSynchronized = chatCursor.getInt(chatCursor.getColumnIndex(TalkContract.ChatList.IS_SYNCHRONIZED)) > 0;
+                    isSynchronized = chatCursor.getInt(chatCursor.getColumnIndex(TalkContract.ChatRoom.IS_SYNCHRONIZED)) > 0;
                 } else {
                     isCreatedChat = false;
                 }
             }
+
+            chatRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
+            chatAdapter = new ChatAdapter(this);
+            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+            linearLayoutManager.setReverseLayout(true);
+            chatRecyclerView.setLayoutManager(linearLayoutManager);
+            chatRecyclerView.setAdapter(chatAdapter);
         }
 
 
-
-
+//
+//
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -114,19 +117,15 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
                 }
                 ContentResolver resolver = getContentResolver();
                 ContentValues chatParams = new ContentValues();
-                    chatParams.put(TalkContract.ChatList.CHAT_LIST_ID, chatTableName);
-                    chatParams.put(TalkContract.Chat.SENDER, "me");
-                    chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, messageContent);
-                    chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
-                    insertedUri = resolver.insert(TalkContract.Chat.CONTENT_URI, chatParams);
-                    if( !isCreatedChat ) {
-                        if( chatType == 1 && receiverId != null ) {
-                            Utils.ChatInitialize(ChatActivity.this, chatTableName , chatType, receiveList);
-                        } else {
-                            Utils.ChatInitialize(ChatActivity.this, chatTableName, chatType, receiveList);
-                        }
-                        isCreatedChat = true;
-                    }
+                chatParams.put(TalkContract.ChatRoom.CHAT_LIST_ID, chatTableName);
+                chatParams.put(TalkContract.Chat.CREATOR_ID, myId);
+                chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, messageContent);
+                chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
+                insertedUri = resolver.insert(TalkContract.Chat.CONTENT_URI, chatParams);
+                if( !isCreatedChat ) {
+                    Utils.ChatInitialize(ChatActivity.this, chatTableName, chatType, receiveList);
+                    isCreatedChat = true;
+                }
                 int insertedChatRowNumber;
                 try {
                     insertedChatRowNumber  = Integer.parseInt(insertedUri.getLastPathSegment());
@@ -152,7 +151,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         switch ( id ) {
             case ID_CHAT_CURSOR_LOADER :
-                return new CursorLoader( this, TalkContract.Chat.CONTENT_URI, null, TalkContract.ChatList.CHAT_LIST_ID + "=?", new String[] {chatTableName}, null );
+                return new CursorLoader( this, TalkContract.Chat.CONTENT_URI, null, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[] {chatTableName}, null );
             default :
                 throw new RuntimeException("Loader Not Implemented: " + id);
         }
@@ -203,7 +202,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
 //            while ( cursor.moveToNext() ) {
 //                Log.d(TAG, cursor.getInt(cursor.getColumnIndex(TalkContract.Chat._ID)) + " : " +
 //                        cursor.getString(cursor.getColumnIndex(TalkContract.Chat.IS_SEND)) + " : " +
-//                        cursor.getString(cursor.getColumnIndex(TalkContract.Chat.SENDER)));
+//                        cursor.getString(cursor.getColumnIndex(TalkContract.Chat.CREATOR_ID)));
 //            }
 
             }
@@ -216,8 +215,8 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             obj.put( "chatTableName", tableName );
             obj.put( TalkContract.Chat.MESSAGE_CONTENT, messageContent );
             obj.put( TalkContract.Chat.MESSAGE_TYPE, messageType);
-            obj.put( TalkContract.Chat.SENDER, myId );
-            obj.put(TalkContract.ChatList.CHAT_TYPE, chatType);
+            obj.put( TalkContract.Chat.CREATOR_ID, myId );
+            obj.put(TalkContract.ChatRoom.CHAT_TYPE, chatType);
             obj.put("members", new JSONArray(receiveList));
             obj.put("insertedChatRowNumber", insertedChatRowNumber);
         } catch (JSONException e) {
@@ -232,8 +231,8 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             obj.put( "chatTableName", tableName );
             obj.put( TalkContract.Chat.MESSAGE_CONTENT, messageContent );
             obj.put( TalkContract.Chat.MESSAGE_TYPE, messageType);
-            obj.put( TalkContract.Chat.SENDER, myId );
-            obj.put(TalkContract.ChatList.CHAT_TYPE, chatType);
+            obj.put( TalkContract.Chat.CREATOR_ID, myId );
+            obj.put(TalkContract.ChatRoom.CHAT_TYPE, chatType);
             obj.put("insertedChatRowNumber", insertedChatRowNumber);
 
         } catch (JSONException e) {

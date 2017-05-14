@@ -15,9 +15,6 @@ import android.util.Log;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
 import static com.beakya.hellotalk.database.TalkContract.User.FRIENDS_PATH;
 
 /**
@@ -47,8 +44,8 @@ public class UserContentProvider extends ContentProvider {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH, USERS);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH + "/*", USER_WITH_ID);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatList.PATH, CHAT_LIST);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRoomMembers.PATH, CHAT_MEMBERS);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRoom.PATH, CHAT_LIST);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat_User_Rooms.PATH, CHAT_MEMBERS);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.PATH, CHAT);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.PATH + "/#", CHAT_ITEM);
         return uriMatcher;
@@ -67,10 +64,10 @@ public class UserContentProvider extends ContentProvider {
                 cursor = db.query(TalkContract.Chat.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             case CHAT_LIST :
-                cursor = db.query(TalkContract.ChatList.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor = db.query(TalkContract.ChatRoom.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             case CHAT_MEMBERS :
-                cursor = db.query(TalkContract.ChatRoomMembers.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor = db.query(TalkContract.Chat_User_Rooms.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             default :
                 throw new RuntimeException("Uri not matched");
@@ -113,7 +110,7 @@ public class UserContentProvider extends ContentProvider {
                 }
                 break;
             case CHAT_LIST :
-                id = db.insert(TalkContract.ChatList.TABLE_NAME, null, values);
+                id = db.insert(TalkContract.ChatRoom.TABLE_NAME, null, values);
                 if( id > 0 ) {
                     returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
                             .appendPath(TalkContract.Chat.PATH).build(), id);
@@ -122,10 +119,10 @@ public class UserContentProvider extends ContentProvider {
                 }
                 break;
             case CHAT_MEMBERS :
-                id = db.insert(TalkContract.ChatRoomMembers.TABLE_NAME, null, values);
+                id = db.insert(TalkContract.Chat_User_Rooms.TABLE_NAME, null, values);
                 if( id > 0 ) {
                     returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
-                            .appendPath(TalkContract.ChatRoomMembers.PATH).build(), id);
+                            .appendPath(TalkContract.Chat_User_Rooms.PATH).build(), id);
                 } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 }
@@ -159,10 +156,10 @@ public class UserContentProvider extends ContentProvider {
                 tasksDeleted = db.delete(TalkContract.User.TABLE_NAME, selection, selectionArgs);
                 break;
             case CHAT_LIST:
-                tasksDeleted = db.delete(TalkContract.ChatList.TABLE_NAME, selection, selectionArgs);
+                tasksDeleted = db.delete(TalkContract.ChatRoom.TABLE_NAME, selection, selectionArgs);
                 break;
             case CHAT_MEMBERS:
-                tasksDeleted = db.delete(TalkContract.ChatRoomMembers.TABLE_NAME, selection, selectionArgs);
+                tasksDeleted = db.delete(TalkContract.Chat_User_Rooms.TABLE_NAME, selection, selectionArgs);
                 break;
             case CHAT :
                 tasksDeleted = db.delete(TalkContract.Chat.TABLE_NAME, selection, selectionArgs);
@@ -195,7 +192,7 @@ public class UserContentProvider extends ContentProvider {
                 rowUpdated = db.update(TalkContract.Chat.TABLE_NAME, values, selection, selectionArgs);
                 break;
             case CHAT_LIST :
-                rowUpdated = db.update(TalkContract.ChatList.TABLE_NAME, values, selection, selectionArgs);
+                rowUpdated = db.update(TalkContract.ChatRoom.TABLE_NAME, values, selection, selectionArgs);
                 break;
             case CHAT :
                 rowUpdated = db.update(TalkContract.Chat.TABLE_NAME, values, selection, selectionArgs);

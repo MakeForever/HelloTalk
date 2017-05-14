@@ -41,18 +41,18 @@ public class ChatTask {
                 }
                 messageContent = obj.getString("message_content");
                 messageType = obj.getString("message_type");
-                sender = obj.getString("sender");
+                sender = obj.getString(TalkContract.Chat.CREATOR_ID);
 
-                int chatType = obj.getInt(TalkContract.ChatList.CHAT_TYPE);
+                int chatType = obj.getInt(TalkContract.ChatRoom.CHAT_TYPE);
 
                 if ( chatTableName == null || messageContent == null || messageType == null || sender == null ) {
                     return;
                 }
                 resolver = context.getContentResolver();
                 Cursor cursor = resolver.query(
-                                TalkContract.ChatList.CONTENT_URI,
+                                TalkContract.ChatRoom.CONTENT_URI,
                                 null,
-                                TalkContract.ChatList.CHAT_LIST_ID + "= ?",
+                                TalkContract.ChatRoom.CHAT_LIST_ID + "= ?",
                                 new String[] { chatTableName } ,
                                 null
                         );
@@ -61,8 +61,8 @@ public class ChatTask {
                 }
 
                 ContentValues chatParams = new ContentValues();
-                chatParams.put(TalkContract.ChatList.CHAT_LIST_ID, chatTableName);
-                chatParams.put(TalkContract.Chat.SENDER, sender );
+                chatParams.put(TalkContract.ChatRoom.CHAT_LIST_ID, chatTableName);
+                chatParams.put(TalkContract.Chat.CREATOR_ID, sender );
                 chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, messageContent);
                 chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
                 resolver.insert(TalkContract.Chat.CONTENT_URI, chatParams);
@@ -78,8 +78,8 @@ public class ChatTask {
                 int insertedChatRowNumber = responseData.getInt("insertedChatRowNumber");
                 resolver = context.getContentResolver();
                 ContentValues values = new ContentValues();
-                values.put(TalkContract.ChatList.IS_SYNCHRONIZED, result);
-                int updatedRow = resolver.update(TalkContract.ChatList.CONTENT_URI, values, TalkContract.ChatList.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
+                values.put(TalkContract.ChatRoom.IS_SYNCHRONIZED, result);
+                int updatedRow = resolver.update(TalkContract.ChatRoom.CONTENT_URI, values, TalkContract.ChatRoom.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
                 if( updatedRow < 1 ) {
                     throw new RuntimeException("something wrong");
                 }

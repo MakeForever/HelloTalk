@@ -2,6 +2,7 @@ package com.beakya.hellotalk.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -173,14 +174,6 @@ public class ImageSelectionActivity extends AppCompatActivity {
             String extension = getString(R.string.setting_profile_img_extension);
             String directory = getString(R.string.setting_profile_img_directory);
             Context context = ImageSelectionActivity.this;
-//            try {
-//                FileOutputStream outs = openFileOutput(fileName, MODE_PRIVATE);
-//                mBitmap.compress(Bitmap.CompressFormat.PNG, 100, outs);
-//                outs.close();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-
             Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory }));
 
 
@@ -216,6 +209,10 @@ public class ImageSelectionActivity extends AppCompatActivity {
             hideProgressBar();
             super.onPostExecute(req);
             if( req.isSuccessful() ) {
+                SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
+                SharedPreferences.Editor editor = tokenStorage.edit();
+                editor.putBoolean(getString(R.string.user_img_boolean), true);
+                editor.commit();
                 Intent intent = new Intent(ImageSelectionActivity.this, MainActivity.class);
                 startActivity(intent);
                 finish();

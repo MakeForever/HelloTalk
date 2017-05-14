@@ -4,7 +4,7 @@
     <string name="test_email_value">beak_ya@naver.com</string>
 
 
-    <string name="user_info">user_info</string>
+    <string name="my_info">user_info</string>
     <string name="token">token</string>
     <string name="user_id">id</string>
     <string name="user_name">name</string>

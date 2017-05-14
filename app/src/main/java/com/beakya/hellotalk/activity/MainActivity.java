@@ -2,28 +2,16 @@ package com.beakya.hellotalk.activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.support.v7.widget.helper.ItemTouchHelper;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,9 +20,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.adapter.MainAdapter;
 import com.beakya.hellotalk.adapter.ViewPagerAdapter;
-import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.fragment.ChatListFragment;
 import com.beakya.hellotalk.fragment.MainFragment;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
@@ -123,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements
 //                });
 
 
-        SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.user_info), MODE_PRIVATE);
+        SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         String myName = userInfoStorage.getString(getString(R.string.user_name), null);
         String myId = userInfoStorage.getString((getString(R.string.user_id)), null);
         if( myName != null ) {
@@ -226,7 +213,9 @@ public class MainActivity extends AppCompatActivity implements
     private void setupViewPager( ViewPager viewPager ) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         MainFragment mainFragment = new MainFragment();
+        ChatListFragment chatListFragment = new ChatListFragment();
         adapter.addFragment(mainFragment);
+        adapter.addFragment(chatListFragment);
         viewPager.setAdapter(adapter);
     }
 }

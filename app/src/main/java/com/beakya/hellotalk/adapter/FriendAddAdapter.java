@@ -83,7 +83,6 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
             nameTextView = (TextView) v.findViewById(R.id.textView_name);
             emailTextView = (TextView) v.findViewById(R.id.textView_email);
             userProfileImage = (ImageView) v.findViewById(R.id.user_profile_image_view);
-            //TODO : 나중에 고칠거
             addButton = (Button) v.findViewById(R.id.friend_add_button);
             addButton.setOnClickListener(new View.OnClickListener() {
                 @Override

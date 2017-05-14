@@ -4,8 +4,6 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -16,7 +14,6 @@ import android.webkit.MimeTypeMap;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 
 import org.json.JSONArray;
@@ -26,7 +23,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import static android.content.Context.MODE_PRIVATE;
-import static android.content.Context.POWER_SERVICE;
 
 /**
  * Created by cheolho on 2017. 4. 8..
@@ -45,12 +40,12 @@ import static android.content.Context.POWER_SERVICE;
 public class Utils {
     public static final String TAG = Utils.class.getSimpleName();
     public static String getToken(Context context) {
-        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.user_info), MODE_PRIVATE);
+        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE);
         String token = preferences.getString(context.getString(R.string.token), null);
         return token;
     }
     public static boolean checkToken( Context context ) {
-        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.user_info), MODE_PRIVATE);
+        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE);
         String token = preferences.getString(context.getString(R.string.token), null);
         if( token == null ) {
             return false;
@@ -154,11 +149,11 @@ public class Utils {
         ContentResolver resolver = c.getContentResolver();
         int userDeletedRow = resolver.delete(TalkContract.User.CONTENT_URI, null, null);
         int chatDeletedRow = resolver.delete( TalkContract.Chat.CONTENT_URI, null, null );
-        int chatListDeletedRow = resolver.delete( TalkContract.ChatList.CONTENT_URI, null, null );
-        int chatMembersDeleteRow = resolver.delete(TalkContract.ChatRoomMembers.CONTENT_URI, null, null);
+        int chatListDeletedRow = resolver.delete( TalkContract.ChatRoom.CONTENT_URI, null, null );
+        int chatMembersDeleteRow = resolver.delete(TalkContract.Chat_User_Rooms.CONTENT_URI, null, null);
         boolean imageDeleteResult = dropAllProfileImg(c);
         if ( userDeletedRow != -1 && imageDeleteResult ) {
-            SharedPreferences storage = c.getSharedPreferences(c.getString(R.string.user_info), MODE_PRIVATE);
+            SharedPreferences storage = c.getSharedPreferences(c.getString(R.string.my_info), MODE_PRIVATE);
             boolean result = storage.edit().clear().commit();
 
             Log.d(TAG, "userDeletedRow : " + userDeletedRow + " chatDeletedRow : " + chatDeletedRow + " chatListDeletedRow : " + chatListDeletedRow + " chatMembersDeleteRow : " + chatMembersDeleteRow);
@@ -214,20 +209,20 @@ public class Utils {
     public static void ChatInitialize(Context context, String tableName,int chatType, ArrayList<String> memberList ) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues chatListParams = new ContentValues();
-        chatListParams.put(TalkContract.ChatList.CHAT_LIST_ID, tableName );
-        chatListParams.put(TalkContract.ChatList.CHAT_TYPE, chatType );
+        chatListParams.put(TalkContract.ChatRoom.CHAT_LIST_ID, tableName );
+        chatListParams.put(TalkContract.ChatRoom.CHAT_TYPE, chatType );
         ArrayList<ContentValues> chatMemberContentValues = new ArrayList<ContentValues>();
         for( String id : memberList ) {
             ContentValues chatMembers = new ContentValues();
-            chatMembers.put(TalkContract.ChatList.CHAT_LIST_ID, tableName);
+            chatMembers.put(TalkContract.ChatRoom.CHAT_LIST_ID, tableName);
             chatMembers.put(TalkContract.User.USER_ID, id);
             chatMemberContentValues.add( chatMembers );
         }
 
         for( ContentValues value : chatMemberContentValues ) {
-            resolver.insert(TalkContract.ChatRoomMembers.CONTENT_URI, value);
+            resolver.insert(TalkContract.Chat_User_Rooms.CONTENT_URI, value);
         }
-        resolver.insert(TalkContract.ChatList.CONTENT_URI, chatListParams);
+        resolver.insert(TalkContract.ChatRoom.CONTENT_URI, chatListParams);
     }
     public static ArrayList<String> JSONArrayToArrayList( JSONArray json ) throws JSONException {
         ArrayList<String> result = new ArrayList<>();

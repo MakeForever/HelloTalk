@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 import com.daimajia.swipe.SwipeLayout;
 
@@ -153,16 +154,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
                 @Override
                 public void onClick(View v) {
                     ContentResolver resolver = mContext.getContentResolver();
-//                    Cursor cursor = resolver.query(TalkContract.ChatRoom.CONTENT_URI, null, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
+//                    Cursor cursor = resolver.query(TalkContract.ChatRooms.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
 //                    cursor.moveToFirst();
                     SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE);
                     String myId = tokenStorage.getString( mContext.getString(R.string.user_id), null );
                     String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] { email, myId }));
                     Log.d(TAG, "chatTableName: " + chatTableName);
                     if( chatTableName != null ) {
-                        int deletedRow1 = resolver.delete(TalkContract.ChatRoom.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
-                        int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
-                        int deletedRow3 = resolver.delete(TalkContract.Chat_User_Rooms.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[] {chatTableName});
+                        int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
+                        int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
+                        int deletedRow3 = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[] {chatTableName});
                         Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
                     }
 
@@ -183,7 +184,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
             Log.d(TAG, "onClick: ");
             if ( !isSwiped ) {
                 String id = emailTextView.getText().toString();
-                mListener.onListItemClick( id );
+                String name = nameTextView.getText().toString();
+                Bitmap bitmap = userProfileImage.getDrawingCache(true);
+                User user = new User(id, name, bitmap);
+                mListener.onListItemClick(user);
             } else {
                 Toast.makeText(mContext, "스와이프를 닫아주세요", Toast.LENGTH_SHORT).show();
             }
@@ -193,6 +197,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         }
     }
     public interface mOnClickListener {
-        void onListItemClick( String userId );
+        void onListItemClick(User user);
     }
 }

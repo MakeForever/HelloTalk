@@ -3,6 +3,7 @@ package com.beakya.hellotalk.adapter;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -34,7 +35,6 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
     private Cursor mCursor;
     private Context mContext;
     private String myId;
-    private Bitmap bitmapImg;
 
     public ChatAdapter(Context context) {
         this.mContext = context;
@@ -65,25 +65,33 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+        String content;
+        String id;
         mCursor.moveToPosition((mCursor.getCount() - 1) - position);
-        Log.d(TAG, "onBindViewHolder: " + position + " : " + ((mCursor.getCount() - 1) - position));
-        String content = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.MESSAGE_CONTENT));
-        String id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.CREATOR_ID));
-        boolean hasPic;
-        if( id.equals(myId) ) {
-            hasPic = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE).getBoolean(mContext.getString(R.string.user_img_boolean), false);
-        } else {
-            Cursor test = mContext.getContentResolver().query(
-                TalkContract.User.CONTENT_URI,
-                null,
-                TalkContract.User.USER_ID + " = ? ",
-                new String[]{ id },
-                null);
+        switch (  holder.getItemViewType() ) {
+            case VIEW_TYPE_MY_CHAT:
+                Log.d(TAG, "onBindViewHolder: " + position + " : " + ((mCursor.getCount() - 1) - position));
+                content = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.MESSAGE_CONTENT));
+                id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.CREATOR_ID));
+                String fileName = mContext.getString(R.string.setting_profile_img_name);
+                String extension = mContext.getString(R.string.setting_profile_img_extension);
+                String directory = mContext.getString(R.string.setting_profile_img_directory);
+                //TODO : 비트맵 얻는 메소드 실패 했을때 null 리턴하지 말고 기본 이미지 리턴 하도록
+                Bitmap profileBitmap = Utils.getImageBitmap(mContext, fileName, extension, Arrays.asList(directory));
 
-            test.moveToNext();
-            hasPic = test.getInt(test.getColumnIndex(TalkContract.User.USER_HAVE_PROFILE_IMAGE)) > 0;
+                holder.bind(content, profileBitmap, id);
+                break;
+            case VIEW_TYPE_OTHER_CHAT:
+                content = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.MESSAGE_CONTENT));
+                id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.CREATOR_ID));
+                Bitmap bitmap = Utils.getImageBitmap(mContext,
+                        mContext.getString(R.string.setting_friends_profile_img_name),
+                        mContext.getString(R.string.setting_profile_img_extension),
+                        Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), id }));
+                holder.bind(content, bitmap, id);
+                break;
         }
-        holder.bind(content, hasPic, id);
+
     }
 
     public void swapCursor(Cursor newCursor) {
@@ -98,7 +106,7 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
     @Override
     public int getItemViewType(int position) {
-        mCursor.moveToPosition((mCursor.getCount() - 1) - position);
+        mCursor.moveToPosition(position);
         String id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.CREATOR_ID));
 
         if( id.equals( myId ) ) {
@@ -129,23 +137,10 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
         }
 
-        public void bind(String content, boolean hasProfileImg, String id) {
+        public void bind(String content, Bitmap profileImg, String id) {
             contentTextView.setText(content);
-            if (hasProfileImg == false) {
-                profileImageView.setImageResource(R.mipmap.default_profile_img);
-            } else {
-                String fileName = mContext.getString(R.string.setting_profile_img_name);
-                String extension = mContext.getString(R.string.setting_profile_img_extension);
-                String directory = mContext.getString(R.string.setting_profile_img_directory);
-                Bitmap bitmapImg = Utils.getImageBitmap(mContext,
-                        fileName,
-                        extension,
-                        Arrays.asList(new String[]{ directory }));
+            profileImageView.setImageBitmap(profileImg);
 
-                profileImageView.setImageBitmap(bitmapImg);
-
-
-            }
         }
     }
 }

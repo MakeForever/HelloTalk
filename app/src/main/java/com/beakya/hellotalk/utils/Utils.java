@@ -15,6 +15,7 @@ import android.webkit.MimeTypeMap;
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.objs.User;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,10 +25,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.security.MessageDigest;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -95,7 +100,7 @@ public class Utils {
         try {
             b = BitmapFactory.decodeStream(new FileInputStream(f));
         } catch (FileNotFoundException e) {
-            return null;
+            return BitmapFactory.decodeResource(c.getResources(),R.mipmap.default_profile_img);
         }
         return b;
     }
@@ -149,8 +154,8 @@ public class Utils {
         ContentResolver resolver = c.getContentResolver();
         int userDeletedRow = resolver.delete(TalkContract.User.CONTENT_URI, null, null);
         int chatDeletedRow = resolver.delete( TalkContract.Chat.CONTENT_URI, null, null );
-        int chatListDeletedRow = resolver.delete( TalkContract.ChatRoom.CONTENT_URI, null, null );
-        int chatMembersDeleteRow = resolver.delete(TalkContract.Chat_User_Rooms.CONTENT_URI, null, null);
+        int chatListDeletedRow = resolver.delete( TalkContract.ChatRooms.CONTENT_URI, null, null );
+        int chatMembersDeleteRow = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, null, null);
         boolean imageDeleteResult = dropAllProfileImg(c);
         if ( userDeletedRow != -1 && imageDeleteResult ) {
             SharedPreferences storage = c.getSharedPreferences(c.getString(R.string.my_info), MODE_PRIVATE);
@@ -206,28 +211,28 @@ public class Utils {
         return returnValue;
     }
 
-    public static void ChatInitialize(Context context, String tableName,int chatType, ArrayList<String> memberList ) {
+    public static void ChatInitialize(Context context, String tableName,int chatType, ArrayList<User> memberList ) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues chatListParams = new ContentValues();
-        chatListParams.put(TalkContract.ChatRoom.CHAT_LIST_ID, tableName );
-        chatListParams.put(TalkContract.ChatRoom.CHAT_TYPE, chatType );
+        chatListParams.put(TalkContract.ChatRooms.CHAT_LIST_ID, tableName );
+        chatListParams.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType );
         ArrayList<ContentValues> chatMemberContentValues = new ArrayList<ContentValues>();
-        for( String id : memberList ) {
+        for( User user : memberList ) {
             ContentValues chatMembers = new ContentValues();
-            chatMembers.put(TalkContract.ChatRoom.CHAT_LIST_ID, tableName);
-            chatMembers.put(TalkContract.User.USER_ID, id);
+            chatMembers.put(TalkContract.ChatRooms.CHAT_LIST_ID, tableName);
+            chatMembers.put(TalkContract.User.USER_ID, user.getId());
             chatMemberContentValues.add( chatMembers );
         }
 
         for( ContentValues value : chatMemberContentValues ) {
-            resolver.insert(TalkContract.Chat_User_Rooms.CONTENT_URI, value);
+            resolver.insert(TalkContract.ChatUserRooms.CONTENT_URI, value);
         }
-        resolver.insert(TalkContract.ChatRoom.CONTENT_URI, chatListParams);
+        resolver.insert(TalkContract.ChatRooms.CONTENT_URI, chatListParams);
     }
-    public static ArrayList<String> JSONArrayToArrayList( JSONArray json ) throws JSONException {
-        ArrayList<String> result = new ArrayList<>();
+    public static ArrayList<User> JSONArrayToArrayList(JSONArray json ) throws JSONException {
+        ArrayList<User> result = new ArrayList<>();
         for ( int i = 0; i < json.length(); i++ ) {
-            result.add(json.getString(i));
+            result.add(new User(json.getString(i),null));
         }
         return result;
     }
@@ -245,5 +250,37 @@ public class Utils {
             builder.append(value);
         }
         return sha256(builder.toString());
+    }
+    public static String timeToString( String date ) {
+
+        long second = 1000;
+        long minute = 1000 * 60;
+        long hour = minute * 60;
+        long day = hour * 24;
+        Date result = null;
+        Calendar calendar = Calendar.getInstance();
+        Date currentDate = calendar.getTime();
+        try {
+            result = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        result.setTime(result.getTime() + (hour * 9));
+        long diff = Math.abs(currentDate.getTime() - result.getTime());
+
+        if (diff < minute) {
+            long time = diff / second;
+            return time + "초전";
+        } else if (diff < hour) {
+            long time = diff / minute;
+            return time + "분전";
+        } else if (diff < day) {
+            return (diff / hour) + "시간전";
+        } else if ( diff > day ){
+            //TODO 3월 15일 이런식으로 리턴하게 만들것
+            return null;
+        } else {
+            return "방금";
+        }
     }
 }

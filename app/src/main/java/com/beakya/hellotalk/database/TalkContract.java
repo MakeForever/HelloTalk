@@ -31,7 +31,7 @@ public class TalkContract {
     }
     public static final class Chat implements BaseColumns{
 
-        public static final String TYPE_TEXT = "text";
+        public static final int TYPE_TEXT = 1;
         public static final String TYPE_IMAGE = "image";
 
         public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(Chat.PATH).build();
@@ -46,39 +46,43 @@ public class TalkContract {
         public static final String CHAT_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE [" + TABLE_NAME + "] ( " +
                         _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        ChatRoom.CHAT_LIST_ID + " TEXT , " +
+                        ChatRooms.CHAT_LIST_ID + " TEXT , " +
                         CREATOR_ID + " TEXT , " +
                         MESSAGE_CONTENT + " TEXT , " +
-                        MESSAGE_TYPE + " TEXT , " +
+                        MESSAGE_TYPE + " INTEGER , " +
                         CREATED_TIME + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                        IS_SEND + " BOOLEAN DEFAULT FALSE, " +
-                        IS_READ + " BOOLEAN DEFAULT FALSE " +
+                        IS_SEND + " BOOLEAN DEFAULT 0, " +
+                        IS_READ + " BOOLEAN DEFAULT 0 " +
                             " ); ";
     }
-    public static final class ChatRoom {
+    public static final class ChatRooms {
+
+        public static final int PERSONAL_CHAT_TYPE = 1;
+        public static final int GROUP_CHAT_TYPE = 2;
+        public static final int OPEN_CHAT_TYPE = 3;
         public static final String TABLE_NAME = "chat_list";
         public static final String PATH = TABLE_NAME;
-        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRoom.PATH).build();
+        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRooms.PATH).build();
         public static final String CHAT_LIST_ID = "chat_list_id";
         public static final String CREATED_TIME = "created_time";
-        public static final String CHAT_TYPE = "chat_type";
+        public static final String CHAT_ROOM_TYPE = "chat_type";
         public static final String IS_SYNCHRONIZED = "is_synchronized";
         public static final String CHAT_LIST_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE [" + TABLE_NAME + "] ( " +
                         CHAT_LIST_ID + " TEXT PRIMARY KEY , " +
-                        CHAT_TYPE + " INTEGER DEFAULT 1, " +
+                        CHAT_ROOM_TYPE + " INTEGER DEFAULT 1, " +
                         CREATED_TIME + " TIMESTAMP DEFAULT CURRENT_TIME, " +
                         IS_SYNCHRONIZED + " BOOLEAN DEFAULT FALSE " +
                         " ); ";
     }
-    public static final class Chat_User_Rooms implements BaseColumns {
+    public static final class ChatUserRooms implements BaseColumns {
         public static final String TABLE_NAME = "chat_members";
         public static final String PATH = TABLE_NAME;
-        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(Chat_User_Rooms.PATH).build();
+        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatUserRooms.PATH).build();
         public static final String CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE " + TABLE_NAME + " ( " +
                         _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        ChatRoom.CHAT_LIST_ID + " TEXT, " +
+                        ChatRooms.CHAT_LIST_ID + " TEXT, " +
                         User.USER_ID + " TEXT " +
                         " ); ";
 

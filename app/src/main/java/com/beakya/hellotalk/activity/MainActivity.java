@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -12,6 +13,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,14 +28,14 @@ import com.beakya.hellotalk.fragment.MainFragment;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements
-
-        NavigationView.OnNavigationItemSelectedListener {
-
-    private NavigationView mNavigationView;
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    public static final int ACTION_CHAT_LIST_ASYNC = 0;
+    public static final int ID_USER_CURSOR_LOADER = 1;
     private DrawerLayout mDrawer;
     private Toolbar mToolbar;
     private ImageView navigationDrawerImageView;
@@ -52,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements
             startActivity(loginIntent);
             finish();
         }
+        String test = FirebaseInstanceId.getInstance().getToken();
+        Log.d(TAG, "onCreate: " + test);
         setContentView(R.layout.activity_main);
 
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -63,51 +67,12 @@ public class MainActivity extends AppCompatActivity implements
         navigationDrawerImageView = (ImageView) headerView.findViewById(R.id.navigation_header_image_view);
         headerNameTextView = (TextView) headerView.findViewById(R.id.navigation_header_name_text_view);
         headerEmailTextView = (TextView) headerView.findViewById(R.id.navigation_header_email_text_view);
-        viewPager = (ViewPager) findViewById(R.id.viewpager);
-
-        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                if( prevMenuItem != null ) {
-                    prevMenuItem.setChecked( false );
-                } else {
-                    bottomNavigationView.getMenu().getItem(0).setChecked( false );
-                }
-                bottomNavigationView.getMenu().getItem( position ).setChecked( true );
-                prevMenuItem = bottomNavigationView.getMenu().getItem( position );
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
-            }
-        });
-
-        setupViewPager( viewPager );
-        bottomNavigationView = (BottomNavigationView)findViewById(R.id.bottom_navigation);
-//        bottomNavigationView.setOnNavigationItemSelectedListener(
-//                new BottomNavigationView.OnNavigationItemSelectedListener() {
-//                    @Override
-//                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-//                        switch (item.getItemId()) {
-//                            case R.id.action_call:
-//                                viewPager.setCurrentItem(0);
-//                                break;
-//                            case R.id.action_chat:
-//                                viewPager.setCurrentItem(1);
-//                                break;
-//                            case R.id.action_contact:
-//                                viewPager.setCurrentItem(2);
-//                                break;
-//                        }
-//                        return false;
-//                    }
-//                });
+        ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
+        if (viewPager != null) {
+            setupViewPager(viewPager);
+        }
+        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout.setupWithViewPager(viewPager);
 
 
         SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
@@ -119,26 +84,20 @@ public class MainActivity extends AppCompatActivity implements
         if( myId != null ) {
             headerEmailTextView.setText(myId);
         }
-//
+
+
         String fileName = getString(R.string.setting_profile_img_name);
         String extension = getString(R.string.setting_profile_img_extension);
         String directory = getString(R.string.setting_profile_img_directory);
 
         Bitmap profileBitmap = Utils.getImageBitmap(this, fileName, extension, Arrays.asList(directory));
-        if( profileBitmap != null ) {
-            navigationDrawerImageView.setImageBitmap(profileBitmap);
-        }
-
-//
-
-
+        navigationDrawerImageView.setImageBitmap(profileBitmap);
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         mDrawer.addDrawerListener(toggle);
         toggle.syncState();
-        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
-        mNavigationView.setNavigationItemSelectedListener(this);
+
 
 
     }
@@ -214,8 +173,8 @@ public class MainActivity extends AppCompatActivity implements
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         MainFragment mainFragment = new MainFragment();
         ChatListFragment chatListFragment = new ChatListFragment();
-        adapter.addFragment(mainFragment);
-        adapter.addFragment(chatListFragment);
+        adapter.addFragment(mainFragment,getString(R.string.tab_name_friend));
+        adapter.addFragment(chatListFragment,getString(R.string.tab_name_chats));
         viewPager.setAdapter(adapter);
     }
 }

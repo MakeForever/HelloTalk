@@ -4,7 +4,6 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,7 +15,7 @@ import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.objs.Friend;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 
 import java.util.Arrays;
@@ -31,7 +30,7 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
 
 
     Context context;
-    Friend[] friends;
+    User[] users;
     public FriendAddAdapter(Context context) {
         this.context = context;
     }
@@ -46,11 +45,11 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        Friend friend = friends[position];
-        String name = friend.getName();
-        String email = friend.getId();
-        boolean isAdded = friend.isAdded();
-        Bitmap profile = friend.getProfileImage();
+        User user = users[position];
+        String name = user.getName();
+        String email = user.getId();
+        boolean isAdded = user.isAdded();
+        Bitmap profile = user.getProfileImage();
         holder.bind( name, email, isAdded, profile);
 
 
@@ -58,13 +57,13 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
 
     @Override
     public int getItemCount() {
-        if(friends == null)
+        if(users == null)
             return 0;
-        else return friends.length;
+        else return users.length;
     }
 
-    public void swapData(com.beakya.hellotalk.objs.Friend[] data) {
-        this.friends = data;
+    public void swapData(User[] data) {
+        this.users = data;
         notifyDataSetChanged();
     }
 

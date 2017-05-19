@@ -20,7 +20,8 @@
     <string name="login_dialog_content">이제 이메일 인증을 하면 로그인 가능합니다</string>
     <string name="image_selection_button">이미지 선택</string>
     <string name="image_selection_disable">선택하지 않으면 기본이미지로 선택됩니다</string>
-
+    <string name="tab_name_friend">친구</string>
+    <string name="tab_name_chats">대화</string>
 
     <string name="image_chooser_title">이미지 선택</string>
 

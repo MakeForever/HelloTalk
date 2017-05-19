@@ -20,8 +20,10 @@ import android.view.ViewGroup;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.FriendAddActivity;
 import com.beakya.hellotalk.activity.FriendDetailActivity;
+import com.beakya.hellotalk.activity.MainActivity;
 import com.beakya.hellotalk.adapter.MainAdapter;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.objs.User;
 
 /**
  * Created by goodlife on 2017. 5. 4..
@@ -32,7 +34,7 @@ public class MainFragment extends Fragment implements
         MainAdapter.mOnClickListener {
 
     public static final String TAG = MainFragment.class.getSimpleName();
-    private static final int ID_USER_CURSOR_LOADER = 1;
+
     private MainAdapter mUserAdapter;
     private RecyclerView mRecyclerView;
     private FloatingActionButton faButton;
@@ -46,7 +48,7 @@ public class MainFragment extends Fragment implements
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: onCreate");
-        getActivity().getSupportLoaderManager().initLoader(ID_USER_CURSOR_LOADER, null, this);
+        getActivity().getSupportLoaderManager().initLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
     }
 
     @Override
@@ -77,7 +79,7 @@ public class MainFragment extends Fragment implements
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         switch ( id ) {
-            case ID_USER_CURSOR_LOADER:
+            case MainActivity.ID_USER_CURSOR_LOADER:
                 return new CursorLoader( getContext(), TalkContract.User.CONTENT_URI, null, null, null, null );
             default :
                 throw new RuntimeException("Loader Not Implemented: " + id);
@@ -98,10 +100,10 @@ public class MainFragment extends Fragment implements
 
 
     @Override
-    public void onListItemClick( String userId ) {
+    public void onListItemClick( User user) {
         Log.d(TAG, "onListItemClick: ");
         Intent intent = new Intent( context, FriendDetailActivity.class );
-        intent.putExtra("id", userId);
+        intent.putExtra("object", user);
         startActivity(intent);
     }
 }

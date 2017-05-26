@@ -76,7 +76,12 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
         if (extras != null) {
             receiveList = extras.getParcelableArrayList("receiveList");
             chatType = extras.getInt("chatType");
+<<<<<<< HEAD
             chatTableName = extras.getString(TalkContract.ChatRooms.CHAT_LIST_ID);
+=======
+            chatTableName = extras.getString(TalkContract.ChatRoom.CHAT_LIST_ID);
+
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
             if( chatTableName == null ) {
                 chatTableName = Utils.sha256(System.currentTimeMillis() + myId);
                 isCreatedChat = false;
@@ -84,6 +89,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             if ( chatTableName != null ) {
                 ContentResolver resolver = getContentResolver();
                 Cursor chatCursor = resolver.query(
+<<<<<<< HEAD
                         TalkContract.ChatRooms.CONTENT_URI,
                         new String[] { TalkContract.ChatRooms.CHAT_ROOM_TYPE, TalkContract.ChatRooms.IS_SYNCHRONIZED },
                         TalkContract.ChatRooms.CHAT_LIST_ID + " = ?", new String[] {chatTableName},
@@ -91,10 +97,30 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
                 if (chatCursor.getCount() > 0 ) {
                     chatCursor.moveToFirst();
                     isSynchronized = chatCursor.getInt(chatCursor.getColumnIndex(TalkContract.ChatRooms.IS_SYNCHRONIZED)) > 0;
+=======
+                        TalkContract.ChatRoom.CONTENT_URI,
+                        new String[] { TalkContract.ChatRoom.CHAT_TYPE, TalkContract.ChatRoom.IS_SYNCHRONIZED },
+                        TalkContract.ChatRoom.CHAT_LIST_ID + " = ?", new String[] {chatTableName},
+                        null);
+                if (chatCursor.getCount() > 0 ) {
+                    chatCursor.moveToFirst();
+                    isSynchronized = chatCursor.getInt(chatCursor.getColumnIndex(TalkContract.ChatRoom.IS_SYNCHRONIZED)) > 0;
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                 } else {
                     isCreatedChat = false;
                 }
             }
+<<<<<<< HEAD
+=======
+
+            chatRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
+            chatAdapter = new ChatAdapter(this);
+            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+            linearLayoutManager.setReverseLayout(true);
+            chatRecyclerView.setLayoutManager(linearLayoutManager);
+            chatRecyclerView.setAdapter(chatAdapter);
+        }
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 
             chatRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
             chatAdapter = new ChatAdapter(this);
@@ -104,6 +130,8 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             chatRecyclerView.setAdapter(chatAdapter);
         }
 
+//
+//
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -114,7 +142,11 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
                 }
                 ContentResolver resolver = getContentResolver();
                 ContentValues chatParams = new ContentValues();
+<<<<<<< HEAD
                 chatParams.put(TalkContract.ChatRooms.CHAT_LIST_ID, chatTableName);
+=======
+                chatParams.put(TalkContract.ChatRoom.CHAT_LIST_ID, chatTableName);
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                 chatParams.put(TalkContract.Chat.CREATOR_ID, myId);
                 chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, messageContent);
                 chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
@@ -148,7 +180,11 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         switch ( id ) {
             case ID_CHAT_CURSOR_LOADER :
+<<<<<<< HEAD
                 return new CursorLoader( this, TalkContract.Chat.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[] {chatTableName}, null );
+=======
+                return new CursorLoader( this, TalkContract.Chat.CONTENT_URI, null, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[] {chatTableName}, null );
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
             default :
                 throw new RuntimeException("Loader Not Implemented: " + id);
         }
@@ -217,8 +253,13 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             obj.put( TalkContract.Chat.MESSAGE_CONTENT, messageContent );
             obj.put( TalkContract.Chat.MESSAGE_TYPE, messageType);
             obj.put( TalkContract.Chat.CREATOR_ID, myId );
+<<<<<<< HEAD
             obj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType);
             obj.put("members", new JSONArray(memberList));
+=======
+            obj.put(TalkContract.ChatRoom.CHAT_TYPE, chatType);
+            obj.put("members", new JSONArray(receiveList));
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
             obj.put("insertedChatRowNumber", insertedChatRowNumber);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -233,7 +274,11 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             obj.put( TalkContract.Chat.MESSAGE_CONTENT, messageContent );
             obj.put( TalkContract.Chat.MESSAGE_TYPE, messageType);
             obj.put( TalkContract.Chat.CREATOR_ID, myId );
+<<<<<<< HEAD
             obj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType);
+=======
+            obj.put(TalkContract.ChatRoom.CHAT_TYPE, chatType);
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
             obj.put("insertedChatRowNumber", insertedChatRowNumber);
 
         } catch (JSONException e) {

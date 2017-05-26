@@ -154,16 +154,26 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
                 @Override
                 public void onClick(View v) {
                     ContentResolver resolver = mContext.getContentResolver();
+<<<<<<< HEAD
 //                    Cursor cursor = resolver.query(TalkContract.ChatRooms.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
+=======
+//                    Cursor cursor = resolver.query(TalkContract.ChatRoom.CONTENT_URI, null, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 //                    cursor.moveToFirst();
                     SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE);
                     String myId = tokenStorage.getString( mContext.getString(R.string.user_id), null );
                     String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] { email, myId }));
                     Log.d(TAG, "chatTableName: " + chatTableName);
                     if( chatTableName != null ) {
+<<<<<<< HEAD
                         int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
                         int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
                         int deletedRow3 = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[] {chatTableName});
+=======
+                        int deletedRow1 = resolver.delete(TalkContract.ChatRoom.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
+                        int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
+                        int deletedRow3 = resolver.delete(TalkContract.Chat_User_Rooms.CONTENT_URI, TalkContract.ChatRoom.CHAT_LIST_ID + "=?", new String[] {chatTableName});
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                         Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
                     }
 

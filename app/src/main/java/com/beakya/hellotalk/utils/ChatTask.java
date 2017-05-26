@@ -43,16 +43,26 @@ public class ChatTask {
                 messageType = obj.getString("message_type");
                 sender = obj.getString(TalkContract.Chat.CREATOR_ID);
 
+<<<<<<< HEAD
                 int chatType = obj.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
+=======
+                int chatType = obj.getInt(TalkContract.ChatRoom.CHAT_TYPE);
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 
                 if ( chatTableName == null || messageContent == null || messageType == null || sender == null ) {
                     return;
                 }
                 resolver = context.getContentResolver();
                 Cursor cursor = resolver.query(
+<<<<<<< HEAD
                                 TalkContract.ChatRooms.CONTENT_URI,
                                 null,
                                 TalkContract.ChatRooms.CHAT_LIST_ID + "= ?",
+=======
+                                TalkContract.ChatRoom.CONTENT_URI,
+                                null,
+                                TalkContract.ChatRoom.CHAT_LIST_ID + "= ?",
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                                 new String[] { chatTableName } ,
                                 null
                         );
@@ -61,7 +71,11 @@ public class ChatTask {
                 }
 
                 ContentValues chatParams = new ContentValues();
+<<<<<<< HEAD
                 chatParams.put(TalkContract.ChatRooms.CHAT_LIST_ID, chatTableName);
+=======
+                chatParams.put(TalkContract.ChatRoom.CHAT_LIST_ID, chatTableName);
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                 chatParams.put(TalkContract.Chat.CREATOR_ID, sender );
                 chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, messageContent);
                 chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
@@ -78,9 +92,14 @@ public class ChatTask {
                 int insertedChatRowNumber = responseData.getInt("insertedChatRowNumber");
                 resolver = context.getContentResolver();
                 ContentValues values = new ContentValues();
+<<<<<<< HEAD
                 values.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, result);
                 //TODO IS_SYNCHRONIZED 이거 먼저 체크 하고 안되어있으면 바꾸든지 해야 할거같다
                 int updatedRow = resolver.update(TalkContract.ChatRooms.CONTENT_URI, values, TalkContract.ChatRooms.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
+=======
+                values.put(TalkContract.ChatRoom.IS_SYNCHRONIZED, result);
+                int updatedRow = resolver.update(TalkContract.ChatRoom.CONTENT_URI, values, TalkContract.ChatRoom.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                 if( updatedRow < 1 ) {
                     throw new RuntimeException("something wrong");
                 }

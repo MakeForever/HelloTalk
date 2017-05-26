@@ -17,6 +17,10 @@
         <!--app:layout_constraintHorizontal_bias="0.0" />-->
 
     <include
+<<<<<<< HEAD
+=======
+        android:id="@+id/include"
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         layout="@layout/main_content"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -30,8 +34,13 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.5" />
+<<<<<<< HEAD
 
 
+=======
+
+
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
     <include
         android:id="@+id/include2"
         layout="@layout/chat_edit_text"

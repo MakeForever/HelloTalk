@@ -46,6 +46,7 @@ public class TalkContract {
         public static final String CHAT_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE [" + TABLE_NAME + "] ( " +
                         _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+<<<<<<< HEAD
                         ChatRooms.CHAT_LIST_ID + " TEXT , " +
                         CREATOR_ID + " TEXT , " +
                         MESSAGE_CONTENT + " TEXT , " +
@@ -63,6 +64,21 @@ public class TalkContract {
         public static final String TABLE_NAME = "chat_list";
         public static final String PATH = TABLE_NAME;
         public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRooms.PATH).build();
+=======
+                        ChatRoom.CHAT_LIST_ID + " TEXT , " +
+                        CREATOR_ID + " TEXT , " +
+                        MESSAGE_CONTENT + " TEXT , " +
+                        MESSAGE_TYPE + " TEXT , " +
+                        CREATED_TIME + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                        IS_SEND + " BOOLEAN DEFAULT FALSE, " +
+                        IS_READ + " BOOLEAN DEFAULT FALSE " +
+                            " ); ";
+    }
+    public static final class ChatRoom {
+        public static final String TABLE_NAME = "chat_list";
+        public static final String PATH = TABLE_NAME;
+        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRoom.PATH).build();
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         public static final String CHAT_LIST_ID = "chat_list_id";
         public static final String CREATED_TIME = "created_time";
         public static final String CHAT_ROOM_TYPE = "chat_type";
@@ -75,6 +91,7 @@ public class TalkContract {
                         IS_SYNCHRONIZED + " BOOLEAN DEFAULT FALSE " +
                         " ); ";
     }
+<<<<<<< HEAD
     public static final class ChatUserRooms implements BaseColumns {
         public static final String TABLE_NAME = "chat_members";
         public static final String PATH = TABLE_NAME;
@@ -83,6 +100,16 @@ public class TalkContract {
                 " CREATE TABLE " + TABLE_NAME + " ( " +
                         _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         ChatRooms.CHAT_LIST_ID + " TEXT, " +
+=======
+    public static final class Chat_User_Rooms implements BaseColumns {
+        public static final String TABLE_NAME = "chat_members";
+        public static final String PATH = TABLE_NAME;
+        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(Chat_User_Rooms.PATH).build();
+        public static final String CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT =
+                " CREATE TABLE " + TABLE_NAME + " ( " +
+                        _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        ChatRoom.CHAT_LIST_ID + " TEXT, " +
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                         User.USER_ID + " TEXT " +
                         " ); ";
 

@@ -3,7 +3,10 @@ package com.beakya.hellotalk.adapter;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+<<<<<<< HEAD
 import android.graphics.BitmapFactory;
+=======
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -35,6 +38,10 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
     private Cursor mCursor;
     private Context mContext;
     private String myId;
+<<<<<<< HEAD
+=======
+    private Bitmap bitmapImg;
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 
     public ChatAdapter(Context context) {
         this.mContext = context;
@@ -65,6 +72,7 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+<<<<<<< HEAD
         String content;
         String id;
         mCursor.moveToPosition((mCursor.getCount() - 1) - position);
@@ -92,6 +100,27 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
                 break;
         }
 
+=======
+        mCursor.moveToPosition((mCursor.getCount() - 1) - position);
+        Log.d(TAG, "onBindViewHolder: " + position + " : " + ((mCursor.getCount() - 1) - position));
+        String content = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.MESSAGE_CONTENT));
+        String id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.CREATOR_ID));
+        boolean hasPic;
+        if( id.equals(myId) ) {
+            hasPic = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE).getBoolean(mContext.getString(R.string.user_img_boolean), false);
+        } else {
+            Cursor test = mContext.getContentResolver().query(
+                TalkContract.User.CONTENT_URI,
+                null,
+                TalkContract.User.USER_ID + " = ? ",
+                new String[]{ id },
+                null);
+
+            test.moveToNext();
+            hasPic = test.getInt(test.getColumnIndex(TalkContract.User.USER_HAVE_PROFILE_IMAGE)) > 0;
+        }
+        holder.bind(content, hasPic, id);
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
     }
 
     public void swapCursor(Cursor newCursor) {
@@ -106,7 +135,11 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
     @Override
     public int getItemViewType(int position) {
+<<<<<<< HEAD
         mCursor.moveToPosition(position);
+=======
+        mCursor.moveToPosition((mCursor.getCount() - 1) - position);
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         String id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Chat.CREATOR_ID));
 
         if( id.equals( myId ) ) {
@@ -137,10 +170,30 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
 
         }
 
+<<<<<<< HEAD
         public void bind(String content, Bitmap profileImg, String id) {
             contentTextView.setText(content);
             profileImageView.setImageBitmap(profileImg);
 
+=======
+        public void bind(String content, boolean hasProfileImg, String id) {
+            contentTextView.setText(content);
+            if (hasProfileImg == false) {
+                profileImageView.setImageResource(R.mipmap.default_profile_img);
+            } else {
+                String fileName = mContext.getString(R.string.setting_profile_img_name);
+                String extension = mContext.getString(R.string.setting_profile_img_extension);
+                String directory = mContext.getString(R.string.setting_profile_img_directory);
+                Bitmap bitmapImg = Utils.getImageBitmap(mContext,
+                        fileName,
+                        extension,
+                        Arrays.asList(new String[]{ directory }));
+
+                profileImageView.setImageBitmap(bitmapImg);
+
+
+            }
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         }
     }
 }

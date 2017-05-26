@@ -11,4 +11,20 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.beakya.hellotalk.activity.MainActivity">
 
+<<<<<<< HEAD
 </android.support.v7.widget.RecyclerView>
+=======
+    <android.support.v7.widget.RecyclerView
+
+        android:id="@+id/my_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="10"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp" />
+
+
+
+
+</LinearLayout>
+>>>>>>> 306bf88... 커스텀 asynctaskloader 추가

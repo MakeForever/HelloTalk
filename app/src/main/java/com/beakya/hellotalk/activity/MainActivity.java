@@ -5,10 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
-<<<<<<< HEAD
 import android.support.design.widget.TabLayout;
-=======
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -16,10 +13,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-<<<<<<< HEAD
 import android.util.Log;
-=======
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -81,34 +75,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         tabLayout.setupWithViewPager(viewPager);
 
 
-<<<<<<< HEAD
-=======
-            }
-        });
-
-        setupViewPager( viewPager );
-        bottomNavigationView = (BottomNavigationView)findViewById(R.id.bottom_navigation);
-//        bottomNavigationView.setOnNavigationItemSelectedListener(
-//                new BottomNavigationView.OnNavigationItemSelectedListener() {
-//                    @Override
-//                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-//                        switch (item.getItemId()) {
-//                            case R.id.action_call:
-//                                viewPager.setCurrentItem(0);
-//                                break;
-//                            case R.id.action_chat:
-//                                viewPager.setCurrentItem(1);
-//                                break;
-//                            case R.id.action_contact:
-//                                viewPager.setCurrentItem(2);
-//                                break;
-//                        }
-//                        return false;
-//                    }
-//                });
-
-
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         String myName = userInfoStorage.getString(getString(R.string.user_name), null);
         String myId = userInfoStorage.getString((getString(R.string.user_id)), null);
@@ -207,13 +173,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         MainFragment mainFragment = new MainFragment();
         ChatListFragment chatListFragment = new ChatListFragment();
-<<<<<<< HEAD
         adapter.addFragment(mainFragment,getString(R.string.tab_name_friend));
         adapter.addFragment(chatListFragment,getString(R.string.tab_name_chats));
-=======
-        adapter.addFragment(mainFragment);
-        adapter.addFragment(chatListFragment);
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         viewPager.setAdapter(adapter);
     }
 }

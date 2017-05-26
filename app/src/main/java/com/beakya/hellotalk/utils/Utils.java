@@ -154,13 +154,8 @@ public class Utils {
         ContentResolver resolver = c.getContentResolver();
         int userDeletedRow = resolver.delete(TalkContract.User.CONTENT_URI, null, null);
         int chatDeletedRow = resolver.delete( TalkContract.Chat.CONTENT_URI, null, null );
-<<<<<<< HEAD
         int chatListDeletedRow = resolver.delete( TalkContract.ChatRooms.CONTENT_URI, null, null );
         int chatMembersDeleteRow = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, null, null);
-=======
-        int chatListDeletedRow = resolver.delete( TalkContract.ChatRoom.CONTENT_URI, null, null );
-        int chatMembersDeleteRow = resolver.delete(TalkContract.Chat_User_Rooms.CONTENT_URI, null, null);
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         boolean imageDeleteResult = dropAllProfileImg(c);
         if ( userDeletedRow != -1 && imageDeleteResult ) {
             SharedPreferences storage = c.getSharedPreferences(c.getString(R.string.my_info), MODE_PRIVATE);
@@ -219,36 +214,20 @@ public class Utils {
     public static void ChatInitialize(Context context, String tableName,int chatType, ArrayList<User> memberList ) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues chatListParams = new ContentValues();
-<<<<<<< HEAD
         chatListParams.put(TalkContract.ChatRooms.CHAT_LIST_ID, tableName );
         chatListParams.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType );
-=======
-        chatListParams.put(TalkContract.ChatRoom.CHAT_LIST_ID, tableName );
-        chatListParams.put(TalkContract.ChatRoom.CHAT_TYPE, chatType );
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         ArrayList<ContentValues> chatMemberContentValues = new ArrayList<ContentValues>();
         for( User user : memberList ) {
             ContentValues chatMembers = new ContentValues();
-<<<<<<< HEAD
             chatMembers.put(TalkContract.ChatRooms.CHAT_LIST_ID, tableName);
             chatMembers.put(TalkContract.User.USER_ID, user.getId());
-=======
-            chatMembers.put(TalkContract.ChatRoom.CHAT_LIST_ID, tableName);
-            chatMembers.put(TalkContract.User.USER_ID, id);
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
             chatMemberContentValues.add( chatMembers );
         }
 
         for( ContentValues value : chatMemberContentValues ) {
-<<<<<<< HEAD
             resolver.insert(TalkContract.ChatUserRooms.CONTENT_URI, value);
         }
         resolver.insert(TalkContract.ChatRooms.CONTENT_URI, chatListParams);
-=======
-            resolver.insert(TalkContract.Chat_User_Rooms.CONTENT_URI, value);
-        }
-        resolver.insert(TalkContract.ChatRoom.CONTENT_URI, chatListParams);
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
     }
     public static ArrayList<User> JSONArrayToArrayList(JSONArray json ) throws JSONException {
         ArrayList<User> result = new ArrayList<>();

@@ -36,17 +36,10 @@ public class FriendDetailActivity extends AppCompatActivity {
         Bitmap bitmap = Utils.getImageBitmap(this,
                 getString(R.string.setting_friends_profile_img_name),
                 getString(R.string.setting_profile_img_extension),
-<<<<<<< HEAD
                 Arrays.asList( new String[]{ getString(R.string.setting_friends_img_directory), user.getId() }));
 
         profileImageView.setImageBitmap(bitmap);
 
-=======
-                Arrays.asList( new String[]{ getString(R.string.setting_friends_img_directory), id }));
-        if ( bitmap != null ) {
-            profileImageView.setImageBitmap(bitmap);
-        }
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
         SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myId = tokenStorage.getString( getString(R.string.user_id), null );
 
@@ -61,13 +54,8 @@ public class FriendDetailActivity extends AppCompatActivity {
                     String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] {user.getId(), myId }));
                     Log.d(TAG, "chatTableName: " + chatTableName);
                     Intent intent = new Intent( FriendDetailActivity.this, ChatActivity.class );
-<<<<<<< HEAD
                     intent.putExtra(TalkContract.ChatRooms.CHAT_LIST_ID, chatTableName);
                     intent.putParcelableArrayListExtra("receiveList", receiveList);
-=======
-                    intent.putExtra(TalkContract.ChatRoom.CHAT_LIST_ID, chatTableName);
-                    intent.putExtra("receiveList", receiveList);
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
                     intent.putExtra("chatType", chatType);
                     startActivity(intent);
                 }

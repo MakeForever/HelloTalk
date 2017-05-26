@@ -1,16 +1,12 @@
 package com.beakya.hellotalk.objs;
 
-<<<<<<< HEAD
 import java.util.ArrayList;
 
-=======
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 /**
  * Created by goodlife on 2017. 5. 11..
  */
 
 public class ChatRoom {
-<<<<<<< HEAD
     private ArrayList<User> userList;
     private String chatId;
     private String lastContent;
@@ -91,6 +87,4 @@ public class ChatRoom {
     public void setChatRoomType(int chatRoomType) {
         this.chatRoomType = chatRoomType;
     }
-=======
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 }

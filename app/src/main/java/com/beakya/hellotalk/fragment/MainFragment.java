@@ -23,10 +23,7 @@ import com.beakya.hellotalk.activity.FriendDetailActivity;
 import com.beakya.hellotalk.activity.MainActivity;
 import com.beakya.hellotalk.adapter.MainAdapter;
 import com.beakya.hellotalk.database.TalkContract;
-<<<<<<< HEAD
 import com.beakya.hellotalk.objs.User;
-=======
->>>>>>> 306bf88... 커스텀 asynctaskloader 추가
 
 /**
  * Created by goodlife on 2017. 5. 4..

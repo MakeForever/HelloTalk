@@ -56,7 +56,7 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
     public void onStart() {
         super.onStart();
         Log.d(TAG, "onStart: ");
-        getActivity().getSupportLoaderManager().initLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
+//        getActivity().getSupportLoaderManager().initLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
     }
 
     @Override

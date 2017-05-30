@@ -53,7 +53,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         mCursor.moveToPosition(position);
         String name = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_NAME));
         String email = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_ID));
-        boolean hasPic = mCursor.getInt(mCursor.getColumnIndex(TalkContract.User.USER_HAVE_PROFILE_IMAGE)) > 0;
+        boolean hasPic = mCursor.getInt(mCursor.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0;
         holder.bind( name, email, hasPic );
     }
 
@@ -154,16 +154,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
                 @Override
                 public void onClick(View v) {
                     ContentResolver resolver = mContext.getContentResolver();
-//                    Cursor cursor = resolver.query(TalkContract.ChatRooms.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
+//                    Cursor cursor = resolver.query(TalkContract.ChatRooms.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_ID + "=?", new String[]{ Utils.hashFunction(email) }, null);
 //                    cursor.moveToFirst();
                     SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE);
                     String myId = tokenStorage.getString( mContext.getString(R.string.user_id), null );
                     String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] { email, myId }));
                     Log.d(TAG, "chatTableName: " + chatTableName);
                     if( chatTableName != null ) {
-                        int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
-                        int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
-                        int deletedRow3 = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[] {chatTableName});
+                        int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] {chatTableName});
+                        int deletedRow2 = resolver.delete(TalkContract.Message.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ? ", new String[] {chatTableName});
+                        int deletedRow3 = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatTableName});
                         Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
                     }
 

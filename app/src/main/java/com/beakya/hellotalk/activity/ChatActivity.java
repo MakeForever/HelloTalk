@@ -1,12 +1,8 @@
 package com.beakya.hellotalk.activity;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
+import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.net.Uri;
 import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -21,8 +17,11 @@ import android.widget.Toast;
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.ChatAdapter;
+import com.beakya.hellotalk.asynctaskloader.ChatAsyncTaskLoader;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.events.MessageEvent;
+import com.beakya.hellotalk.objs.ChatRoom;
+import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 
@@ -34,29 +33,30 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import io.socket.client.Socket;
 
 
-public class ChatActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class ChatActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
     public static final String TAG = ChatActivity.class.getSimpleName();
 
     private static final int ID_CHAT_CURSOR_LOADER = 1;
+
+
+
     private Button button;
     private EditText contentEditText;
     private RecyclerView chatRecyclerView;
-    private String chatTableName = null;
-    private ArrayList<User> receiveList;
-    private int chatType;
     private String myId;
     private String receiverId;
     String messageContent = null;
-    private boolean isCreatedChat = true;
+    private boolean isStored = true;
     private boolean isSynchronized = false;
     private ChatAdapter chatAdapter;
     private Socket socket;
-    private Uri insertedUri;
-
+    private Context mContext;
+    private ChatRoom mChatRoom;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,105 +64,98 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
 
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
+        mContext = this;
         SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myId = tokenStorage.getString( getString(R.string.user_id), null );
-
         button = (Button) findViewById(R.id.chat_send_button);
         contentEditText = (EditText) findViewById(R.id.chat_content_edit_text);
-
-
+        chatRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            receiveList = extras.getParcelableArrayList("receiveList");
-            chatType = extras.getInt("chatType");
-            chatTableName = extras.getString(TalkContract.ChatRooms.CHAT_LIST_ID);
-            if( chatTableName == null ) {
-                chatTableName = Utils.sha256(System.currentTimeMillis() + myId);
-                isCreatedChat = false;
-            }
-            if ( chatTableName != null ) {
-                ContentResolver resolver = getContentResolver();
-                Cursor chatCursor = resolver.query(
-                        TalkContract.ChatRooms.CONTENT_URI,
-                        new String[] { TalkContract.ChatRooms.CHAT_ROOM_TYPE, TalkContract.ChatRooms.IS_SYNCHRONIZED },
-                        TalkContract.ChatRooms.CHAT_LIST_ID + " = ?", new String[] {chatTableName},
-                        null);
-                if (chatCursor.getCount() > 0 ) {
-                    chatCursor.moveToFirst();
-                    isSynchronized = chatCursor.getInt(chatCursor.getColumnIndex(TalkContract.ChatRooms.IS_SYNCHRONIZED)) > 0;
-                } else {
-                    isCreatedChat = false;
-                }
-            }
-
-            chatRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
-            chatAdapter = new ChatAdapter(this);
-            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
-            linearLayoutManager.setReverseLayout(true);
-            chatRecyclerView.setLayoutManager(linearLayoutManager);
-            chatRecyclerView.setAdapter(chatAdapter);
+            mChatRoom = extras.getParcelable("chatRoom");
+            isStored = extras.getBoolean("is_stored");
         }
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                String chatId = mChatRoom.getChatId();
+                int chatType = mChatRoom.getChatRoomType();
                 messageContent = contentEditText.getText().toString();
                 if( !(messageContent.length() > 0) ) {
                     Toast.makeText(ChatActivity.this, "빈문자는 보낼수 없습니다.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                ContentResolver resolver = getContentResolver();
-                ContentValues chatParams = new ContentValues();
-                chatParams.put(TalkContract.ChatRooms.CHAT_LIST_ID, chatTableName);
-                chatParams.put(TalkContract.Chat.CREATOR_ID, myId);
-                chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, messageContent);
-                chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
-                insertedUri = resolver.insert(TalkContract.Chat.CONTENT_URI, chatParams);
-                if( !isCreatedChat ) {
-                    Utils.ChatInitialize(ChatActivity.this, chatTableName, chatType, receiveList);
-                    isCreatedChat = true;
+
+                if( !isStored ) {
+                    Utils.ChatInitialize(mContext, mChatRoom);
+                    isStored = true;
                 }
-                int insertedChatRowNumber;
-                try {
-                    insertedChatRowNumber  = Integer.parseInt(insertedUri.getLastPathSegment());
-                } catch ( Exception e ) {
-                    throw new RuntimeException("something wrong");
-                }
+                String messageId =  Utils.hashFunction( myId + chatId + System.currentTimeMillis(), "SHA-1" );
+                Message message = new Message(messageId, myId, messageContent, chatId, TalkContract.Message.TYPE_TEXT, mChatRoom.getMembersCount());
+                int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
+
                 if( !isSynchronized ) {
-                    String message = createMessage(chatTableName, insertedChatRowNumber, messageContent, TalkContract.Chat.TYPE_TEXT, chatType, receiveList);
-                    socket.emit( getString(R.string.socket_send_chat), message );
+                    String messageJson = createMessage(chatId, insertedChatRowNumber, messageId, messageContent, TalkContract.Message.TYPE_TEXT, chatType, mChatRoom.getUserList());
+                    socket.emit(getString(R.string.invite_to_chat), messageJson );
                     Log.d(TAG, "onClick: socket emit with members");
                 } else {
-                    String message = createMessage(chatTableName, insertedChatRowNumber, messageContent, TalkContract.Chat.TYPE_TEXT, chatType);
+                    String messageJson = createMessage(chatId, insertedChatRowNumber, messageContent, TalkContract.Message.TYPE_TEXT, chatType);
                     socket.emit( getString(R.string.socket_send_chat), message );
                     Log.d(TAG, "onClick: socket emit without members");
                 }
-
+                chatAdapter.addMessage(message);
             }
         });
+
+        chatAdapter = new ChatAdapter(this , mChatRoom, chatRecyclerView);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setReverseLayout(true);
+        chatRecyclerView.setLayoutManager(linearLayoutManager);
+        chatRecyclerView.setAdapter(chatAdapter);
         getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
     }
 
     @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+    public Loader<ArrayList<Message>> onCreateLoader(int id, Bundle args) {
         switch ( id ) {
             case ID_CHAT_CURSOR_LOADER :
-                return new CursorLoader( this, TalkContract.Chat.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_LIST_ID + "=?", new String[] {chatTableName}, null );
+                Log.d(TAG, "onCreateLoader:  new CursorLoader call" );
+//                return new CursorLoader( this, TalkContract.Message.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatId}, null );
+                return new ChatAsyncTaskLoader(this, mChatRoom.getChatId());
             default :
                 throw new RuntimeException("Loader Not Implemented: " + id);
         }
+
     }
 
+
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+    public void onLoadFinished(Loader<ArrayList<Message>> loader, ArrayList<Message> data) {
+        Log.d(TAG, "onLoadFinished: ");
         chatAdapter.swapCursor( data );
     }
 
     @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
+    public void onLoaderReset(Loader<ArrayList<Message>> loader) {
+        Log.d(TAG, "onLoaderReset: ");
         chatAdapter.swapCursor( null );
     }
+
+
+
+//    @Override
+//    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+//        Log.d(TAG, "onLoadFinished: ");
+//        chatAdapter.swapCursor( data );
+//    }
+//
+//    @Override
+//    public void onLoaderReset(Loader<Cursor> loader) {
+//        Log.d(TAG, "onLoaderReset: ");
+//        chatAdapter.swapCursor( null );
+//    }
 
 
     @Override
@@ -180,59 +173,55 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(MessageEvent<String> event) {
-        if( event.getMessage().equals("first_received")) {
-            if( !chatTableName.equals(event.getStorage()) ) {
-                chatTableName = event.getStorage();
-                isCreatedChat = true;
-            }
-        }
-        if ( event.getMessage().equals("message_send_success")) {
-            if( insertedUri != null ) {
-                ContentValues updateValue = new ContentValues();
-                updateValue.put(TalkContract.Chat.IS_SEND, true);
-                String segment = insertedUri.getLastPathSegment();
-                getContentResolver().update(insertedUri, updateValue, TalkContract.Chat._ID +" = ?", new String[] { segment });
-                isSynchronized = true;
-//        디버그용 코드 나중에 지울것
-//            Cursor cursor = getContentResolver().query(TalkContract.Chat.CONTENT_URI, null, null, null, null);
-//            Toast.makeText(ChatActivity.this, "result" + cursor.getCount() , Toast.LENGTH_SHORT).show();
-//            while ( cursor.moveToNext() ) {
-//                Log.d(TAG, cursor.getInt(cursor.getColumnIndex(TalkContract.Chat._ID)) + " : " +
-//                        cursor.getString(cursor.getColumnIndex(TalkContract.Chat.IS_SEND)) + " : " +
-//                        cursor.getString(cursor.getColumnIndex(TalkContract.Chat.CREATOR_ID)));
+//        if( event.getMessage().equals("first_received")) {
+//            if( !chatId.equals(event.getStorage()) ) {
+//                chatId = event.getStorage();
+//                isStored = true;
 //            }
-
-            }
-        }
+//        }
+//        if ( event.getMessage().equals("message_send_success")) {
+//            if( insertedUri != null ) {
+//                ContentValues updateValue = new ContentValues();
+//                updateValue.put(TalkContract.Message.IS_SEND, true);
+//                String segment = insertedUri.getLastPathSegment();
+//                getContentResolver().update(insertedUri, updateValue, TalkContract.Message._ID +" = ?", new String[] { segment });
+//                isSynchronized = true;
+//
+//            }
+//        }
         getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
     }
-    String createMessage (String tableName, int insertedChatRowNumber, String messageContent, int messageType, int chatType, ArrayList<User> receiveList) {
-        JSONObject obj = new JSONObject();
-        ArrayList<String> memberList = new ArrayList<>();
-        for( User user: receiveList ) {
-            memberList.add(user.getId());
-        }
+    String createMessage (String tableName, int insertedChatRowNumber, String messageId, String messageContent, int messageType, int chatType, HashMap<String, User> receiveList) {
+        JSONObject chatObj = new JSONObject();
         try {
-            obj.put( "chatTableName", tableName );
-            obj.put( TalkContract.Chat.MESSAGE_CONTENT, messageContent );
-            obj.put( TalkContract.Chat.MESSAGE_TYPE, messageType);
-            obj.put( TalkContract.Chat.CREATOR_ID, myId );
-            obj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType);
-            obj.put("members", new JSONArray(memberList));
-            obj.put("insertedChatRowNumber", insertedChatRowNumber);
+            JSONArray array = new JSONArray();
+            for( User user : receiveList.values() ) {
+                JSONObject object = new JSONObject();
+                object.put(TalkContract.User.USER_ID, user.getId());
+                object.put(TalkContract.User.USER_NAME, user.getName());
+                array.put(object);
+            }
+            chatObj.put(TalkContract.ChatRooms.CHAT_ID, tableName );
+            chatObj.put( TalkContract.Message.MESSAGE_CONTENT, messageContent );
+            chatObj.put( TalkContract.Message.MESSAGE_TYPE, messageType);
+            chatObj.put( TalkContract.Message.CREATOR_ID, myId );
+            chatObj.put(TalkContract.Message.MESSAGE_ID, messageId);
+            chatObj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType);
+            chatObj.put("members", array);
+            chatObj.put("insertedChatRowNumber", insertedChatRowNumber);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        return obj.toString();
+        return chatObj.toString();
     }
 
     String createMessage (String tableName, int insertedChatRowNumber, String messageContent, int messageType, int chatType) {
         JSONObject obj = new JSONObject();
         try {
-            obj.put( "chatTableName", tableName );
-            obj.put( TalkContract.Chat.MESSAGE_CONTENT, messageContent );
-            obj.put( TalkContract.Chat.MESSAGE_TYPE, messageType);
-            obj.put( TalkContract.Chat.CREATOR_ID, myId );
+            obj.put( "chatId", tableName );
+            obj.put( TalkContract.Message.MESSAGE_CONTENT, messageContent );
+            obj.put( TalkContract.Message.MESSAGE_TYPE, messageType);
+            obj.put( TalkContract.Message.CREATOR_ID, myId );
             obj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType);
             obj.put("insertedChatRowNumber", insertedChatRowNumber);
 

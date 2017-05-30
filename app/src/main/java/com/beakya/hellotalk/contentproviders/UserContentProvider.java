@@ -46,8 +46,8 @@ public class UserContentProvider extends ContentProvider {
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH + "/*", USER_WITH_ID);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRooms.PATH, CHAT_LIST);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatUserRooms.PATH, CHAT_MEMBERS);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.PATH, CHAT);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Chat.PATH + "/#", CHAT_ITEM);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Message.PATH, CHAT);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Message.PATH + "/#", CHAT_ITEM);
         return uriMatcher;
     }
 
@@ -61,8 +61,8 @@ public class UserContentProvider extends ContentProvider {
                 cursor = db.query(TalkContract.User.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             case CHAT :
-                cursor = db.query(TalkContract.Chat.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
-                break;
+                cursor = db.query(TalkContract.Message.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                return cursor;
             case CHAT_LIST :
                 cursor = db.query(TalkContract.ChatRooms.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
@@ -101,10 +101,10 @@ public class UserContentProvider extends ContentProvider {
                 break;
 
             case CHAT :
-                id = db.insert(TalkContract.Chat.TABLE_NAME, null, values);
+                id = db.insert(TalkContract.Message.TABLE_NAME, null, values);
                 if( id > 0 ) {
                     returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
-                            .appendPath(TalkContract.Chat.PATH).build(), id);
+                            .appendPath(TalkContract.Message.PATH).build(), id);
                 } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 }
@@ -113,7 +113,7 @@ public class UserContentProvider extends ContentProvider {
                 id = db.insert(TalkContract.ChatRooms.TABLE_NAME, null, values);
                 if( id > 0 ) {
                     returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
-                            .appendPath(TalkContract.Chat.PATH).build(), id);
+                            .appendPath(TalkContract.Message.PATH).build(), id);
                 } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 }
@@ -162,7 +162,7 @@ public class UserContentProvider extends ContentProvider {
                 tasksDeleted = db.delete(TalkContract.ChatUserRooms.TABLE_NAME, selection, selectionArgs);
                 break;
             case CHAT :
-                tasksDeleted = db.delete(TalkContract.Chat.TABLE_NAME, selection, selectionArgs);
+                tasksDeleted = db.delete(TalkContract.Message.TABLE_NAME, selection, selectionArgs);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -189,13 +189,13 @@ public class UserContentProvider extends ContentProvider {
                 break;
             case CHAT_ITEM :
                 String Segment = uri.getLastPathSegment();
-                rowUpdated = db.update(TalkContract.Chat.TABLE_NAME, values, selection, selectionArgs);
+                rowUpdated = db.update(TalkContract.Message.TABLE_NAME, values, selection, selectionArgs);
                 break;
             case CHAT_LIST :
                 rowUpdated = db.update(TalkContract.ChatRooms.TABLE_NAME, values, selection, selectionArgs);
                 break;
             case CHAT :
-                rowUpdated = db.update(TalkContract.Chat.TABLE_NAME, values, selection, selectionArgs);
+                rowUpdated = db.update(TalkContract.Message.TABLE_NAME, values, selection, selectionArgs);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);

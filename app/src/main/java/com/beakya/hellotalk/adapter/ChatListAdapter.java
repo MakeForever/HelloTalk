@@ -20,6 +20,7 @@ import com.beakya.hellotalk.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 
 /**
@@ -94,34 +95,12 @@ public class ChatListAdapter  extends RecyclerView.Adapter<ChatListAdapter.ViewH
         }
         public void bind( ChatRoom room ) {
             this.chatRoom = room;
-            ArrayList<User> users = room.getUserList();
-            Bitmap profileBitmap = null;
-            if( users.size() > 0 ) {
-                User user = users.get(0);
-                profileBitmap = Utils.getImageBitmap(
-                        mContext,
-                        mContext.getString(R.string.setting_friends_profile_img_name),
-                        mContext.getString(R.string.setting_profile_img_extension),
-                        Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), user.getId() }));
-                mNameTextView.setText(user.getName());
-            }
-            notReadCountView.setText(String.valueOf(room.getNotReadChatCount()));
-            lastChatTimeView.setText(room.getLastContentTimeMessage());
-            mImageView.setImageBitmap(profileBitmap);
-            mLastChatView.setText(room.getLastContent());
 
-        }
+            }
 
         @Override
         public void onClick(View v) {
-            Intent intent = new Intent( v.getContext(), ChatActivity.class );
-            Log.d(TAG, "onClick: " + chatRoom.getChatId());
-            Log.d(TAG, "onClick: " + chatRoom.getUserList());
-            Log.d(TAG, "onClick: " + chatRoom.getChatRoomType());
-            intent.putExtra(TalkContract.ChatRooms.CHAT_LIST_ID, chatRoom.getChatId());
-//            intent.putExtra("receiveList", chatRoom.getUserList());
-            intent.putExtra("chatType", chatRoom.getChatRoomType());
-            v.getContext().startActivity(intent);
+
         }
     }
 }

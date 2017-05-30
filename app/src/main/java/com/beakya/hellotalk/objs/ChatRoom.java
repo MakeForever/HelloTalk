@@ -1,58 +1,87 @@
 package com.beakya.hellotalk.objs;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.util.Log;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by goodlife on 2017. 5. 11..
  */
 
-public class ChatRoom {
-    private ArrayList<User> userList;
+public class ChatRoom implements Parcelable {
+    public static final String TAG  = ChatRoom.class.getSimpleName();
+    private HashMap<String, User> userList;
     private String chatId;
-    private String lastContent;
-    private int lastContentType;
     private int chatRoomType;
-    private int notReadChatCount;
-    private String lastContentTimeMessage;
-//    public ChatRoom(ArrayList<String>  usersCursor, String chatId, String lastContent, int lastContentType, int chatRoomType, int notReadChatCount) {
-//        this.userList = usersCursor;
-//        this.chatId = chatId;
-//        this.lastContent = lastContent;
-//        this.lastContentType = lastContentType;
-//        this.chatRoomType = chatRoomType;
-//        this.notReadChatCount = notReadChatCount;
-//    }
-    public ChatRoom(ArrayList<User>  userList, String chatId, String lastContent, int lastContentType, int chatRoomType, int notReadChatCount, String lastContentTimeMessage) {
+    private boolean isSynchronized;
+    public ChatRoom(HashMap<String, User> userList, String chatId, int chatRoomType, boolean isSynchronized ) {
         this.userList = userList;
         this.chatId = chatId;
-        this.lastContent = lastContent;
-        this.lastContentType = lastContentType;
         this.chatRoomType = chatRoomType;
-        this.notReadChatCount = notReadChatCount;
-        this.lastContentTimeMessage = lastContentTimeMessage;
+        this.isSynchronized = isSynchronized;
     }
 
-    public int getNotReadChatCount() {
-        return notReadChatCount;
+
+    public ChatRoom(Parcel in) {
+        userList = new HashMap<>();
+        chatId = in.readString();
+        chatRoomType = in.readInt();
+        isSynchronized = in.readByte() != 0;
+        final int N = in.readInt();
+        for ( int i = 0; i < N; i++ ) {
+            String key = in.readString();
+            String id =  in.readString();
+            String name = in.readString();
+            boolean isAdded = in.readByte() != 0;
+//            Log.d(TAG, "ChatRoom: " + key + " id : " + id + " name : " + name + " is Added " + isAdded);
+            User user = new User(id, name);
+            user.setAdded(isAdded);
+            userList.put(key, user);
+        }
     }
 
-    public void setNotReadChatCount(int notReadChatCount) {
-        this.notReadChatCount = notReadChatCount;
-    }
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        final int N = userList.size();
+        dest.writeString(chatId);
+        dest.writeInt(chatRoomType);
+        dest.writeByte((byte) (isSynchronized ? 1 : 0));
+        dest.writeInt(N);
+        if ( N > 0 ) {
+            for ( HashMap.Entry<String, User> entry : userList.entrySet() ) {
+                dest.writeString(entry.getKey());
+                User user = entry.getValue();
+                dest.writeString(user.getId());
+                dest.writeString(user.getName());
+                dest.writeByte( ( byte) ( user.isAdded() ? 1 : 0 ));
+                System.out.println("user id " + user.getId());
+            }
+        }
 
-    public String getLastContentTimeMessage() {
-        return lastContentTimeMessage;
     }
+    public static final Creator<ChatRoom> CREATOR = new Creator<ChatRoom>() {
+        @Override
+        public ChatRoom createFromParcel(Parcel in) {
+            return new ChatRoom(in);
+        }
 
-    public void setLastContentTimeMessage(String lastContentTimeMessage) {
-        this.lastContentTimeMessage = lastContentTimeMessage;
+        @Override
+        public ChatRoom[] newArray(int size) {
+            return new ChatRoom[size];
+        }
+    };
+
+    public int getMembersCount () {
+        return (userList == null) ? 0 : userList.size();
     }
-
-    public ArrayList<User> getUserList() {
+    public HashMap<String, User> getUserList() {
         return userList;
     }
 
-    public void setUserList(ArrayList<User> userList) {
+    public void setUserList(HashMap<String, User> userList) {
         this.userList = userList;
     }
 
@@ -64,22 +93,6 @@ public class ChatRoom {
         this.chatId = chatId;
     }
 
-    public String getLastContent() {
-        return lastContent;
-    }
-
-    public void setLastContent(String lastContent) {
-        this.lastContent = lastContent;
-    }
-
-    public int getLastContentType() {
-        return lastContentType;
-    }
-
-    public void setLastContentType(int lastContentType) {
-        this.lastContentType = lastContentType;
-    }
-
     public int getChatRoomType() {
         return chatRoomType;
     }
@@ -87,4 +100,29 @@ public class ChatRoom {
     public void setChatRoomType(int chatRoomType) {
         this.chatRoomType = chatRoomType;
     }
+
+    public boolean isSynchronized() {
+        return isSynchronized;
+    }
+
+    public void setSynchronized(boolean aSynchronized) {
+        isSynchronized = aSynchronized;
+    }
+
+
+    public void printAll () {
+        System.out.println("ChatRoom Id : " + chatId);
+        System.out.println("Chat Type : " + chatRoomType);
+        for( User user : userList.values() ) {
+            System.out.println("User ID : " + user.getId());
+            System.out.println("User Name : " + user.getName());
+        }
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+
 }

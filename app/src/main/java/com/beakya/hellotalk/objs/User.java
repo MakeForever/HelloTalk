@@ -32,15 +32,9 @@ public class User implements Parcelable {
         this.name = name;
     }
     public User(Parcel in) {
-        Log.d(TAG, "User: " + in.dataSize());
         this.id = in.readString();
         this.name = in.readString();
         this.isAdded = in.readInt() == 1;
-        Log.d(TAG, "User: " + in.dataAvail());
-        if ( in.dataAvail()  > 0 ) {
-            Log.d(TAG, "User: " + "test");
-        }
-        profileImage = in.readParcelable(Bitmap.class.getClassLoader());
     }
     public boolean isAdded() {
         return isAdded;
@@ -88,16 +82,5 @@ public class User implements Parcelable {
         dest.writeString(id);
         dest.writeString(name);
         dest.writeInt( isAdded ? 1 : 0);
-        dest.writeParcelable(profileImage, flags);
-    }
-    public JSONObject getJsonObj() {
-        JSONObject obj = new JSONObject();
-        try {
-            obj.put("id", id);
-            obj.put("name", name);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return obj;
     }
 }

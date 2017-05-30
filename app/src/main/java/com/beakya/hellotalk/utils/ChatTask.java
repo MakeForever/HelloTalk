@@ -10,6 +10,8 @@ import android.util.Log;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.events.ChatResultEvent;
 import com.beakya.hellotalk.events.MessageEvent;
+import com.beakya.hellotalk.objs.ChatRoom;
+import com.beakya.hellotalk.objs.Message;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONArray;
@@ -33,45 +35,25 @@ public class ChatTask {
         switch ( intent.getAction() )  {
             case ACTION_STORAGE_CHAT_DATA :
 
-                JSONObject obj = new JSONObject(intent.getStringExtra("data"));
-                chatTableName = obj.getString("chatTableName");
-                JSONArray members = null;
-                if( obj.has("members")) {
-                    members = obj.getJSONArray("members");
-                }
-                messageContent = obj.getString("message_content");
-                messageType = obj.getString("message_type");
-                sender = obj.getString(TalkContract.Chat.CREATOR_ID);
-
-                int chatType = obj.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
-
-                if ( chatTableName == null || messageContent == null || messageType == null || sender == null ) {
-                    return;
-                }
+                Message message = intent.getParcelableExtra("message");
+                ChatRoom chatRoom = intent.getParcelableExtra("chatRoom");
                 resolver = context.getContentResolver();
                 Cursor cursor = resolver.query(
                                 TalkContract.ChatRooms.CONTENT_URI,
                                 null,
-                                TalkContract.ChatRooms.CHAT_LIST_ID + "= ?",
-                                new String[] { chatTableName } ,
+                                TalkContract.ChatRooms.CHAT_ID + "= ?",
+                                new String[] { chatRoom.getChatId() } ,
                                 null
                         );
-                if( !(cursor.getCount() > 0) && members != null ) {
-                    Utils.ChatInitialize(context, chatTableName, chatType, Utils.JSONArrayToArrayList(members));
+                if( !(cursor.getCount() > 0) && chatRoom.getMembersCount() > 0 ) {
+                    Log.d(TAG, "task: ChatInitialize ");
+                    Utils.ChatInitialize( context, chatRoom );
                 }
-
-                ContentValues chatParams = new ContentValues();
-                chatParams.put(TalkContract.ChatRooms.CHAT_LIST_ID, chatTableName);
-                chatParams.put(TalkContract.Chat.CREATOR_ID, sender );
-                chatParams.put(TalkContract.Chat.MESSAGE_CONTENT, messageContent);
-                chatParams.put(TalkContract.Chat.MESSAGE_TYPE, TalkContract.Chat.TYPE_TEXT);
-                resolver.insert(TalkContract.Chat.CONTENT_URI, chatParams);
-                EventBus.getDefault().post(new MessageEvent<String>("first_received", chatTableName));
-                Log.d(TAG, "task: " + obj.toString());
+                Utils.insertMessage(context, message, chatRoom.getChatId());
                 break;
 
             case ACTION_CHAT_SEND_RESULT:
-                Log.d(TAG, "Chat Task // ACTION_CHAT_SEND_RESULT execute ");
+                Log.d(TAG, "Message Task // ACTION_CHAT_SEND_RESULT execute ");
                 JSONObject responseData = new JSONObject(intent.getStringExtra("data"));
                 chatTableName = responseData.getString("chatTableName");
                 boolean result = responseData.getBoolean("result");
@@ -80,13 +62,13 @@ public class ChatTask {
                 ContentValues values = new ContentValues();
                 values.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, result);
                 //TODO IS_SYNCHRONIZED 이거 먼저 체크 하고 안되어있으면 바꾸든지 해야 할거같다
-                int updatedRow = resolver.update(TalkContract.ChatRooms.CONTENT_URI, values, TalkContract.ChatRooms.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
+                int updatedRow = resolver.update(TalkContract.ChatRooms.CONTENT_URI, values, TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] {chatTableName});
                 if( updatedRow < 1 ) {
                     throw new RuntimeException("something wrong");
                 }
                 values.clear();
-                values.put(TalkContract.Chat.IS_SEND, true);
-                int insertedRowUpdated = resolver.update(TalkContract.Chat.CONTENT_URI, values, TalkContract.Chat._ID + "= ?", new String[]{String.valueOf(insertedChatRowNumber)});
+                values.put(TalkContract.Message.IS_SEND, true);
+                int insertedRowUpdated = resolver.update(TalkContract.Message.CONTENT_URI, values, TalkContract.Message._ID + "= ?", new String[]{String.valueOf(insertedChatRowNumber)});
                 Log.d(TAG, "insertedRowUpdated: " + insertedChatRowNumber + " just updated to " + insertedRowUpdated);
                 EventBus.getDefault().post(new MessageEvent<ChatResultEvent<Boolean>>("message_send_success", new ChatResultEvent("message_send_success", chatTableName, result)));
                 break;

@@ -28,4 +28,5 @@ public class ChatService extends IntentService {
             e.printStackTrace();
         }
     }
+
 }

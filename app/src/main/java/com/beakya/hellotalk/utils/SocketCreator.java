@@ -6,6 +6,8 @@ import android.util.Log;
 
 import com.beakya.hellotalk.events.MessageEvent;
 import com.beakya.hellotalk.events.UserInfoEvent;
+import com.beakya.hellotalk.objs.ChatRoom;
+import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.services.ChatService;
 
 import org.greenrobot.eventbus.EventBus;
@@ -78,28 +80,27 @@ public class SocketCreator {
             }
         });
         // 처음 채팅이 왔을때 초기화해야 한다
-        socket.on("receive_chat", new Emitter.Listener() {
+        socket.on("invite_to_chat", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 JSONObject data = (JSONObject) args[0];
+                Message message = null;
+                ChatRoom chatRoom = null;
+                try {
+                    message = Utils.extractMessageFromJson(data);
+                    chatRoom = Utils.extractChatRoomFromJson(data);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
                 Intent intent = new Intent(context, ChatService.class);
-                intent.putExtra("data", data.toString());
+                intent.putExtra("message", message);
+                intent.putExtra("chatRoom", chatRoom);
                 intent.setAction(ChatTask.ACTION_STORAGE_CHAT_DATA);
                 context.startService(intent);
             }
         });
-        //내가 보낸 채팅의 결과값을 받을때
-        socket.on("chat_result", new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                Log.d(TAG, "socket invite_result call");
-                JSONObject data = (JSONObject) args[0];
-                Intent intent = new Intent(context, ChatService.class);
-                intent.putExtra("data", data.toString());
-                intent.setAction(ChatTask.ACTION_CHAT_SEND_RESULT);
-                context.startService(intent);
-            }
-        });
+
         socket.on("invite_user_to_room", new Emitter.Listener() {
             @Override
             public void call(Object... args) {

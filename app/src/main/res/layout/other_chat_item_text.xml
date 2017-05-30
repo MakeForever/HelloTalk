@@ -37,4 +37,14 @@
         app:layout_constraintLeft_toRightOf="@+id/chat_user_profile_image_view"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:id="@+id/read_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="11"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="24dp"
+        app:layout_constraintLeft_toRightOf="@+id/chat_text_content"
+        android:layout_marginLeft="9dp" />
+
 </android.support.constraint.ConstraintLayout>

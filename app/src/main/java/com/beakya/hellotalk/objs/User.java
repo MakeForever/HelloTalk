@@ -1,14 +1,20 @@
 package com.beakya.hellotalk.objs;
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
+
+import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.utils.Utils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 
 /**
  * Created by cheolho on 2017. 4. 10..
@@ -20,6 +26,7 @@ public class User implements Parcelable {
     private String id;
     private String name;
     private Bitmap profileImage;
+    private boolean hasProfileImg;
     private boolean isAdded = false;
     public User(String id, String name, Bitmap profileImage) {
         this.id = id;
@@ -27,14 +34,16 @@ public class User implements Parcelable {
         this.profileImage = profileImage;
     }
 
-    public User(String id, String name) {
+    public User(String id, String name, boolean hasProfileImg) {
         this.id = id;
         this.name = name;
+        this.hasProfileImg = hasProfileImg;
     }
     public User(Parcel in) {
         this.id = in.readString();
         this.name = in.readString();
         this.isAdded = in.readInt() == 1;
+        this.hasProfileImg = in.readByte() != 0;
     }
     public boolean isAdded() {
         return isAdded;
@@ -47,12 +56,17 @@ public class User implements Parcelable {
     public String getId() {
         return id;
     }
+
     public String getName() {
         return name;
     }
 
     public Bitmap getProfileImage() {
         return profileImage;
+    }
+
+    public boolean hasProfileImg() {
+        return hasProfileImg;
     }
 
     public void setProfileImage(Bitmap profileImage) {
@@ -64,7 +78,19 @@ public class User implements Parcelable {
         return 0;
     }
 
-
+    public Bitmap getProfileImg(Context context) {
+        Bitmap bitmapImg;
+        if( hasProfileImg == false ) {
+            bitmapImg = BitmapFactory.decodeResource(context.getResources(), R.mipmap.default_profile_img);
+        } else {
+            bitmapImg = Utils.getImageBitmap(
+                    context,
+                    context.getString(R.string.setting_friends_profile_img_name),
+                    context.getString(R.string.setting_profile_img_extension),
+                    Arrays.asList( new String[] { context.getString(R.string.setting_friends_img_directory), id }));
+        }
+        return bitmapImg;
+    }
 
     public static final Creator<User> CREATOR = new Creator<User>() {
         @Override
@@ -82,5 +108,6 @@ public class User implements Parcelable {
         dest.writeString(id);
         dest.writeString(name);
         dest.writeInt( isAdded ? 1 : 0);
+        dest.writeByte((byte) (hasProfileImg ? 1 : 0));
     }
 }

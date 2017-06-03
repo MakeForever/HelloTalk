@@ -17,7 +17,7 @@ import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.FriendAddAdapter;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.events.MessageEvent;
+import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.User;
 
 import org.greenrobot.eventbus.EventBus;
@@ -102,7 +102,7 @@ public class FriendAddActivity extends AppCompatActivity {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(MessageEvent<JSONObject> event) {
+    public void onMessageEvent(Events.FriendFindEvent event) {
 //        Toast.makeText(this, event.getMessage(), Toast.LENGTH_SHORT).show();
         JSONObject obj = event.getStorage();
         User[] users;

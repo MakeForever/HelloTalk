@@ -43,7 +43,6 @@ public class SocketTask {
     private static void connectSocket(Context context) {
         if( Utils.checkToken(context) ) {
             MyApp app = Utils.getMyApp(context);
-
             app.connectSocket();
         }
     }
@@ -60,7 +59,7 @@ public class SocketTask {
                 Socket socket = new SocketCreator(context).createSocket(token);
                 MyApp app = Utils.getMyApp(context);
                 app.setSocket(socket);
-                socket.connect();
+                socket.open();
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }

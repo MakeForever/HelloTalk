@@ -22,13 +22,14 @@ public class Message implements Parcelable {
         Parcelable 만들때 하나의 constructor 가 존재해야 하기 때문에 Parcelable 만드는 메소드 수정 및
     *   메세지 데이터 오고 보낼때 전부 다 보내도록 할것 Message 동기화 할것
     */
-    public Message(String messageId, String creatorId, String messageContent, String chatId, int messageType, int readCount) {
+    public Message(String messageId, String creatorId, String messageContent, String chatId, int messageType, String createdTime, int readCount) {
         this.messageId = messageId;
         this.creatorId = creatorId;
         this.messageContent = messageContent;
         this.chatId = chatId;
         this.messageType = messageType;
         this.readCount = readCount;
+        this.createdTime = createdTime;
     }
 
     public Message(String messageId, String creatorId, String messageContent, String chatId, int messageType, String createdTime, boolean isSend, int readCount) {
@@ -48,6 +49,8 @@ public class Message implements Parcelable {
         messageContent = in.readString();
         chatId = in.readString();
         messageType = in.readInt();
+        readCount = in.readInt();
+        createdTime = in.readString();
     }
 
     public static final Creator<Message> CREATOR = new Creator<Message>() {
@@ -138,6 +141,8 @@ public class Message implements Parcelable {
         dest.writeString(messageContent);
         dest.writeString(chatId);
         dest.writeInt(messageType);
+        dest.writeInt(readCount);
+        dest.writeString(createdTime);
     }
     public void printAll() {
         System.out.println( "Chat ID : " + chatId );

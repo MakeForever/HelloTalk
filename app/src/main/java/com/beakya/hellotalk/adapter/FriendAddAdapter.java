@@ -94,7 +94,7 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                         values.put(TalkContract.User.USER_ID, id);
                         values.put(TalkContract.User.USER_NAME, name);
                         if ( mBitmap != null) {
-                            values.put(TalkContract.User.HAVE_PROFILE_IMAGE, true);
+                            values.put(TalkContract.User.HAVE_PROFILE_IMAGE, 1);
                         }
                         resolver.insert(TalkContract.User.CONTENT_URI, values);
                         if( mBitmap != null) {

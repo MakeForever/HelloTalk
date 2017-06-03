@@ -25,7 +25,7 @@ public class TalkContract {
                         USER_ID            + " TEXT PRIMARY KEY, " +
                         USER_NAME          + " TEXT, " +
                         USER_ADDED_TIME    + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                        HAVE_PROFILE_IMAGE + " BOOLEAN DEFAULT FALSE, " +
+                        HAVE_PROFILE_IMAGE + " BOOLEAN DEFAULT 0, " +
                         ChatRooms.CHAT_ID + " TEXT " +
                         " ); ";
 
@@ -60,9 +60,7 @@ public class TalkContract {
     }
     public static final class ChatRooms {
 
-        public static final int PERSONAL_CHAT_TYPE = 1;
-        public static final int GROUP_CHAT_TYPE = 2;
-        public static final int OPEN_CHAT_TYPE = 3;
+
         public static final String TABLE_NAME = "chat_list";
         public static final String PATH = TABLE_NAME;
         public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRooms.PATH).build();

@@ -9,7 +9,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -18,7 +17,9 @@ import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.ChatRoom;
+import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
+import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 
 import org.json.JSONArray;
@@ -35,7 +36,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -227,10 +227,13 @@ public class Utils {
         chatParams.put(TalkContract.Message.CREATOR_ID, message.getCreatorId());
         chatParams.put(TalkContract.Message.MESSAGE_CONTENT, message.getMessageContent());
         chatParams.put(TalkContract.Message.MESSAGE_TYPE, message.getMessageType());
+        chatParams.put(TalkContract.Message.READING_COUNT, message.isReadCount());
+        chatParams.put(TalkContract.Message.CREATED_TIME, message.getCreatedTime());
         Uri insertedUri = resolver.insert(TalkContract.Message.CONTENT_URI, chatParams);
         return Integer.parseInt(insertedUri.getLastPathSegment());
     }
-    public static int insertChatRoom ( ContentResolver resolver, ChatRoom chatRoom ) {
+
+    public static int insertChatRoom ( ContentResolver resolver, ChatRoom chatRoom) {
         ContentValues params = new ContentValues();
         params.put(TalkContract.ChatRooms.CHAT_ID, chatRoom.getChatId());
         params.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, chatRoom.isSynchronized());
@@ -243,12 +246,13 @@ public class Utils {
         Uri insertedUri = resolver.insert(TalkContract.ChatRooms.CONTENT_URI, params);
         return Integer.parseInt(insertedUri.getLastPathSegment());
     }
-    public static int addChatIdIntoUser ( Context context, String chatId, String userId ) {
-        ContentResolver resolver = context.getContentResolver();
-        ContentValues values = new ContentValues();
-        values.put(TalkContract.ChatRooms.CHAT_ID, chatId );
-        return resolver.update(TalkContract.User.CONTENT_URI, values, TalkContract.User.USER_ID + " = ?" , new String[] { userId } );
-    }
+
+//    public static int addChatIdIntoUser ( Context context, String chatId, String userId ) {
+//        ContentResolver resolver = context.getContentResolver();
+//        ContentValues values = new ContentValues();
+//        values.put(TalkContract.ChatRooms.CHAT_ID, chatId );
+//        return resolver.update(TalkContract.User.CONTENT_URI, values, TalkContract.User.USER_ID + " = ?" , new String[] { userId } );
+//    }
 
     //TODO : 나중에 bulkInsert 로 바꾸어야 한다
     public static void insertChatMembers ( ContentResolver resolver, String chatId, HashMap<String, User> users ) {
@@ -263,25 +267,36 @@ public class Utils {
             resolver.insert(TalkContract.ChatUserRooms.CONTENT_URI, value);
         }
     }
-    public static void ChatInitialize( Context context, ChatRoom chatRoom ) {
-        ContentResolver resolver = context.getContentResolver();
-        if ( chatRoom.getChatRoomType() == 1 ) {
-            int userListSize = chatRoom.getUserList().size();
-            if ( userListSize == 1 ) {
-                for ( HashMap.Entry<String, User> entry : chatRoom.getUserList().entrySet() ) {
-                    User user = entry.getValue();
-                    addChatIdIntoUser(context, chatRoom.getChatId(), user.getId());
-                }
-            }
+
+    public static void insertChatMembers ( ContentResolver resolver, String chatId, List<User> users ) {
+        ArrayList<ContentValues> chatMemberContentValues = new ArrayList<ContentValues>();
+        for( User user : users ) {
+            ContentValues params = new ContentValues();
+            params.put(TalkContract.ChatRooms.CHAT_ID, chatId);
+            params.put(TalkContract.User.USER_ID, user.getId());
+            chatMemberContentValues.add( params );
         }
-        insertChatRoom(resolver, chatRoom);
-        insertChatMembers(resolver, chatRoom.getChatId(), chatRoom.getUserList());
+        for( ContentValues value : chatMemberContentValues ) {
+            resolver.insert(TalkContract.ChatUserRooms.CONTENT_URI, value);
+        }
     }
 
-    public static ArrayList<User> JSONArrayToArrayList(JSONArray json ) throws JSONException {
-        ArrayList<User> result = new ArrayList<>();
+    public static void ChatInitialize( Context context, ChatRoom chatRoom) {
+        ContentResolver resolver = context.getContentResolver();
+        if( chatRoom instanceof PersonalChatRoom ) {
+            PersonalChatRoom personalChatRoom = (PersonalChatRoom) chatRoom;
+            insertChatRoom(resolver, personalChatRoom);
+            insertChatMembers(resolver, personalChatRoom.getChatId(), Arrays.asList(new User[] { personalChatRoom.getTalkTo() }));
+        } else if ( chatRoom instanceof  GroupChatRoom ) {
+
+        }
+    }
+
+    public static ArrayList<String> JSONArrayToArrayList(JSONArray json, String name ) throws JSONException {
+        ArrayList<String> result = new ArrayList<>();
         for ( int i = 0; i < json.length(); i++ ) {
-            result.add(new User(json.getString(i),null));
+            JSONObject k = json.getJSONObject(i);
+            result.add(k.getString(name));
         }
         return result;
     }
@@ -308,31 +323,32 @@ public class Utils {
         long minute = 1000 * 60;
         long hour = minute * 60;
         long day = hour * 24;
-        Date result = null;
+        Date resultTime = null;
         Calendar calendar = Calendar.getInstance();
         Date currentDate = calendar.getTime();
         try {
-            result = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(date);
+            resultTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(date);
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        result.setTime(result.getTime() + (hour * 9));
-        long diff = Math.abs(currentDate.getTime() - result.getTime());
 
-        if (diff < minute) {
-            long time = diff / second;
-            return time + "초전";
-        } else if (diff < hour) {
-            long time = diff / minute;
-            return time + "분전";
-        } else if (diff < day) {
-            return (diff / hour) + "시간전";
-        } else if ( diff > day ){
-            //TODO 3월 15일 이런식으로 리턴하게 만들것
-            return null;
+        resultTime.setTime(resultTime.getTime());
+        long diff = Math.abs(currentDate.getTime() - resultTime.getTime());
+        StringBuilder builder = new StringBuilder();
+        calendar.setTime(resultTime);
+        if (diff < day) {
+            int i = calendar.get(Calendar.AM_PM);
+            if ( i == 1 ){
+                builder.append("오후 ");
+            } else {
+                builder.append("오전 ");
+            }
+            builder.append(calendar.get(Calendar.HOUR)+ "시");
+            builder.append(calendar.get(Calendar.MINUTE) + "분");
         } else {
-            return "방금";
+
         }
+        return builder.toString();
     }
 
 
@@ -352,7 +368,7 @@ public class Utils {
         return ( chatId == null ) ?  hashFunction(userId + System.currentTimeMillis(), "SHA-256") :  chatId;
     }
 
-    public static ChatRoom extractChatRoomFromJson ( JSONObject object ) throws JSONException {
+    public static GroupChatRoom extractChatRoomFromJson (JSONObject object ) throws JSONException {
         HashMap<String, User> users = new HashMap<>();
         JSONArray array = object.getJSONArray("members");
         String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
@@ -362,17 +378,45 @@ public class Utils {
             JSONObject userObj = array.getJSONObject(i);
             String id = userObj.getString(TalkContract.User.USER_ID);
             String name = userObj.getString(TalkContract.User.USER_NAME);
-            users.put(id, new User(id, name));
+            users.put(id, new User(id, name, true));
         }
-        return new ChatRoom(users, chatId, chatType, isSynchronized);
+        return new GroupChatRoom(users, chatId, chatType, isSynchronized);
     }
+    public static PersonalChatRoom extractPersonalChatRoomFromJson (JSONObject object, User user ) throws JSONException {
+        String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
+        int chatType = object.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
+        boolean isSynchronized = true;
+        return new PersonalChatRoom(chatId, chatType, isSynchronized, user );
+    }
+
     public static Message extractMessageFromJson ( JSONObject object) throws JSONException {
         int messageType = object.getInt(TalkContract.Message.MESSAGE_TYPE);
         String creatorId = object.getString(TalkContract.Message.CREATOR_ID);
         String messageContent = object.getString(TalkContract.Message.MESSAGE_CONTENT);
         String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
         String messageId = object.getString(TalkContract.Message.MESSAGE_ID);
-
-        return new Message(messageId, creatorId, messageContent, chatId, messageType, 0);
+        int readCount = object.getInt(TalkContract.Message.READING_COUNT);
+        String createdTime = object.getString(TalkContract.Message.CREATED_TIME);
+        return new Message(messageId, creatorId, messageContent, chatId, messageType, createdTime, readCount);
+    }
+    public static User extractUserFromJson ( JSONObject object ) throws JSONException {
+        return new User (object.getString(TalkContract.User.USER_ID), object.getString(TalkContract.User.USER_NAME), true);
+    }
+    public static String createIsReadMessageJsonObj ( String chatId, List<String> list , User user) {
+        JSONObject object = new JSONObject();
+        JSONArray array = new JSONArray();
+        try {
+            object.put("from", user.getId());
+            object.put(TalkContract.ChatRooms.CHAT_ID, chatId);
+            for( int i = 0 ; i < list.size(); i++ ) {
+                JSONObject arrayItem = new JSONObject();
+                arrayItem.put(TalkContract.Message.MESSAGE_ID, list.get(i));
+                array.put(i, arrayItem);
+            }
+            object.put("message_id_list", array);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return object.toString();
     }
 }

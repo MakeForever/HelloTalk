@@ -15,11 +15,11 @@ import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.objs.ChatRoom;
+import com.beakya.hellotalk.objs.GroupChatRoom;
+import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -61,7 +61,7 @@ public class FriendDetailActivity extends AppCompatActivity {
                     Intent intent = new Intent( mContext, ChatActivity.class );
                     boolean isSynchronized;
                     boolean isStored;
-                    String chatTableName = Utils.getUserChatId(mContext, user.getId());
+                    String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String [] { myId, user.getId()}));
                     ContentResolver resolver = getContentResolver();
                     Cursor chatCursor = resolver.query(
                             TalkContract.ChatRooms.CONTENT_URI,
@@ -77,11 +77,12 @@ public class FriendDetailActivity extends AppCompatActivity {
                         isSynchronized = false;
                         isStored = false;
                     }
-
-                    ChatRoom chatRoom = new ChatRoom(receiveList, chatTableName, chatType, isSynchronized);
+                    Log.d(TAG, "onClick: "+ chatTableName);
+                    PersonalChatRoom chatRoom = new PersonalChatRoom( chatTableName, chatType, isSynchronized, user);
                     intent.putExtra("chatRoom", chatRoom);
                     intent.putExtra("is_stored", isStored);
                     startActivity(intent);
+                    finish();
                 }
 
             }

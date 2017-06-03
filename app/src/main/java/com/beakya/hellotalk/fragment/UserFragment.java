@@ -21,7 +21,7 @@ import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.FriendAddActivity;
 import com.beakya.hellotalk.activity.FriendDetailActivity;
 import com.beakya.hellotalk.activity.MainActivity;
-import com.beakya.hellotalk.adapter.MainAdapter;
+import com.beakya.hellotalk.adapter.UserAdapter;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.User;
 
@@ -29,19 +29,19 @@ import com.beakya.hellotalk.objs.User;
  * Created by goodlife on 2017. 5. 4..
  */
 
-public class MainFragment extends Fragment implements
+public class UserFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor>,
-        MainAdapter.mOnClickListener {
+        UserAdapter.mOnClickListener {
 
-    public static final String TAG = MainFragment.class.getSimpleName();
+    public static final String TAG = UserFragment.class.getSimpleName();
 
-    private MainAdapter mUserAdapter;
+    private UserAdapter mUserAdapter;
     private RecyclerView mRecyclerView;
     private FloatingActionButton faButton;
     Context context;
-    public MainFragment() {
+    public UserFragment() {
         // Required empty public constructor
-        Log.d(TAG, "MainFragment: constructor");
+        Log.d(TAG, "UserFragment: constructor");
     }
 
     @Override
@@ -61,7 +61,7 @@ public class MainFragment extends Fragment implements
         mRecyclerView = (RecyclerView) view.findViewById(R.id.my_recycler_view);
         faButton = (FloatingActionButton) view.findViewById(R.id.fab);
         faButton.setImageResource(R.drawable.ic_add_black_24dp);
-        mUserAdapter = new MainAdapter( context, this );
+        mUserAdapter = new UserAdapter( context, this );
         mRecyclerView.setLayoutManager(new LinearLayoutManager( context ));
         mRecyclerView.setAdapter(mUserAdapter);
 

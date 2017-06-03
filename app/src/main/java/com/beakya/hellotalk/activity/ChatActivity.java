@@ -1,6 +1,9 @@
 package com.beakya.hellotalk.activity;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
@@ -19,10 +22,14 @@ import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.ChatAdapter;
 import com.beakya.hellotalk.asynctaskloader.ChatAsyncTaskLoader;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.events.MessageEvent;
+import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.ChatRoom;
+import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
+import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.beakya.hellotalk.services.ChatService;
+import com.beakya.hellotalk.utils.ChatTask;
 import com.beakya.hellotalk.utils.Utils;
 
 import org.greenrobot.eventbus.EventBus;
@@ -32,27 +39,33 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.security.spec.PSSParameterSpec;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 
 import io.socket.client.Socket;
 
 
 public class ChatActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
     public static final String TAG = ChatActivity.class.getSimpleName();
-
+    public static final String EVENT_BUS_ACTION_INVITE_RESULT = "event_bus_action_invite_result";
+    public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
+    public static final String EVENT_SOMEONE_READ_MESSAGE = "event_someone_read_message";
     private static final int ID_CHAT_CURSOR_LOADER = 1;
-
-
 
     private Button button;
     private EditText contentEditText;
     private RecyclerView chatRecyclerView;
     private String myId;
-    private String receiverId;
+    private String myName;
     String messageContent = null;
     private boolean isStored = true;
-    private boolean isSynchronized = false;
     private ChatAdapter chatAdapter;
     private Socket socket;
     private Context mContext;
@@ -67,6 +80,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
         mContext = this;
         SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myId = tokenStorage.getString( getString(R.string.user_id), null );
+        myName = tokenStorage.getString(getString(R.string.user_name), null);
         button = (Button) findViewById(R.id.chat_send_button);
         contentEditText = (EditText) findViewById(R.id.chat_content_edit_text);
         chatRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
@@ -93,28 +107,39 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
                     isStored = true;
                 }
                 String messageId =  Utils.hashFunction( myId + chatId + System.currentTimeMillis(), "SHA-1" );
-                Message message = new Message(messageId, myId, messageContent, chatId, TalkContract.Message.TYPE_TEXT, mChatRoom.getMembersCount());
-                int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
-
-                if( !isSynchronized ) {
-                    String messageJson = createMessage(chatId, insertedChatRowNumber, messageId, messageContent, TalkContract.Message.TYPE_TEXT, chatType, mChatRoom.getUserList());
-                    socket.emit(getString(R.string.invite_to_chat), messageJson );
-                    Log.d(TAG, "onClick: socket emit with members");
+                Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formatted = dateFormat.format(calendar.getTime());
+                Message message = null;
+                if ( chatType == 1 ) {
+                    PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
+                    message = new Message(messageId, myId, messageContent, chatId, TalkContract.Message.TYPE_TEXT, formatted  ,1);
+                    String messageJson = createPersonalMessage(chatRoom, message, chatRoom.getTalkTo());
+                    socket.emit(getString(R.string.invite_to_personal_chat), messageJson );
+                    Log.d(TAG, "onClick: invite_to_personal_chat" + messageJson);
                 } else {
-                    String messageJson = createMessage(chatId, insertedChatRowNumber, messageContent, TalkContract.Message.TYPE_TEXT, chatType);
-                    socket.emit( getString(R.string.socket_send_chat), message );
-                    Log.d(TAG, "onClick: socket emit without members");
+                    //group chat
                 }
-                chatAdapter.addMessage(message);
+                int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
+                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, ChatActivity.this);
+                //TODO : // message에 모든 칼럼이 다 들어가야 된다. created_time bind할때 parse 에러 발생 고칠것
+//                chatAdapter.addMessage(message);
             }
         });
-
-        chatAdapter = new ChatAdapter(this , mChatRoom, chatRecyclerView);
+        PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
+        chatAdapter = new ChatAdapter(this , chatRoom, chatRecyclerView);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setReverseLayout(true);
         chatRecyclerView.setLayoutManager(linearLayoutManager);
         chatRecyclerView.setAdapter(chatAdapter);
         getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
+
+        Intent intent = new Intent(this, ChatService.class);
+        intent.putExtra(TalkContract.User.USER_ID, myId);
+        intent.putExtra("user", chatRoom.getTalkTo());
+        intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
+        intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
+        startService(intent);
     }
 
     @Override
@@ -145,53 +170,53 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
 
-//    @Override
-//    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-//        Log.d(TAG, "onLoadFinished: ");
-//        chatAdapter.swapCursor( data );
-//    }
-//
-//    @Override
-//    public void onLoaderReset(Loader<Cursor> loader) {
-//        Log.d(TAG, "onLoaderReset: ");
-//        chatAdapter.swapCursor( null );
-//    }
-
-
     @Override
     protected void onStart() {
         super.onStart();
         EventBus.getDefault().register(this);
+
     }
 
     @Override
     protected void onPause() {
         EventBus.getDefault().unregister(this);
-        chatAdapter.swapCursor(null);
+//        chatAdapter.swapCursor(null);
         super.onPause();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(MessageEvent<String> event) {
-//        if( event.getMessage().equals("first_received")) {
-//            if( !chatId.equals(event.getStorage()) ) {
-//                chatId = event.getStorage();
-//                isStored = true;
-//            }
-//        }
-//        if ( event.getMessage().equals("message_send_success")) {
-//            if( insertedUri != null ) {
-//                ContentValues updateValue = new ContentValues();
-//                updateValue.put(TalkContract.Message.IS_SEND, true);
-//                String segment = insertedUri.getLastPathSegment();
-//                getContentResolver().update(insertedUri, updateValue, TalkContract.Message._ID +" = ?", new String[] { segment });
-//                isSynchronized = true;
-//
-//            }
-//        }
-        getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
+    public void onMessageEvent(Events.MessageEvent event) {
+        switch ( event.getMessage() ) {
+            case EVENT_NEW_MESSAGE_ARRIVED :
+                Message message = event.getStorage();
+                if (message.getChatId().equals(mChatRoom.getChatId())) {
+                    int count = message.isReadCount();
+                    ContentValues values = new ContentValues();
+                    values.put(TalkContract.Message.READING_COUNT, --count);
+                    ContentResolver resolver = getContentResolver();
+                    resolver.update(
+                            TalkContract.Message.CONTENT_URI,
+                            values,
+                            TalkContract.Message.MESSAGE_ID + " = ?",
+                            new String[ ] { message.getMessageId() });
+                    chatAdapter.addMessage(message);
+                    message.setReadCount(count);
+                    mChatRoom.setSynchronized( true );
+
+                    PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
+                    String t = Utils.createIsReadMessageJsonObj(message.getChatId(), Arrays.asList(new String[] { message.getMessageId()}), chatRoom.getTalkTo());
+                    socket.emit("chat_read", t);
+                }
+                break;
+            case EVENT_SOMEONE_READ_MESSAGE:
+                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
+                break;
+            default :
+                throw new RuntimeException("message not matched");
+        }
     }
-    String createMessage (String tableName, int insertedChatRowNumber, String messageId, String messageContent, int messageType, int chatType, HashMap<String, User> receiveList) {
+
+    String createMessage (String tableName, int insertedChatRowNumber, String messageId, String messageContent, int messageType, int chatType, HashMap<String, User> receiveList, int readCount) {
         JSONObject chatObj = new JSONObject();
         try {
             JSONArray array = new JSONArray();
@@ -209,25 +234,55 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             chatObj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType);
             chatObj.put("members", array);
             chatObj.put("insertedChatRowNumber", insertedChatRowNumber);
+            chatObj.put(TalkContract.Message.READING_COUNT, readCount);
         } catch (JSONException e) {
             e.printStackTrace();
         }
         return chatObj.toString();
     }
 
-    String createMessage (String tableName, int insertedChatRowNumber, String messageContent, int messageType, int chatType) {
+    String createPersonalMessage (PersonalChatRoom groupChatRoom, Message message, User user ) {
         JSONObject obj = new JSONObject();
         try {
-            obj.put( "chatId", tableName );
-            obj.put( TalkContract.Message.MESSAGE_CONTENT, messageContent );
-            obj.put( TalkContract.Message.MESSAGE_TYPE, messageType);
-            obj.put( TalkContract.Message.CREATOR_ID, myId );
-            obj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatType);
-            obj.put("insertedChatRowNumber", insertedChatRowNumber);
-
+            obj.put("message", createMessageJsonObject(message));
+            obj.put("chat_room", createPersonalChatRoomJsonObject(groupChatRoom));
+            obj.put("receive", createUserObject(user.getId(), user.getName()));
+            obj.put("from", createUserObject(myId, myName));
         } catch (JSONException e) {
             e.printStackTrace();
         }
         return obj.toString();
     }
+    JSONObject createUserObject( String id, String name ) throws JSONException {
+        JSONObject object = new JSONObject();
+        object.put(TalkContract.User.USER_NAME, name );
+        object.put(TalkContract.User.USER_ID, id);
+        return object;
+    }
+    JSONObject createPersonalChatRoomJsonObject(PersonalChatRoom groupChatRoom) {
+        JSONObject object = new JSONObject();
+        try {
+            object.put(TalkContract.ChatRooms.CHAT_ID, groupChatRoom.getChatId());
+            object.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, groupChatRoom.getChatRoomType());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return object;
+    }
+    JSONObject createMessageJsonObject ( Message message ) {
+        JSONObject object = new JSONObject();
+        try {
+            object.put(TalkContract.ChatRooms.CHAT_ID, message.getChatId());
+            object.put(TalkContract.Message.MESSAGE_ID, message.getMessageId());
+            object.put(TalkContract.Message.CREATOR_ID, message.getCreatorId());
+            object.put(TalkContract.Message.MESSAGE_CONTENT, message.getMessageContent());
+            object.put(TalkContract.Message.MESSAGE_TYPE, message.getMessageType());
+            object.put(TalkContract.Message.READING_COUNT, message.isReadCount());
+            object.put(TalkContract.Message.CREATED_TIME, message.getCreatedTime());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return object;
+    }
+
 }

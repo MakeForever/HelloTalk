@@ -1,6 +1,7 @@
 package com.beakya.hellotalk.adapter;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -12,12 +13,14 @@ import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.objs.ChatRoom;
+import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
+import com.beakya.hellotalk.objs.PersonalChatRoom;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -33,15 +36,18 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
     private static final int VIEW_TYPE_OTHER_CHAT = 2;
     private static final int VIEW_TYPE_SYSTEM = 3;
     private ArrayList<Message> messages = new ArrayList<>();
-    private ChatRoom mChatRoom;
+    private PersonalChatRoom mChatRoom;
     private Context mContext;
     private String myId;
+    private String myName;
     private RecyclerView recyclerView;
-    public ChatAdapter(Context context, ChatRoom mChatRoom, RecyclerView recyclerView) {
+    public ChatAdapter(Context context, PersonalChatRoom mChatRoom, RecyclerView recyclerView) {
         this.mContext = context;
         this.mChatRoom = mChatRoom;
         this.recyclerView = recyclerView;
-        myId = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE).getString("id", null);
+        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE);
+        myId = preferences.getString(context.getString(R.string.user_id), null);
+        myName = preferences.getString(context.getString(R.string.user_name), null);
         if( myId == null) {
             throw new RuntimeException("something wrong");
         }
@@ -108,21 +114,21 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
                     String directory = mContext.getString(R.string.setting_profile_img_directory);
 
                     content = message.getMessageContent();
-                    name = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE).getString(mContext.getString(R.string.user_name), null);
+
                     Bitmap profileBitmap = Utils.getImageBitmap(mContext, fileName, extension, Arrays.asList(directory));
                     readCount = message.isReadCount();
-                    holder.bind(content, profileBitmap, readCount);
+                    holder.bind(content, profileBitmap, readCount, myName, Utils.timeToString(message.getCreatedTime()) );
                     break;
                 case VIEW_TYPE_OTHER_CHAT:
                     content = message.getMessageContent();
                     creatorId = message.getCreatorId();
-                    name = mChatRoom.getUserList().get(creatorId).getName();
                     Bitmap bitmap = Utils.getImageBitmap(mContext,
                             mContext.getString(R.string.setting_friends_profile_img_name),
                             mContext.getString(R.string.setting_profile_img_extension),
-                            Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), name }));
+                            Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), creatorId }));
                     readCount = message.isReadCount();
-                    holder.bind(content, bitmap, readCount);
+                    User talker = mChatRoom.getTalkTo();
+                    holder.bind(content, bitmap, readCount, talker.getName(), Utils.timeToString(message.getCreatedTime()) );
                     break;
             }
     }
@@ -164,18 +170,29 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
         TextView contentTextView;
         TextView readCountView;
         ImageView profileImageView;
-
+        TextView createTimeView;
+        TextView nameView;
         public ViewHolder(View itemView) {
             super(itemView);
             contentTextView = (TextView) itemView.findViewById(R.id.chat_text_content);
             profileImageView = (ImageView) itemView.findViewById(R.id.chat_user_profile_image_view);
             readCountView = (TextView) itemView.findViewById(R.id.read_count);
+            createTimeView = (TextView) itemView.findViewById(R.id.chat_time_view);
+            nameView = (TextView) itemView.findViewById(R.id.chat_name_view);
+
         }
 
-        public void bind(String content, Bitmap profileImg, int readCount) {
+        public void bind(String content, Bitmap profileImg, int readCount, String name, String time) {
+            if( readCount == 0 ) {
+                readCountView.setVisibility(View.INVISIBLE);
+            } else {
+                readCountView.setVisibility(View.VISIBLE);
+                readCountView.setText(String.valueOf(readCount));
+            }
             contentTextView.setText(content);
             profileImageView.setImageBitmap(profileImg);
-            readCountView.setText(String.valueOf(readCount));
+            createTimeView.setText(time);
+            nameView.setText(name);
         }
     }
 }

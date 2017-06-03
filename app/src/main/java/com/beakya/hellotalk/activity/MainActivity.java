@@ -24,12 +24,11 @@ import android.widget.Toast;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.ViewPagerAdapter;
 import com.beakya.hellotalk.fragment.ChatListFragment;
-import com.beakya.hellotalk.fragment.MainFragment;
+import com.beakya.hellotalk.fragment.UserFragment;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.Arrays;
 
@@ -171,9 +170,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void setupViewPager( ViewPager viewPager ) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        MainFragment mainFragment = new MainFragment();
+        UserFragment userFragment = new UserFragment();
         ChatListFragment chatListFragment = new ChatListFragment();
-        adapter.addFragment(mainFragment,getString(R.string.tab_name_friend));
+        adapter.addFragment(userFragment,getString(R.string.tab_name_friend));
         adapter.addFragment(chatListFragment,getString(R.string.tab_name_chats));
         viewPager.setAdapter(adapter);
     }

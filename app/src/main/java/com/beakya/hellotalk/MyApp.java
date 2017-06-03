@@ -15,6 +15,7 @@ import com.beakya.hellotalk.utils.SocketTask;
 import java.net.URISyntaxException;
 
 import io.socket.client.IO;
+import io.socket.client.Manager;
 import io.socket.client.Socket;
 
 import static com.beakya.hellotalk.utils.SocketCreator.*;
@@ -25,6 +26,7 @@ import static com.beakya.hellotalk.utils.SocketCreator.*;
 
 public class MyApp extends Application {
     public static final String TAG = MyApp.class.getSimpleName();
+
     private Socket mSocket = null;
     private AppStatus mAppStatus = AppStatus.FOREGROUND;
 

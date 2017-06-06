@@ -4,7 +4,7 @@
     <string name="test_email_value">beak_ya@naver.com</string>
 
 
-    <string name="user_info">user_info</string>
+    <string name="my_info">user_info</string>
     <string name="token">token</string>
     <string name="user_id">id</string>
     <string name="user_name">name</string>
@@ -20,7 +20,8 @@
     <string name="login_dialog_content">이제 이메일 인증을 하면 로그인 가능합니다</string>
     <string name="image_selection_button">이미지 선택</string>
     <string name="image_selection_disable">선택하지 않으면 기본이미지로 선택됩니다</string>
-
+    <string name="tab_name_friend">친구</string>
+    <string name="tab_name_chats">대화</string>
 
     <string name="image_chooser_title">이미지 선택</string>
 
@@ -37,5 +38,8 @@
     <string name="navigation_drawer_action_logout">logout</string>
 
     <string name="socket_send_chat">send_chat</string>
-    <string name="invite_send_chat">invite_socket_chat</string>
+    <string name="invite_to_personal_chat">invite_to_personal_chat</string>
+
+    <string name="new_message_arrived">new_message_arrived</string>
+    <string name="move_upward_behavior">com.beakya.hellotalk.utils.MoveUpwardBehavior</string>
 </resources>

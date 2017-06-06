@@ -19,9 +19,9 @@ public class DbHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(TalkContract.User.USER_TABLE_CREATE_STATEMENT);
-        db.execSQL(TalkContract.ChatList.CHAT_LIST_TABLE_CREATE_STATEMENT);
-        db.execSQL(TalkContract.ChatRoomMembers.CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT);
-        db.execSQL(TalkContract.Chat.CHAT_TABLE_CREATE_STATEMENT);
+        db.execSQL(TalkContract.ChatRooms.CHAT_LIST_TABLE_CREATE_STATEMENT);
+        db.execSQL(TalkContract.ChatUserRooms.CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT);
+        db.execSQL(TalkContract.Message.CHAT_TABLE_CREATE_STATEMENT);
     }
 
     @Override

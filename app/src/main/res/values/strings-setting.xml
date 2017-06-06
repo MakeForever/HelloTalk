@@ -4,7 +4,7 @@
     <string name="setting_profile_img_extension">png</string>
     <string name="setting_profile_img_directory">profile</string>
 
-    <string name="setting_friends_img_directory">friends</string>
+    <string name="setting_friends_img_directory">users</string>
     <string name="setting_friends_profile_img_name">basic</string>
     <string name="server_ip">http://192.168.0.102:8888</string>
     <string name="error_connection_timeout">서버가 이상합니다. 나중에 다시 시도하세요.</string>

@@ -17,8 +17,8 @@ import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.FriendAddAdapter;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.events.MessageEvent;
-import com.beakya.hellotalk.objs.Friend;
+import com.beakya.hellotalk.event.Events;
+import com.beakya.hellotalk.objs.User;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -102,15 +102,15 @@ public class FriendAddActivity extends AppCompatActivity {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(MessageEvent<JSONObject> event) {
+    public void onMessageEvent(Events.FriendFindEvent event) {
 //        Toast.makeText(this, event.getMessage(), Toast.LENGTH_SHORT).show();
         JSONObject obj = event.getStorage();
-        Friend[] friends;
+        User[] users;
         Uri targetUri = TalkContract.BASE_URI.buildUpon().appendEncodedPath(TalkContract.User.FRIENDS_PATH).build();
         try {
             JSONArray array = obj.getJSONArray("data");
             Log.d(TAG, "onMessageEvent: " + array);
-            friends = new Friend[array.length()];
+            users = new User[array.length()];
             for ( int i = 0; i< array.length(); i++) {
                 JSONObject o = array.getJSONObject(i);
 
@@ -120,15 +120,15 @@ public class FriendAddActivity extends AppCompatActivity {
                     byte[] imageBytes = Base64.decode(imgStringData, Base64.DEFAULT);
                     decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
                 }
-                Friend friend = new Friend(o.getString("id"), o.getString("name"), decodedImage);
+                User user = new User(o.getString("id"), o.getString("name"), decodedImage);
                 ContentResolver resolver = getContentResolver();
                 Cursor cursor = resolver.query(targetUri, null, USER_ID+"=?", new String[]{o.getString("id")}, null );
                 if( cursor.getCount() > 0 ) {
-                    friend.setAdded(true);
+                    user.setAdded(true);
                 }
-                friends[i] = friend;
+                users[i] = user;
             }
-            friendAddAdapter.swapData(friends);
+            friendAddAdapter.swapData(users);
         } catch (JSONException e) {
             e.printStackTrace();
         }

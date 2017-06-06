@@ -2,15 +2,21 @@ package com.beakya.hellotalk.utils;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.JsonWriter;
 import android.util.Log;
 
-import com.beakya.hellotalk.events.MessageEvent;
-import com.beakya.hellotalk.events.UserInfoEvent;
+import com.beakya.hellotalk.event.Events;
+import com.beakya.hellotalk.objs.Message;
+import com.beakya.hellotalk.objs.PersonalChatRoom;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.services.ChatService;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.gson.JsonParser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.net.URISyntaxException;
 
@@ -32,7 +38,9 @@ public class SocketCreator {
 
     public IO.Options getOptions(String token) {
         IO.Options options = new IO.Options();
-        options.query = "token=" + token;
+        JSONObject object = new JSONObject();
+        String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
+        options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
         return options;
     }
     public Socket createSocket(String token) throws URISyntaxException {
@@ -47,22 +55,25 @@ public class SocketCreator {
             }
 
         });
-        socket.on("receive_user_info", new Emitter.Listener() {
+
+        socket.on(Socket.EVENT_CONNECT_TIMEOUT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                Log.d(TAG, "call: receive_user_info");
-                JSONObject info = (JSONObject) args[0];
-                String message = null;
-                try {
-                    message = info.getString("message");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                EventBus.getDefault().post(new UserInfoEvent(message, info));
-
+                Log.d(TAG, "call: EVENT_CONNECT_ERROR" );
             }
         });
-
+        socket.on(Socket.EVENT_RECONNECT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "call: EVENT_RECONNECT" );
+            }
+        });
+        socket.on(Socket.EVENT_RECONNECT_ERROR, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "call: EVENT_RECONNECT_ERROR" );
+            }
+        });
         socket.on("search_friends_result", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
@@ -74,36 +85,42 @@ public class SocketCreator {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                EventBus.getDefault().post(new MessageEvent<JSONObject>(message, list));
+                EventBus.getDefault().post(new Events.FriendFindEvent(message, list));
             }
         });
         // 처음 채팅이 왔을때 초기화해야 한다
-        socket.on("receive_chat", new Emitter.Listener() {
+        socket.on("invite_to_personal_chat", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                JSONObject data = (JSONObject) args[0];
+                JSONObject data = null;
+                data = (JSONObject) args[0];
+                Message message = null;
+                PersonalChatRoom chatRoom = null;
+                try {
+                    User sender = Utils.extractUserFromJson(data.getJSONObject("from"));
+                    message = Utils.extractMessageFromJson(data.getJSONObject("message"));
+                    chatRoom = Utils.extractPersonalChatRoomFromJson(data.getJSONObject("chat_room"), sender);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
                 Intent intent = new Intent(context, ChatService.class);
-                intent.putExtra("data", data.toString());
+                intent.putExtra("message", message);
+                intent.putExtra("chatRoom", chatRoom);
                 intent.setAction(ChatTask.ACTION_STORAGE_CHAT_DATA);
                 context.startService(intent);
             }
         });
-        //내가 보낸 채팅의 결과값을 받을때
-        socket.on("chat_result", new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                Log.d(TAG, "socket invite_result call");
-                JSONObject data = (JSONObject) args[0];
-                Intent intent = new Intent(context, ChatService.class);
-                intent.putExtra("data", data.toString());
-                intent.setAction(ChatTask.ACTION_CHAT_SEND_RESULT);
-                context.startService(intent);
-            }
-        });
-        socket.on("invite_user_to_room", new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
 
+        socket.on("chat_read", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "call: chat_read");
+                JSONObject object = (JSONObject) args[0];
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("object", object.toString());
+                intent.setAction(ChatTask.ACTION_HANDLE_READ_CHAT);
+                context.startService(intent);
             }
         });
         socket.on("leave_room", new Emitter.Listener() {
@@ -124,6 +141,7 @@ public class SocketCreator {
                 Log.d(TAG, "call: disconnected");
             }
         });
+
         return socket;
     }
 

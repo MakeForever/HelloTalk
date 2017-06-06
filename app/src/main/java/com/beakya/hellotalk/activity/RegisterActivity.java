@@ -13,22 +13,17 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.retrofit.GeneralResponseBody;
-import com.beakya.hellotalk.retrofit.LoginResponseBody;
 import com.beakya.hellotalk.retrofit.RegisterRequestBody;
 import com.beakya.hellotalk.retrofit.RegisterService;
-
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 
 import retrofit2.Call;
 import retrofit2.Response;
 
-import static com.beakya.hellotalk.activity.LoginActivity.RESULT_CODE;
 import static com.beakya.hellotalk.retrofit.RetrofitCreator.retrofit;
 
 public class RegisterActivity extends AppCompatActivity {

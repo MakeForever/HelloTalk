@@ -2,9 +2,7 @@ package com.beakya.hellotalk.services;
 
 import android.app.IntentService;
 import android.content.Intent;
-import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.beakya.hellotalk.utils.ChatTask;
 
@@ -28,4 +26,5 @@ public class ChatService extends IntentService {
             e.printStackTrace();
         }
     }
+
 }

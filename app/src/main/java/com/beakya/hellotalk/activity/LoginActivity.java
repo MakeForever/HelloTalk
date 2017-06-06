@@ -1,13 +1,10 @@
 package com.beakya.hellotalk.activity;
 
-import android.app.Application;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.os.AsyncTask;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputEditText;
@@ -19,13 +16,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.events.UserInfoEvent;
-import com.beakya.hellotalk.objs.Friend;
 import com.beakya.hellotalk.retrofit.LoginResponseBody;
 import com.beakya.hellotalk.retrofit.LoginRequestBody;
 import com.beakya.hellotalk.retrofit.LoginService;
@@ -33,15 +25,9 @@ import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
 
-import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
-
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -177,20 +163,21 @@ public class LoginActivity extends AppCompatActivity {
                         isFirstLogin = true;
                     }
 
-                    String fileName = getString(R.string.setting_profile_img_name);
-                    String extension = getString(R.string.setting_profile_img_extension);
-                    String directory = getString(R.string.setting_profile_img_directory);
-                    Context context = LoginActivity.this;
-                    Bitmap mBitmap = Utils.decodeImgStringBase64(body.getImg());
-                    Utils.saveToInternalStorage(context, mBitmap, fileName, extension, Arrays.asList(directory));
+                    if ( body.getImg() != null ) {
+                        String fileName = getString(R.string.setting_profile_img_name);
+                        String extension = getString(R.string.setting_profile_img_extension);
+                        String directory = getString(R.string.setting_profile_img_directory);
+                        Context context = LoginActivity.this;
+                        Bitmap mBitmap = Utils.decodeImgStringBase64(body.getImg());
+                        Utils.saveToInternalStorage(context, mBitmap, fileName, extension, Arrays.asList(directory));
+                    }
 
-
-                    SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.user_info), MODE_PRIVATE);
+                    SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
                     SharedPreferences.Editor editor = tokenStorage.edit();
                     editor.putString(getString(R.string.token), body.getToken());
                     editor.putString(getString(R.string.user_id), emailEditText.getText().toString());
                     editor.putString(getString(R.string.user_name), body.getName());
-                    editor.putBoolean(getString(R.string.user_img_boolean), isFirstLogin);
+                    editor.putBoolean(getString(R.string.user_img_boolean), !isFirstLogin);
                     editor.commit();
                     Intent socketIntent = new Intent(LoginActivity.this, SocketService.class);
                     socketIntent.setAction(SocketTask.ACTION_SOCKET_CREATE);

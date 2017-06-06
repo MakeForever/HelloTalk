@@ -43,7 +43,6 @@ public class SocketTask {
     private static void connectSocket(Context context) {
         if( Utils.checkToken(context) ) {
             MyApp app = Utils.getMyApp(context);
-
             app.connectSocket();
         }
     }

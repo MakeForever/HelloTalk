@@ -1,5 +1,6 @@
 package com.beakya.hellotalk.fragment;
 
+import android.animation.Animator;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -12,46 +13,46 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.FriendAddActivity;
 import com.beakya.hellotalk.activity.FriendDetailActivity;
-import com.beakya.hellotalk.adapter.MainAdapter;
+import com.beakya.hellotalk.activity.MainActivity;
+import com.beakya.hellotalk.adapter.UserAdapter;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.utils.Utils;
-
-import java.util.ArrayList;
+import com.beakya.hellotalk.objs.User;
 
 /**
  * Created by goodlife on 2017. 5. 4..
  */
 
-public class MainFragment extends Fragment implements
+public class UserFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor>,
-        MainAdapter.mOnClickListener {
+        UserAdapter.mOnClickListener {
 
-    public static final String TAG = MainFragment.class.getSimpleName();
-    private static final int ID_USER_CURSOR_LOADER = 1;
-    private MainAdapter mUserAdapter;
+    public static final String TAG = UserFragment.class.getSimpleName();
+
+    private UserAdapter mUserAdapter;
     private RecyclerView mRecyclerView;
-    private FloatingActionButton faButton;
+
+
+
     Context context;
-    public MainFragment() {
+    public UserFragment() {
         // Required empty public constructor
-        Log.d(TAG, "MainFragment: constructor");
+        Log.d(TAG, "UserFragment: constructor");
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: onCreate");
-        getActivity().getSupportLoaderManager().initLoader(ID_USER_CURSOR_LOADER, null, this);
+        getActivity().getSupportLoaderManager().initLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
     }
 
     @Override
@@ -60,29 +61,46 @@ public class MainFragment extends Fragment implements
         // Inflate the layout for this fragment
         Log.d(TAG, "onCreateView: onCreateView");
         context = getActivity().getApplicationContext();
-        View view = inflater.inflate(R.layout.app_bar_main, container, false);
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.friends_recyclerView);
-        faButton = (FloatingActionButton) view.findViewById(R.id.fab);
-        faButton.setImageResource(R.drawable.ic_add_black_24dp);
-        mUserAdapter = new MainAdapter( context, this );
+        View view = inflater.inflate(R.layout.main_content, container, false);
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.my_recycler_view);
+//
+        mUserAdapter = new UserAdapter( context, this );
         mRecyclerView.setLayoutManager(new LinearLayoutManager( context ));
         mRecyclerView.setAdapter(mUserAdapter);
 
-
-        faButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(context, FriendAddActivity.class);
-                startActivity(intent);
-            }
-        });
-
+//
+//        mainFabBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if ( isFabOpen ) {
+//                    fabClose();
+//                } else {
+//                    fabOpen();
+//                }
+//            }
+//        });
+//        addFriendFabBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent intent = new Intent(context, FriendAddActivity.class);
+//                startActivity(intent);
+//            }
+//        });
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+    }
+    @Override
+    public void onPause() {
+        super.onPause();
     }
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         switch ( id ) {
-            case ID_USER_CURSOR_LOADER:
+            case MainActivity.ID_USER_CURSOR_LOADER:
                 return new CursorLoader( getContext(), TalkContract.User.CONTENT_URI, null, null, null, null );
             default :
                 throw new RuntimeException("Loader Not Implemented: " + id);
@@ -103,10 +121,10 @@ public class MainFragment extends Fragment implements
 
 
     @Override
-    public void onListItemClick( String userId ) {
+    public void onListItemClick( User user) {
         Log.d(TAG, "onListItemClick: ");
         Intent intent = new Intent( context, FriendDetailActivity.class );
-        intent.putExtra("id", userId);
+        intent.putExtra("object", user);
         startActivity(intent);
     }
 }

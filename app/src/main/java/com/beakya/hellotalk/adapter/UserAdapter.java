@@ -19,11 +19,13 @@ import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 import com.daimajia.swipe.SwipeLayout;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -31,12 +33,12 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by cheolho on 2017. 3. 24..
  */
 
-public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
-    public static final String TAG = MainAdapter.class.getSimpleName();
+public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
+    public static final String TAG = UserAdapter.class.getSimpleName();
     private Cursor mCursor;
     private Context mContext;
     private mOnClickListener mListener;
-    public MainAdapter(Context context, mOnClickListener listener ) {
+    public UserAdapter(Context context, mOnClickListener listener ) {
         mContext = context;
         mListener = listener;
     }
@@ -52,9 +54,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
     public void onBindViewHolder(ViewHolder holder, int position) {
         mCursor.moveToPosition(position);
         String name = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_NAME));
-        String email = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_ID));
-        boolean hasPic = mCursor.getInt(mCursor.getColumnIndex(TalkContract.User.USER_HAVE_PROFILE_IMAGE)) > 0;
-        holder.bind( name, email, hasPic );
+        String id = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_ID));
+        boolean hasPic = mCursor.getInt(mCursor.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0;
+
+        User user = new User( id, name, hasPic );
+        holder.bind( user );
     }
 
 
@@ -74,7 +78,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         private TextView nameTextView;
         private TextView emailTextView;
-        private ImageView userProfileImage;
+        private CircleImageView userProfileImage;
         private SwipeLayout swipeLayout;
         private ImageButton deleteButton;
         private boolean isSwiped = false;
@@ -84,7 +88,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
 
             nameTextView = (TextView) itemView.findViewById(R.id.textView_name);
             emailTextView = (TextView) itemView.findViewById(R.id.textView_email);
-            userProfileImage = (ImageView) itemView.findViewById(R.id.user_profile_image_view);
+            userProfileImage = (CircleImageView) itemView.findViewById(R.id.user_profile_image_view);
             deleteButton = (ImageButton) itemView.findViewById(R.id.delete_user_button);
             ConstraintLayout userInfoLayout = (ConstraintLayout) itemView.findViewById(R.id.user_info);
             userInfoLayout.setOnClickListener(this);
@@ -132,48 +136,36 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
 
         }
 
-        public void bind(String name, final String email, final boolean image ) {
+        public void bind( final User user ) {
             isSwiped = false;
-            nameTextView.setText(name);
-            emailTextView.setText(email);
-            hasProfileImg = image;
-            if( hasProfileImg == false ) {
-                userProfileImage.setImageResource(R.mipmap.default_profile_img);
-            } else {
-
-                Bitmap bitmapImg = Utils.getImageBitmap(mContext,
-                        mContext.getString(R.string.setting_friends_profile_img_name),
-                        mContext.getString(R.string.setting_profile_img_extension),
-                        Arrays.asList( new String[] { mContext.getString(R.string.setting_friends_img_directory), email }));
-
-                userProfileImage.setImageBitmap(bitmapImg);
-
-
-            }
+            nameTextView.setText(user.getName());
+            emailTextView.setText(user.getId());
+            hasProfileImg = user.hasProfileImg();
+            userProfileImage.setImageBitmap(user.getProfileImg(mContext));
             deleteButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     ContentResolver resolver = mContext.getContentResolver();
-//                    Cursor cursor = resolver.query(TalkContract.ChatList.CONTENT_URI, null, TalkContract.ChatList.CHAT_LIST_ID + "=?", new String[]{ Utils.sha256(email) }, null);
+//                    Cursor cursor = resolver.query(TalkContract.ChatRooms.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_ID + "=?", new String[]{ Utils.hashFunction(email) }, null);
 //                    cursor.moveToFirst();
-                    SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.user_info), MODE_PRIVATE);
+                    SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE);
                     String myId = tokenStorage.getString( mContext.getString(R.string.user_id), null );
-                    String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] { email, myId }));
+                    String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] { user.getId(), myId }));
                     Log.d(TAG, "chatTableName: " + chatTableName);
                     if( chatTableName != null ) {
-                        int deletedRow1 = resolver.delete(TalkContract.ChatList.CONTENT_URI, TalkContract.ChatList.CHAT_LIST_ID + " = ?", new String[] {chatTableName});
-                        int deletedRow2 = resolver.delete(TalkContract.Chat.CONTENT_URI, TalkContract.ChatList.CHAT_LIST_ID + " = ? ", new String[] {chatTableName});
-                        int deletedRow3 = resolver.delete(TalkContract.ChatRoomMembers.CONTENT_URI, TalkContract.ChatList.CHAT_LIST_ID + "=?", new String[] {chatTableName});
+                        int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] {chatTableName});
+                        int deletedRow2 = resolver.delete(TalkContract.Message.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ? ", new String[] {chatTableName});
+                        int deletedRow3 = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatTableName});
                         Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
                     }
 
-                    Uri uri = TalkContract.User.CONTENT_URI.buildUpon().appendPath(email).build();
-                    int deletedRow = resolver.delete(uri, TalkContract.User.USER_ID+ "=?",new String[]{ email });
+                    Uri uri = TalkContract.User.CONTENT_URI.buildUpon().appendPath(user.getId()).build();
+                    int deletedRow = resolver.delete(uri, TalkContract.User.USER_ID+ "=?",new String[]{ user.getId() });
                     if( hasProfileImg != false ) {
                         Utils.deleteFile(mContext,
                                 mContext.getString(R.string.setting_friends_profile_img_name),
                                 mContext.getString(R.string.setting_profile_img_extension),
-                                Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), email }));
+                                Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), user.getId() }));
                     }
                     isSwiped = false;
                 }
@@ -184,7 +176,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
             Log.d(TAG, "onClick: ");
             if ( !isSwiped ) {
                 String id = emailTextView.getText().toString();
-                mListener.onListItemClick( id );
+                String name = nameTextView.getText().toString();
+                Bitmap bitmap = userProfileImage.getDrawingCache(true);
+                User user = new User(id, name, bitmap);
+                mListener.onListItemClick(user);
             } else {
                 Toast.makeText(mContext, "스와이프를 닫아주세요", Toast.LENGTH_SHORT).show();
             }
@@ -194,6 +189,6 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         }
     }
     public interface mOnClickListener {
-        void onListItemClick( String userId );
+        void onListItemClick(User user);
     }
 }

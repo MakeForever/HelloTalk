@@ -1,60 +1,65 @@
 package com.beakya.hellotalk.activity;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
+import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.adapter.MainAdapter;
 import com.beakya.hellotalk.adapter.ViewPagerAdapter;
-import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.fragment.MainFragment;
+import com.beakya.hellotalk.fragment.ChatListFragment;
+import com.beakya.hellotalk.fragment.UserFragment;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
-
+import com.google.firebase.iid.FirebaseInstanceId;
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements
+import io.codetail.animation.ViewAnimationUtils;
+import io.codetail.widget.RevealFrameLayout;
 
-        NavigationView.OnNavigationItemSelectedListener {
-
-    private NavigationView mNavigationView;
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    public static final int ACTION_CHAT_LIST_ASYNC = 0;
+    public static final int ID_USER_CURSOR_LOADER = 1;
     private DrawerLayout mDrawer;
     private Toolbar mToolbar;
     private ImageView navigationDrawerImageView;
     private TextView headerNameTextView;
     private TextView headerEmailTextView;
-    private ViewPager viewPager;
-    MenuItem prevMenuItem;
-    BottomNavigationView bottomNavigationView;
+    private TabLayout tabLayout;
+    private FloatingActionButton mainFabBtn;
+    private FloatingActionButton addFriendFabBtn;
+    private FloatingActionButton createNewChatFabBtn;
+    private LinearLayout layoutForAddFriendFab;
+    private LinearLayout createNewChatFabLayout;
+    private RevealFrameLayout revealFrameLayout;
+    private boolean isFabOpen = false;
+    private boolean isFabRunning = false;
+    private View fabBackground;
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -65,65 +70,24 @@ public class MainActivity extends AppCompatActivity implements
             startActivity(loginIntent);
             finish();
         }
+        String firebaseToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d(TAG, "onCreate: " + firebaseToken);
         setContentView(R.layout.activity_main);
-
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         View headerView = navigationView.getHeaderView(0);
-
         navigationDrawerImageView = (ImageView) headerView.findViewById(R.id.navigation_header_image_view);
         headerNameTextView = (TextView) headerView.findViewById(R.id.navigation_header_name_text_view);
         headerEmailTextView = (TextView) headerView.findViewById(R.id.navigation_header_email_text_view);
-        viewPager = (ViewPager) findViewById(R.id.viewpager);
-
-        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                if( prevMenuItem != null ) {
-                    prevMenuItem.setChecked( false );
-                } else {
-                    bottomNavigationView.getMenu().getItem(0).setChecked( false );
-                }
-                bottomNavigationView.getMenu().getItem( position ).setChecked( true );
-                prevMenuItem = bottomNavigationView.getMenu().getItem( position );
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
-            }
-        });
-
-        setupViewPager( viewPager );
-        bottomNavigationView = (BottomNavigationView)findViewById(R.id.bottom_navigation);
-//        bottomNavigationView.setOnNavigationItemSelectedListener(
-//                new BottomNavigationView.OnNavigationItemSelectedListener() {
-//                    @Override
-//                    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-//                        switch (item.getItemId()) {
-//                            case R.id.action_call:
-//                                viewPager.setCurrentItem(0);
-//                                break;
-//                            case R.id.action_chat:
-//                                viewPager.setCurrentItem(1);
-//                                break;
-//                            case R.id.action_contact:
-//                                viewPager.setCurrentItem(2);
-//                                break;
-//                        }
-//                        return false;
-//                    }
-//                });
-
-
-        SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.user_info), MODE_PRIVATE);
+        ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
+        if (viewPager != null) {
+            setupViewPager(viewPager);
+        }
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout.setupWithViewPager(viewPager);
+        SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         String myName = userInfoStorage.getString(getString(R.string.user_name), null);
         String myId = userInfoStorage.getString((getString(R.string.user_id)), null);
         if( myName != null ) {
@@ -132,28 +96,55 @@ public class MainActivity extends AppCompatActivity implements
         if( myId != null ) {
             headerEmailTextView.setText(myId);
         }
-//
+
+
         String fileName = getString(R.string.setting_profile_img_name);
         String extension = getString(R.string.setting_profile_img_extension);
         String directory = getString(R.string.setting_profile_img_directory);
 
         Bitmap profileBitmap = Utils.getImageBitmap(this, fileName, extension, Arrays.asList(directory));
-        if( profileBitmap != null ) {
-            navigationDrawerImageView.setImageBitmap(profileBitmap);
-        }
-
-//
-
-
+        navigationDrawerImageView.setImageBitmap(profileBitmap);
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         mDrawer.addDrawerListener(toggle);
         toggle.syncState();
-        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
-        mNavigationView.setNavigationItemSelectedListener(this);
+
+        revealFrameLayout = (RevealFrameLayout) findViewById(R.id.fab_reveal_frame_layout);
+        mainFabBtn = (FloatingActionButton) findViewById(R.id.main_fab);
+        createNewChatFabBtn = (FloatingActionButton) findViewById(R.id.fab_create_new_group_chat);
+        addFriendFabBtn = (FloatingActionButton) findViewById(R.id.fab_add_friend);
+        layoutForAddFriendFab = (LinearLayout) findViewById(R.id.layout_for_fab_add_friend);
+        createNewChatFabLayout = (LinearLayout) findViewById(R.id.layout_for_fab_create_new_group_chat);
+        fabBackground = findViewById(R.id.fab_background);
+        mainFabBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if( !isFabRunning ) {
+                    setFabBackground();
+                    isFabRunning = true;
+                }
 
 
+            }
+        });
+        fabBackground.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if( !isFabRunning ) {
+                    fabClose();
+                    isFabRunning = true;
+                }
+            }
+        });
+        addFriendFabBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, FriendAddActivity.class);
+                startActivity(intent);
+                setFabBackground();
+            }
+        });
     }
 
 
@@ -164,6 +155,8 @@ public class MainActivity extends AppCompatActivity implements
     public void onBackPressed() {
         if (mDrawer.isDrawerOpen(GravityCompat.START)) {
             mDrawer.closeDrawer(GravityCompat.START);
+        } else if (isFabOpen) {
+            fabClose();
         } else {
             super.onBackPressed();
         }
@@ -225,8 +218,138 @@ public class MainActivity extends AppCompatActivity implements
 
     private void setupViewPager( ViewPager viewPager ) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        MainFragment mainFragment = new MainFragment();
-        adapter.addFragment(mainFragment);
+        UserFragment userFragment = new UserFragment();
+        ChatListFragment chatListFragment = new ChatListFragment();
+        adapter.addFragment(userFragment,getString(R.string.tab_name_friend));
+        adapter.addFragment(chatListFragment,getString(R.string.tab_name_chats));
         viewPager.setAdapter(adapter);
+    }
+
+
+
+    public void setFabBackground() {
+
+
+        if( isFabOpen ) {
+            fabClose();
+        } else {
+            fabOpen();
+        }
+
+
+
+
+    }
+
+    void fabOpen() {
+        isFabOpen = true;
+        mainFabBtn.animate().rotation(45);
+        createNewChatFabLayout.setVisibility(View.VISIBLE);
+        layoutForAddFriendFab.setVisibility(View.VISIBLE);
+        createNewChatFabLayout.animate().translationY(-170);
+        layoutForAddFriendFab.animate().translationY(-300);
+
+        int cx = (mainFabBtn.getLeft() + mainFabBtn.getRight()) / 2;
+        int cy = (mainFabBtn.getTop() + mainFabBtn.getBottom()) / 2;
+        float finalRadius = (float) Math.hypot(cx, cy);
+        Animator animator = ViewAnimationUtils.createCircularReveal(fabBackground, cx, cy, 0, finalRadius);
+        animator.setInterpolator(new AccelerateDecelerateInterpolator());
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+                fabBackground.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                super.onAnimationCancel(animation);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                isFabRunning = false;
+            }
+        });
+        animator.start();
+    }
+    void fabClose() {
+        mainFabBtn.animate().rotation(0);
+        createNewChatFabLayout.animate().translationY(0);
+        layoutForAddFriendFab.animate().translationY(0).setListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                if(!isFabOpen){
+                    createNewChatFabLayout.setVisibility(View.GONE);
+                    layoutForAddFriendFab.setVisibility(View.GONE);
+                }
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+
+        int cx = (mainFabBtn.getLeft() + mainFabBtn.getRight()) / 2;
+        int cy = (mainFabBtn.getTop() + mainFabBtn.getBottom()) / 2;
+        float finalRadius = (float) Math.hypot(cx, cy);
+
+        Animator animator = ViewAnimationUtils.createCircularReveal(fabBackground, cx, cy, finalRadius, 0);
+        animator.setInterpolator(new AccelerateDecelerateInterpolator());
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                fabBackground.setVisibility(View.INVISIBLE);
+                isFabRunning = false;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                super.onAnimationCancel(animation);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+                super.onAnimationRepeat(animation);
+            }
+
+            @Override
+            public void onAnimationPause(Animator animation) {
+                super.onAnimationPause(animation);
+            }
+
+            @Override
+            public void onAnimationResume(Animator animation) {
+                super.onAnimationResume(animation);
+            }
+        });
+        animator.start();
+        isFabOpen = false;
+    }
+    @NonNull
+    private static Rect createRect(@NonNull ViewGroup parent, @NonNull View view) {
+        Rect rect = new Rect();
+        view.getDrawingRect(rect);
+        parent.offsetDescendantRectToMyCoords(view, rect);
+        return rect;
     }
 }

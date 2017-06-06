@@ -1,5 +1,6 @@
 package com.beakya.hellotalk.fragment;
 
+import android.animation.Animator;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -16,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.FriendAddActivity;
@@ -37,7 +39,9 @@ public class UserFragment extends Fragment implements
 
     private UserAdapter mUserAdapter;
     private RecyclerView mRecyclerView;
-    private FloatingActionButton faButton;
+
+
+
     Context context;
     public UserFragment() {
         // Required empty public constructor
@@ -57,24 +61,41 @@ public class UserFragment extends Fragment implements
         // Inflate the layout for this fragment
         Log.d(TAG, "onCreateView: onCreateView");
         context = getActivity().getApplicationContext();
-        View view = inflater.inflate(R.layout.app_bar_main, container, false);
+        View view = inflater.inflate(R.layout.main_content, container, false);
         mRecyclerView = (RecyclerView) view.findViewById(R.id.my_recycler_view);
-        faButton = (FloatingActionButton) view.findViewById(R.id.fab);
-        faButton.setImageResource(R.drawable.ic_add_black_24dp);
+//
         mUserAdapter = new UserAdapter( context, this );
         mRecyclerView.setLayoutManager(new LinearLayoutManager( context ));
         mRecyclerView.setAdapter(mUserAdapter);
 
-
-        faButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(context, FriendAddActivity.class);
-                startActivity(intent);
-            }
-        });
-
+//
+//        mainFabBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if ( isFabOpen ) {
+//                    fabClose();
+//                } else {
+//                    fabOpen();
+//                }
+//            }
+//        });
+//        addFriendFabBtn.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent intent = new Intent(context, FriendAddActivity.class);
+//                startActivity(intent);
+//            }
+//        });
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+    }
+    @Override
+    public void onPause() {
+        super.onPause();
     }
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {

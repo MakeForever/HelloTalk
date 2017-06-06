@@ -1,7 +1,5 @@
 package com.beakya.hellotalk.objs;
 
-import java.util.ArrayList;
-
 /**
  * Created by goodlife on 2017. 6. 1..
  */

@@ -38,5 +38,8 @@
     <string name="navigation_drawer_action_logout">logout</string>
 
     <string name="socket_send_chat">send_chat</string>
-    <string name="invite_to_chat">invite_to_chat</string>
+    <string name="invite_to_personal_chat">invite_to_personal_chat</string>
+
+    <string name="new_message_arrived">new_message_arrived</string>
+    <string name="move_upward_behavior">com.beakya.hellotalk.utils.MoveUpwardBehavior</string>
 </resources>

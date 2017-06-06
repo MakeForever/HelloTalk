@@ -1,13 +1,16 @@
 package com.beakya.hellotalk.viewholder;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.utils.Utils;
@@ -42,11 +45,13 @@ public class PersonalChatViewHolder extends BaseViewHolder<ChatListItem> {
         nameTextView = (TextView) v.findViewById(R.id.name_text_view);
         notReadCountView = (TextView) v.findViewById(R.id.not_read_count_view);
         dateTextView = (TextView) v.findViewById(R.id.date_text_view);
+
     }
 
     @Override
-    public void bind( ChatListItem chatListItem ) {
-        PersonalChatRoom chatRoom = (PersonalChatRoom) chatListItem.getChatRoom();
+    public void bind(final ChatListItem chatListItem ) {
+
+        final PersonalChatRoom chatRoom = (PersonalChatRoom) chatListItem.getChatRoom();
         if(chatListItem.getNotReadCount() == 0 ) {
             notReadCountView.setVisibility(View.INVISIBLE);
         } else {
@@ -59,5 +64,15 @@ public class PersonalChatViewHolder extends BaseViewHolder<ChatListItem> {
 
         dateTextView.setText(Utils.timeToString(chatListItem.getLastMessageCreatedTime()));
         userImageView.setImageBitmap(chatRoom.getTalkTo().getProfileImg(context));
+
+        itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(context, ChatActivity.class);
+                intent.putExtra("chatRoom", chatRoom);
+                intent.putExtra("is_stored", true);
+                context.startActivity(intent);
+            }
+        });
     }
 }

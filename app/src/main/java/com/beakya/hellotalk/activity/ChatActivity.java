@@ -5,6 +5,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.beakya.hellotalk.MyApp;
@@ -24,7 +27,6 @@ import com.beakya.hellotalk.asynctaskloader.ChatAsyncTaskLoader;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.ChatRoom;
-import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
@@ -39,14 +41,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.security.spec.PSSParameterSpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.List;
-import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
 import io.socket.client.Socket;
@@ -60,6 +59,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final int ID_CHAT_CURSOR_LOADER = 1;
 
     private Button button;
+    private Button testButton;
     private EditText contentEditText;
     private RecyclerView chatRecyclerView;
     private String myId;
@@ -70,6 +70,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
     private Socket socket;
     private Context mContext;
     private ChatRoom mChatRoom;
+    private LinearLayout chatEditTextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,7 +85,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
         button = (Button) findViewById(R.id.chat_send_button);
         contentEditText = (EditText) findViewById(R.id.chat_content_edit_text);
         chatRecyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
-
+        chatEditTextView = (LinearLayout) findViewById(R.id.chat_edit_text_layout);
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             mChatRoom = extras.getParcelable("chatRoom");
@@ -94,17 +95,21 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                button.setEnabled(false);
                 String chatId = mChatRoom.getChatId();
                 int chatType = mChatRoom.getChatRoomType();
                 messageContent = contentEditText.getText().toString();
                 if( !(messageContent.length() > 0) ) {
-                    Toast.makeText(ChatActivity.this, "빈문자는 보낼수 없습니다.", Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(ChatActivity.this, "빈문자는 보낼수 없습니다.", Toast.LENGTH_SHORT).show();
+                    Snackbar.make(chatRecyclerView, "빈문자는 보낼수 없습니다.", Snackbar.LENGTH_SHORT).show();
+
+                    button.setEnabled(true);
                     return;
                 }
 
-                if( !isStored ) {
+                if( !mChatRoom.isSynchronized() ) {
                     Utils.ChatInitialize(mContext, mChatRoom);
-                    isStored = true;
+                    mChatRoom.setSynchronized(true);
                 }
                 String messageId =  Utils.hashFunction( myId + chatId + System.currentTimeMillis(), "SHA-1" );
                 Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
@@ -114,16 +119,23 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
                 if ( chatType == 1 ) {
                     PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
                     message = new Message(messageId, myId, messageContent, chatId, TalkContract.Message.TYPE_TEXT, formatted  ,1);
-                    String messageJson = createPersonalMessage(chatRoom, message, chatRoom.getTalkTo());
+                    int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
+                    String messageJson = chatRoom.toExportedJson(message, new User(myId, myName, null));
+//                    message = new Message(messageId, myId, String.valueOf(i), chatId, TalkContract.Message.TYPE_TEXT, formatted  ,1);
+
+//                    String messageJson = createPersonalMessage(chatRoom, message, chatRoom.getTalkTo());
+
+
                     socket.emit(getString(R.string.invite_to_personal_chat), messageJson );
                     Log.d(TAG, "onClick: invite_to_personal_chat" + messageJson);
+
+
                 } else {
                     //group chat
                 }
-                int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, ChatActivity.this);
                 //TODO : // message에 모든 칼럼이 다 들어가야 된다. created_time bind할때 parse 에러 발생 고칠것
-//                chatAdapter.addMessage(message);
+                button.setEnabled(true);
             }
         });
         PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;

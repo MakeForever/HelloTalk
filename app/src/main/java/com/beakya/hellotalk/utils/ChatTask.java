@@ -6,22 +6,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
 import com.beakya.hellotalk.MyApp;
-import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
-import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 
 import org.greenrobot.eventbus.EventBus;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,7 +25,6 @@ import java.util.ArrayList;
 
 import io.socket.client.Socket;
 
-import static android.content.Context.MEDIA_PROJECTION_SERVICE;
 import static com.beakya.hellotalk.activity.ChatActivity.EVENT_NEW_MESSAGE_ARRIVED;
 
 /**

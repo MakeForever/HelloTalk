@@ -25,6 +25,8 @@ import com.daimajia.swipe.SwipeLayout;
 
 import java.util.Arrays;
 
+import de.hdodenhof.circleimageview.CircleImageView;
+
 import static android.content.Context.MODE_PRIVATE;
 
 /**
@@ -76,7 +78,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         private TextView nameTextView;
         private TextView emailTextView;
-        private ImageView userProfileImage;
+        private CircleImageView userProfileImage;
         private SwipeLayout swipeLayout;
         private ImageButton deleteButton;
         private boolean isSwiped = false;
@@ -86,7 +88,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
             nameTextView = (TextView) itemView.findViewById(R.id.textView_name);
             emailTextView = (TextView) itemView.findViewById(R.id.textView_email);
-            userProfileImage = (ImageView) itemView.findViewById(R.id.user_profile_image_view);
+            userProfileImage = (CircleImageView) itemView.findViewById(R.id.user_profile_image_view);
             deleteButton = (ImageButton) itemView.findViewById(R.id.delete_user_button);
             ConstraintLayout userInfoLayout = (ConstraintLayout) itemView.findViewById(R.id.user_info);
             userInfoLayout.setOnClickListener(this);

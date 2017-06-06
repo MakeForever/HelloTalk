@@ -1,17 +1,14 @@
 package com.beakya.hellotalk.asynctaskloader;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.AsyncTaskLoader;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
-import android.util.Log;
 
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.Message;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by goodlife on 2017. 5. 19..

@@ -15,7 +15,6 @@ import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
-import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;

@@ -1,9 +1,14 @@
 package com.beakya.hellotalk.activity;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.support.design.widget.BottomNavigationView;
+import android.graphics.Rect;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
@@ -17,7 +22,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,8 +37,10 @@ import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.firebase.iid.FirebaseInstanceId;
-
 import java.util.Arrays;
+
+import io.codetail.animation.ViewAnimationUtils;
+import io.codetail.widget.RevealFrameLayout;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     public static final int ACTION_CHAT_LIST_ASYNC = 0;
@@ -40,9 +50,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private ImageView navigationDrawerImageView;
     private TextView headerNameTextView;
     private TextView headerEmailTextView;
-    private ViewPager viewPager;
-    MenuItem prevMenuItem;
-    BottomNavigationView bottomNavigationView;
+    private TabLayout tabLayout;
+    private FloatingActionButton mainFabBtn;
+    private FloatingActionButton addFriendFabBtn;
+    private FloatingActionButton createNewChatFabBtn;
+    private LinearLayout layoutForAddFriendFab;
+    private LinearLayout createNewChatFabLayout;
+    private RevealFrameLayout revealFrameLayout;
+    private boolean isFabOpen = false;
+    private boolean isFabRunning = false;
+    private View fabBackground;
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -53,16 +70,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             startActivity(loginIntent);
             finish();
         }
-        String test = FirebaseInstanceId.getInstance().getToken();
-        Log.d(TAG, "onCreate: " + test);
+        String firebaseToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d(TAG, "onCreate: " + firebaseToken);
         setContentView(R.layout.activity_main);
-
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         View headerView = navigationView.getHeaderView(0);
-
         navigationDrawerImageView = (ImageView) headerView.findViewById(R.id.navigation_header_image_view);
         headerNameTextView = (TextView) headerView.findViewById(R.id.navigation_header_name_text_view);
         headerEmailTextView = (TextView) headerView.findViewById(R.id.navigation_header_email_text_view);
@@ -70,10 +85,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (viewPager != null) {
             setupViewPager(viewPager);
         }
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
-
-
         SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         String myName = userInfoStorage.getString(getString(R.string.user_name), null);
         String myId = userInfoStorage.getString((getString(R.string.user_id)), null);
@@ -97,8 +110,41 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mDrawer.addDrawerListener(toggle);
         toggle.syncState();
 
+        revealFrameLayout = (RevealFrameLayout) findViewById(R.id.fab_reveal_frame_layout);
+        mainFabBtn = (FloatingActionButton) findViewById(R.id.main_fab);
+        createNewChatFabBtn = (FloatingActionButton) findViewById(R.id.fab_create_new_group_chat);
+        addFriendFabBtn = (FloatingActionButton) findViewById(R.id.fab_add_friend);
+        layoutForAddFriendFab = (LinearLayout) findViewById(R.id.layout_for_fab_add_friend);
+        createNewChatFabLayout = (LinearLayout) findViewById(R.id.layout_for_fab_create_new_group_chat);
+        fabBackground = findViewById(R.id.fab_background);
+        mainFabBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if( !isFabRunning ) {
+                    setFabBackground();
+                    isFabRunning = true;
+                }
 
 
+            }
+        });
+        fabBackground.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if( !isFabRunning ) {
+                    fabClose();
+                    isFabRunning = true;
+                }
+            }
+        });
+        addFriendFabBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, FriendAddActivity.class);
+                startActivity(intent);
+                setFabBackground();
+            }
+        });
     }
 
 
@@ -109,6 +155,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void onBackPressed() {
         if (mDrawer.isDrawerOpen(GravityCompat.START)) {
             mDrawer.closeDrawer(GravityCompat.START);
+        } else if (isFabOpen) {
+            fabClose();
         } else {
             super.onBackPressed();
         }
@@ -175,5 +223,133 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         adapter.addFragment(userFragment,getString(R.string.tab_name_friend));
         adapter.addFragment(chatListFragment,getString(R.string.tab_name_chats));
         viewPager.setAdapter(adapter);
+    }
+
+
+
+    public void setFabBackground() {
+
+
+        if( isFabOpen ) {
+            fabClose();
+        } else {
+            fabOpen();
+        }
+
+
+
+
+    }
+
+    void fabOpen() {
+        isFabOpen = true;
+        mainFabBtn.animate().rotation(45);
+        createNewChatFabLayout.setVisibility(View.VISIBLE);
+        layoutForAddFriendFab.setVisibility(View.VISIBLE);
+        createNewChatFabLayout.animate().translationY(-170);
+        layoutForAddFriendFab.animate().translationY(-300);
+
+        int cx = (mainFabBtn.getLeft() + mainFabBtn.getRight()) / 2;
+        int cy = (mainFabBtn.getTop() + mainFabBtn.getBottom()) / 2;
+        float finalRadius = (float) Math.hypot(cx, cy);
+        Animator animator = ViewAnimationUtils.createCircularReveal(fabBackground, cx, cy, 0, finalRadius);
+        animator.setInterpolator(new AccelerateDecelerateInterpolator());
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+                fabBackground.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                super.onAnimationCancel(animation);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                isFabRunning = false;
+            }
+        });
+        animator.start();
+    }
+    void fabClose() {
+        mainFabBtn.animate().rotation(0);
+        createNewChatFabLayout.animate().translationY(0);
+        layoutForAddFriendFab.animate().translationY(0).setListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                if(!isFabOpen){
+                    createNewChatFabLayout.setVisibility(View.GONE);
+                    layoutForAddFriendFab.setVisibility(View.GONE);
+                }
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animator) {
+
+            }
+        });
+
+        int cx = (mainFabBtn.getLeft() + mainFabBtn.getRight()) / 2;
+        int cy = (mainFabBtn.getTop() + mainFabBtn.getBottom()) / 2;
+        float finalRadius = (float) Math.hypot(cx, cy);
+
+        Animator animator = ViewAnimationUtils.createCircularReveal(fabBackground, cx, cy, finalRadius, 0);
+        animator.setInterpolator(new AccelerateDecelerateInterpolator());
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                fabBackground.setVisibility(View.INVISIBLE);
+                isFabRunning = false;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                super.onAnimationCancel(animation);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+                super.onAnimationRepeat(animation);
+            }
+
+            @Override
+            public void onAnimationPause(Animator animation) {
+                super.onAnimationPause(animation);
+            }
+
+            @Override
+            public void onAnimationResume(Animator animation) {
+                super.onAnimationResume(animation);
+            }
+        });
+        animator.start();
+        isFabOpen = false;
+    }
+    @NonNull
+    private static Rect createRect(@NonNull ViewGroup parent, @NonNull View view) {
+        Rect rect = new Rect();
+        view.getDrawingRect(rect);
+        parent.offsetDescendantRectToMyCoords(view, rect);
+        return rect;
     }
 }

@@ -4,21 +4,13 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.beakya.hellotalk.services.SocketService;
-import com.beakya.hellotalk.utils.SocketCreator;
 import com.beakya.hellotalk.utils.SocketTask;
 
-import java.net.URISyntaxException;
-
-import io.socket.client.IO;
-import io.socket.client.Manager;
 import io.socket.client.Socket;
-
-import static com.beakya.hellotalk.utils.SocketCreator.*;
 
 /**
  * Created by cheolho on 2017. 3. 27..

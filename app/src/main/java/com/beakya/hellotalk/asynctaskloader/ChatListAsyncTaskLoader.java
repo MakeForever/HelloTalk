@@ -16,7 +16,6 @@ import com.beakya.hellotalk.objs.ChatRoom;
 import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
-import com.beakya.hellotalk.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,7 +76,7 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
             Cursor notReadChatCountQuery = db.query(
                     TalkContract.Message.TABLE_NAME,
                     new String[] {"count(*) as count"},
-                    " NOT "+ TalkContract.Message.CREATOR_ID +" = ? and " + TalkContract.ChatRooms.CHAT_ID +"=? and "+ TalkContract.Message.READING_COUNT + "=?",
+                    " NOT "+ TalkContract.Message.CREATOR_ID +" = ? and " + TalkContract.ChatRooms.CHAT_ID +"=? and "+ TalkContract.Message.READING_COUNT + ">?",
                     new String[] {myId, mChatId, "0"},
                     null,
                     null,

@@ -59,7 +59,7 @@ public class SocketTask {
                 Socket socket = new SocketCreator(context).createSocket(token);
                 MyApp app = Utils.getMyApp(context);
                 app.setSocket(socket);
-                socket.open();
+                socket.connect();
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }

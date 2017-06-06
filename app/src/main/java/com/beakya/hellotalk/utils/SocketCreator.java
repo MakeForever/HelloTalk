@@ -2,25 +2,25 @@ package com.beakya.hellotalk.utils;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.JsonWriter;
 import android.util.Log;
 
-import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
-import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.services.ChatService;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.gson.JsonParser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 
 import io.socket.client.IO;
-import io.socket.client.Manager;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
@@ -38,8 +38,9 @@ public class SocketCreator {
 
     public IO.Options getOptions(String token) {
         IO.Options options = new IO.Options();
-        options.query = "token=" + token;
-        options.timeout = -1;
+        JSONObject object = new JSONObject();
+        String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
+        options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
         return options;
     }
     public Socket createSocket(String token) throws URISyntaxException {
@@ -91,7 +92,8 @@ public class SocketCreator {
         socket.on("invite_to_personal_chat", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                JSONObject data = (JSONObject) args[0];
+                JSONObject data = null;
+                data = (JSONObject) args[0];
                 Message message = null;
                 PersonalChatRoom chatRoom = null;
                 try {

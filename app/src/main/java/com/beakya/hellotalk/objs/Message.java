@@ -3,7 +3,10 @@ package com.beakya.hellotalk.objs;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.Date;
+import com.beakya.hellotalk.database.TalkContract;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by goodlife on 2017. 5. 27..
@@ -150,5 +153,20 @@ public class Message implements Parcelable {
         System.out.println( "Message type :"  + messageType );
         System.out.println( "Message messageContent" + messageContent );
         System.out.println( "Creator ID : " + creatorId );
+    }
+    public JSONObject toJson() {
+        JSONObject object = new JSONObject();
+        try {
+            object.put(TalkContract.ChatRooms.CHAT_ID, getChatId());
+            object.put(TalkContract.Message.MESSAGE_ID, getMessageId());
+            object.put(TalkContract.Message.CREATOR_ID, getCreatorId());
+            object.put(TalkContract.Message.MESSAGE_CONTENT, getMessageContent());
+            object.put(TalkContract.Message.MESSAGE_TYPE, getMessageType());
+            object.put(TalkContract.Message.READING_COUNT, isReadCount());
+            object.put(TalkContract.Message.CREATED_TIME, getCreatedTime());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return object;
     }
 }

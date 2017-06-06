@@ -8,11 +8,79 @@ android:layout_height="match_parent"
 android:fitsSystemWindows="true"
 tools:openDrawer="start">
 
+    <android.support.design.widget.CoordinatorLayout
+        android:layout_height="match_parent"
+        android:layout_width="match_parent">
+        <include layout="@layout/bottom_navigation_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+        <io.codetail.widget.RevealFrameLayout
+            android:id="@+id/fab_reveal_frame_layout"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent">
+            <View
+                android:id="@+id/fab_background"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#CC000000"
+                android:visibility="invisible"/>
 
+            <LinearLayout
+                android:id="@+id/layout_for_fab_add_friend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:clipToPadding="false"
+                android:layout_marginBottom="16dp"
+                android:layout_marginRight="16dp"
+                app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior"
+                android:visibility="gone"
+                android:layout_gravity="bottom|end">
+                <android.support.design.widget.FloatingActionButton
+                    android:id="@+id/fab_add_friend"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="8dp"
+                    app:elevation="0dp"
+                    app:fabSize="mini"
+                    app:srcCompat="@drawable/ic_person_add_black_24dp" />
+            </LinearLayout>
 
-    <include layout="@layout/bottom_navigation_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+            <LinearLayout
+                android:id="@+id/layout_for_fab_create_new_group_chat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:clipToPadding="false"
+                android:layout_marginBottom="16dp"
+                android:layout_marginRight="16dp"
+                app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior"
+                android:visibility="gone"
+                android:layout_gravity="bottom|end">
+
+                <android.support.design.widget.FloatingActionButton
+                    android:id="@+id/fab_create_new_group_chat"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="8dp"
+                    app:elevation="0dp"
+                    app:fabSize="mini"
+                    app:srcCompat="@android:drawable/ic_dialog_email" />
+            </LinearLayout>
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/main_fab"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="@dimen/fab_margin"
+                android:layout_marginBottom="@dimen/fab_margin"
+                app:fabSize="normal"
+                app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior"
+                android:layout_gravity="bottom|end"
+                app:srcCompat="@drawable/ic_add_black_24dp" />
+        </io.codetail.widget.RevealFrameLayout>
+
+    </android.support.design.widget.CoordinatorLayout>
 
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"

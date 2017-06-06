@@ -2,20 +2,11 @@ package com.beakya.hellotalk.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
-import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.ChatRoom;
-import com.beakya.hellotalk.objs.GroupChatRoom;
-import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.viewholder.BaseViewHolder;
-import com.beakya.hellotalk.viewholder.GroupChatViewHolder;
 import com.beakya.hellotalk.viewholder.PersonalChatViewHolder;
 
 import java.util.ArrayList;

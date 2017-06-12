@@ -30,14 +30,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.adapter.NewChatAdapter;
 import com.beakya.hellotalk.adapter.ViewPagerAdapter;
 import com.beakya.hellotalk.fragment.ChatListFragment;
 import com.beakya.hellotalk.fragment.UserFragment;
+import com.beakya.hellotalk.objs.GroupChatRoom;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.firebase.iid.FirebaseInstanceId;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import io.codetail.animation.ViewAnimationUtils;
 import io.codetail.widget.RevealFrameLayout;
@@ -145,6 +149,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 setFabBackground();
             }
         });
+        createNewChatFabBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+//                Intent activityIntent = new Intent(MainActivity.this, GroupChatActivity.class);
+//                HashMap<String, User> hashMap = new HashMap<>();
+//                hashMap.put("beak_ya@naver.com", new User("beak_ya@naver.com", "박철호", null));
+//                hashMap.put("qkrcjf332@naver.com", new User("qkrcjf332@naver.com", "김철호", null));
+//
+//                activityIntent.putExtra("chatRoom",new GroupChatRoom(hashMap, "12345", 2, true));
+//                activityIntent.putExtra("is_Stored", true);
+//                startActivity(activityIntent);
+                Intent activityIntent = new Intent(MainActivity.this, NewChatActivity.class);
+                startActivity(activityIntent);
+                setFabBackground();
+            }
+        });
     }
 
 
@@ -228,17 +248,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
 
     public void setFabBackground() {
-
-
         if( isFabOpen ) {
             fabClose();
         } else {
             fabOpen();
         }
-
-
-
-
     }
 
     void fabOpen() {

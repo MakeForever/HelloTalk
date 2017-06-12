@@ -7,7 +7,8 @@ import android.view.ViewGroup;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.ChatRoom;
 import com.beakya.hellotalk.viewholder.BaseViewHolder;
-import com.beakya.hellotalk.viewholder.PersonalChatViewHolder;
+import com.beakya.hellotalk.viewholder.GroupChatListViewHolder;
+import com.beakya.hellotalk.viewholder.PersonalChatListViewHolder;
 
 import java.util.ArrayList;
 
@@ -31,9 +32,9 @@ public class ChatListAdapter  extends RecyclerView.Adapter<BaseViewHolder>  {
     public BaseViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
         if (viewType == ChatRoom.PERSONAL_CHAT_TYPE) {
-            return PersonalChatViewHolder.newInstance(parent);
+            return PersonalChatListViewHolder.newInstance(parent);
         } else if ( viewType == ChatRoom.GROUP_CHAT_TYPE ) {
-            return null;
+            return GroupChatListViewHolder.newInstance(parent);
         } else {
             return null;
         }
@@ -42,8 +43,10 @@ public class ChatListAdapter  extends RecyclerView.Adapter<BaseViewHolder>  {
     @Override
     public void onBindViewHolder(BaseViewHolder holder, int position) {
         ChatListItem room = rooms.get( position );
-        if( holder instanceof PersonalChatViewHolder ) {
-            ((PersonalChatViewHolder) holder ).bind( room );
+        if( holder instanceof PersonalChatListViewHolder) {
+            ((PersonalChatListViewHolder) holder ).bind( room );
+        } else if ( holder instanceof  GroupChatListViewHolder ) {
+            ((GroupChatListViewHolder) holder).bind(room);
         }
     }
 

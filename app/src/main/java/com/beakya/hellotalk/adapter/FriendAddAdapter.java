@@ -93,6 +93,7 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                         ContentValues values = new ContentValues();
                         values.put(TalkContract.User.USER_ID, id);
                         values.put(TalkContract.User.USER_NAME, name);
+                        values.put(TalkContract.User.IS_MY_FRIEND, 1);
                         if ( mBitmap != null) {
                             values.put(TalkContract.User.HAVE_PROFILE_IMAGE, 1);
                         }

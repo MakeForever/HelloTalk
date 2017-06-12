@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -15,6 +16,7 @@ import android.webkit.MimeTypeMap;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.ChatRoom;
 import com.beakya.hellotalk.objs.GroupChatRoom;
@@ -42,6 +44,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TimeZone;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -233,11 +236,33 @@ public class Utils {
         return Integer.parseInt(insertedUri.getLastPathSegment());
     }
 
-    public static int insertChatRoom ( ContentResolver resolver, ChatRoom chatRoom) {
+
+    public static void ChatInitialize( Context context, ChatRoom chatRoom) {
+        ContentResolver resolver = context.getContentResolver();
+        if( chatRoom instanceof PersonalChatRoom ) {
+            PersonalChatRoom personalChatRoom = (PersonalChatRoom) chatRoom;
+            insertChatRoom(resolver, personalChatRoom);
+            insertChatMembers(resolver, personalChatRoom.getChatId(), Arrays.asList(new User[] { personalChatRoom.getTalkTo() }));
+        } else if ( chatRoom instanceof  GroupChatRoom ) {
+            SharedPreferences tokenStorage = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE);
+            String myId = tokenStorage.getString(context.getString(R.string.user_id), null);
+            GroupChatRoom groupChatRoom = (GroupChatRoom) chatRoom;
+            insertChatRoom(resolver, groupChatRoom);
+            insertChatMembers(resolver, groupChatRoom.getChatId(), groupChatRoom.getUsers());
+            for( User user : groupChatRoom.getUsers().values() ) {
+                if ( !myId.equals( user.getId())) {
+                    insertUser(context, user);
+                }
+            }
+        }
+    }
+
+    public static int insertChatRoom ( ContentResolver resolver, PersonalChatRoom chatRoom) {
         ContentValues params = new ContentValues();
         params.put(TalkContract.ChatRooms.CHAT_ID, chatRoom.getChatId());
         params.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, chatRoom.isSynchronized());
-        params.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatRoom.getChatRoomType() );
+        params.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatRoom.getChatRoomType());
+        params.put(TalkContract.ChatRooms.CREATED_TIME, Utils.getCurrentTime());
         if( chatRoom.isSynchronized() ) {
             params.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, 1);
         } else {
@@ -246,13 +271,21 @@ public class Utils {
         Uri insertedUri = resolver.insert(TalkContract.ChatRooms.CONTENT_URI, params);
         return Integer.parseInt(insertedUri.getLastPathSegment());
     }
-
-//    public static int addChatIdIntoUser ( Context context, String chatId, String userId ) {
-//        ContentResolver resolver = context.getContentResolver();
-//        ContentValues values = new ContentValues();
-//        values.put(TalkContract.ChatRooms.CHAT_ID, chatId );
-//        return resolver.update(TalkContract.User.CONTENT_URI, values, TalkContract.User.USER_ID + " = ?" , new String[] { userId } );
-//    }
+    public static int insertChatRoom ( ContentResolver resolver, GroupChatRoom chatRoom) {
+        ContentValues params = new ContentValues();
+        params.put(TalkContract.ChatRooms.CHAT_ID, chatRoom.getChatId());
+        params.put(TalkContract.ChatRooms.CHAT_NAME, chatRoom.getChatName());
+        params.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, chatRoom.isSynchronized());
+        params.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, chatRoom.getChatRoomType());
+        params.put(TalkContract.ChatRooms.CREATED_TIME, Utils.getCurrentTime());
+        if( chatRoom.isSynchronized() ) {
+            params.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, 1);
+        } else {
+            params.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, 0);
+        }
+        Uri insertedUri = resolver.insert(TalkContract.ChatRooms.CONTENT_URI, params);
+        return Integer.parseInt(insertedUri.getLastPathSegment());
+    }
 
     //TODO : 나중에 bulkInsert 로 바꾸어야 한다
     public static void insertChatMembers ( ContentResolver resolver, String chatId, HashMap<String, User> users ) {
@@ -267,7 +300,33 @@ public class Utils {
             resolver.insert(TalkContract.ChatUserRooms.CONTENT_URI, value);
         }
     }
+    public static void insertUser( Context c, User user ) {
+        DbHelper dbHelper = new DbHelper(c);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        Cursor cursor = db.query(
+                TalkContract.User.TABLE_NAME,
+                null,
+                TalkContract.User.USER_ID + " = ?",
+                new String[] { user.getId() },
+                null,
+                null,
+                null
+                );
+        if (cursor.getCount() == 0 ) {
+            ContentValues values = new ContentValues();
+            values.put(TalkContract.User.USER_ID, user.getId());
+            values.put(TalkContract.User.USER_NAME, user.getName());
+            if( user.hasProfileImg() && user.getProfileImage() != null ) {
+                values.put(TalkContract.User.HAVE_PROFILE_IMAGE, 1);
+                saveToInternalStorage(c, user.getProfileImage(),
+                        c.getString(R.string.setting_friends_profile_img_name),
+                        c.getString(R.string.setting_profile_img_extension),
+                        Arrays.asList( new String[]{ c.getString(R.string.setting_friends_img_directory), user.getId() }));
+            }
+            db.insert(TalkContract.User.TABLE_NAME, null, values);
+        }
 
+    }
     public static void insertChatMembers ( ContentResolver resolver, String chatId, List<User> users ) {
         ArrayList<ContentValues> chatMemberContentValues = new ArrayList<ContentValues>();
         for( User user : users ) {
@@ -281,16 +340,6 @@ public class Utils {
         }
     }
 
-    public static void ChatInitialize( Context context, ChatRoom chatRoom) {
-        ContentResolver resolver = context.getContentResolver();
-        if( chatRoom instanceof PersonalChatRoom ) {
-            PersonalChatRoom personalChatRoom = (PersonalChatRoom) chatRoom;
-            insertChatRoom(resolver, personalChatRoom);
-            insertChatMembers(resolver, personalChatRoom.getChatId(), Arrays.asList(new User[] { personalChatRoom.getTalkTo() }));
-        } else if ( chatRoom instanceof  GroupChatRoom ) {
-
-        }
-    }
 
     public static ArrayList<String> JSONArrayToArrayList(JSONArray json, String name ) throws JSONException {
         ArrayList<String> result = new ArrayList<>();
@@ -371,6 +420,7 @@ public class Utils {
     public static GroupChatRoom extractChatRoomFromJson (JSONObject object ) throws JSONException {
         HashMap<String, User> users = new HashMap<>();
         JSONArray array = object.getJSONArray("members");
+        String chatName = object.getString(TalkContract.ChatRooms.CHAT_NAME);
         String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
         int chatType = object.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
         boolean isSynchronized = true;
@@ -380,7 +430,7 @@ public class Utils {
             String name = userObj.getString(TalkContract.User.USER_NAME);
             users.put(id, new User(id, name, true));
         }
-        return new GroupChatRoom(users, chatId, chatType, isSynchronized);
+        return new GroupChatRoom(chatName, users, chatId, chatType, isSynchronized);
     }
     public static PersonalChatRoom extractPersonalChatRoomFromJson (JSONObject object, User user ) throws JSONException {
         String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
@@ -388,7 +438,12 @@ public class Utils {
         boolean isSynchronized = true;
         return new PersonalChatRoom(chatId, chatType, isSynchronized, user );
     }
-
+    public static GroupChatRoom extractGroupChatRoomFromJson (JSONObject object, Context context ) throws JSONException {
+        String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
+        int chatType = object.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
+        boolean isSynchronized = true;
+        return null;
+    }
     public static Message extractMessageFromJson ( JSONObject object) throws JSONException {
         int messageType = object.getInt(TalkContract.Message.MESSAGE_TYPE);
         String creatorId = object.getString(TalkContract.Message.CREATOR_ID);
@@ -402,7 +457,7 @@ public class Utils {
     public static User extractUserFromJson ( JSONObject object ) throws JSONException {
         return new User (object.getString(TalkContract.User.USER_ID), object.getString(TalkContract.User.USER_NAME), true);
     }
-    public static String createIsReadMessageJsonObj ( String chatId, List<String> list , User user) {
+    public static String createIsReadMessageJsonObj ( String event, String chatId, List<String> list , User user) {
         JSONObject object = new JSONObject();
         JSONArray array = new JSONArray();
         try {
@@ -418,5 +473,18 @@ public class Utils {
             e.printStackTrace();
         }
         return object.toString();
+    }
+    public static String getCurrentTime() {
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return dateFormat.format(calendar.getTime());
+    }
+
+    public static User getMyInfo ( Context context ) {
+        SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE);
+        String myId = preferences.getString(context.getString(R.string.user_id), null);
+        String myName = preferences.getString(context.getString(R.string.user_name), null);
+        boolean hasPic = preferences.getBoolean(context.getString(R.string.user_img_boolean), true);
+        return new User(myId, myName, hasPic);
     }
 }

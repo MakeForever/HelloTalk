@@ -26,6 +26,7 @@ import com.beakya.hellotalk.activity.MainActivity;
 import com.beakya.hellotalk.adapter.UserAdapter;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.User;
+import com.beakya.hellotalk.utils.SimpleDividerItemDecoration;
 
 /**
  * Created by goodlife on 2017. 5. 4..
@@ -52,7 +53,7 @@ public class UserFragment extends Fragment implements
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: onCreate");
-        getActivity().getSupportLoaderManager().initLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
+
     }
 
     @Override
@@ -67,25 +68,8 @@ public class UserFragment extends Fragment implements
         mUserAdapter = new UserAdapter( context, this );
         mRecyclerView.setLayoutManager(new LinearLayoutManager( context ));
         mRecyclerView.setAdapter(mUserAdapter);
-
-//
-//        mainFabBtn.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                if ( isFabOpen ) {
-//                    fabClose();
-//                } else {
-//                    fabOpen();
-//                }
-//            }
-//        });
-//        addFriendFabBtn.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Intent intent = new Intent(context, FriendAddActivity.class);
-//                startActivity(intent);
-//            }
-//        });
+        mRecyclerView.addItemDecoration(new SimpleDividerItemDecoration(context));
+        getActivity().getSupportLoaderManager().initLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
         return view;
     }
 
@@ -101,7 +85,13 @@ public class UserFragment extends Fragment implements
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         switch ( id ) {
             case MainActivity.ID_USER_CURSOR_LOADER:
-                return new CursorLoader( getContext(), TalkContract.User.CONTENT_URI, null, null, null, null );
+                return new CursorLoader(
+                        getContext(),
+                        TalkContract.User.CONTENT_URI,
+                        null,
+                        TalkContract.User.IS_MY_FRIEND + " = ?",
+                        new String[] { "1" },
+                        null );
             default :
                 throw new RuntimeException("Loader Not Implemented: " + id);
         }

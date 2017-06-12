@@ -16,6 +16,7 @@ import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
+import com.beakya.hellotalk.viewholder.ChatViewHolder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,9 +27,9 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by goodlife on 2017. 5. 1..
  */
 
-public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
+public class PersonalChatAdapter extends RecyclerView.Adapter<ChatViewHolder> {
 
-    public static final String TAG = ChatAdapter.class.getSimpleName();
+    public static final String TAG = PersonalChatAdapter.class.getSimpleName();
 
     private static final int VIEW_TYPE_MY_CHAT = 1;
     private static final int VIEW_TYPE_OTHER_CHAT = 2;
@@ -39,7 +40,7 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
     private String myId;
     private String myName;
     private RecyclerView recyclerView;
-    public ChatAdapter(Context context, PersonalChatRoom mChatRoom, RecyclerView recyclerView) {
+    public PersonalChatAdapter(Context context, PersonalChatRoom mChatRoom, RecyclerView recyclerView) {
         this.mContext = context;
         this.mChatRoom = mChatRoom;
         this.recyclerView = recyclerView;
@@ -50,9 +51,8 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
             throw new RuntimeException("something wrong");
         }
     }
-
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ChatViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = null;
@@ -67,44 +67,18 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
             case VIEW_TYPE_SYSTEM:
                 break;
         }
-        ChatAdapter.ViewHolder viewHolder = new ChatAdapter.ViewHolder(view);
+        ChatViewHolder viewHolder = new ChatViewHolder(view);
         return viewHolder;
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(ChatViewHolder holder, int position) {
         String content;
-        String name;
         Message message;
         String creatorId;
         int readCount;
-//        mCursor.moveToPosition((mCursor.getCount() - 1) - position);
-//        switch (  holder.getItemViewType() ) {
-//            case VIEW_TYPE_MY_CHAT:
-//                Log.d(TAG, "onBindViewHolder: " + position + " : " + ((mCursor.getCount() - 1) - position));
-//                content = mCursor.getString(mCursor.getColumnIndex(TalkContract.Message.MESSAGE_CONTENT));
-//                id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Message.CREATOR_ID));
-//                String fileName = mContext.getString(R.string.setting_profile_img_name);
-//                String extension = mContext.getString(R.string.setting_profile_img_extension);
-//                String directory = mContext.getString(R.string.setting_profile_img_directory);
-//                //TODO : 비트맵 얻는 메소드 실패 했을때 null 리턴하지 말고 기본 이미지 리턴 하도록
-//                Bitmap profileBitmap = Utils.getImageBitmap(mContext, fileName, extension, Arrays.asList(directory));
-//
-//                holder.bind(content, profileBitmap, id);
-//                break;
-//            case VIEW_TYPE_OTHER_CHAT:
-//                content = mCursor.getString(mCursor.getColumnIndex(TalkContract.Message.MESSAGE_CONTENT));
-//                id = mCursor.getString(mCursor.getColumnIndex(TalkContract.Message.CREATOR_ID));
-//                Bitmap bitmap = Utils.getImageBitmap(mContext,
-//                        mContext.getString(R.string.setting_friends_profile_img_name),
-//                        mContext.getString(R.string.setting_profile_img_extension),
-//                        Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), id }));
-//                holder.bind(content, bitmap, id);
-//                break;
-//        }
         message = messages.get( (messages.size()-1) - position );
             switch (  holder.getItemViewType() ) {
-
                 case VIEW_TYPE_MY_CHAT:
                     //TODO : 비트맵 얻는 메소드 실패 했을때 null 리턴하지 말고 기본 이미지 리턴 하도록
                     String fileName = mContext.getString(R.string.setting_profile_img_name);
@@ -164,33 +138,5 @@ public class ChatAdapter  extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
             return 0;
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
-        TextView contentTextView;
-        TextView readCountView;
-        ImageView profileImageView;
-        TextView createTimeView;
-        TextView nameView;
-        public ViewHolder(View itemView) {
-            super(itemView);
-            contentTextView = (TextView) itemView.findViewById(R.id.chat_text_content);
-            profileImageView = (ImageView) itemView.findViewById(R.id.chat_user_profile_image_view);
-            readCountView = (TextView) itemView.findViewById(R.id.read_count);
-            createTimeView = (TextView) itemView.findViewById(R.id.chat_time_view);
-            nameView = (TextView) itemView.findViewById(R.id.chat_name_view);
 
-        }
-
-        public void bind(String content, Bitmap profileImg, int readCount, String name, String time) {
-            if( readCount == 0 ) {
-                readCountView.setVisibility(View.INVISIBLE);
-            } else {
-                readCountView.setVisibility(View.VISIBLE);
-                readCountView.setText(String.valueOf(readCount));
-            }
-            contentTextView.setText(content);
-            profileImageView.setImageBitmap(profileImg);
-            createTimeView.setText(time);
-            nameView.setText(name);
-        }
-    }
 }

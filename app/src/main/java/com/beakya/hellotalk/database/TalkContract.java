@@ -20,13 +20,14 @@ public class TalkContract {
         public static final String USER_NAME = "user_name";
         public static final String USER_ADDED_TIME = "time";
         public static final String HAVE_PROFILE_IMAGE ="user_image";
+        public static final String IS_MY_FRIEND = "is_my_friend";
         public static final String USER_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE " + TABLE_NAME         + " ( " +
                         USER_ID            + " TEXT PRIMARY KEY, " +
                         USER_NAME          + " TEXT, " +
                         USER_ADDED_TIME    + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                         HAVE_PROFILE_IMAGE + " BOOLEAN DEFAULT 0, " +
-                        ChatRooms.CHAT_ID + " TEXT " +
+                        IS_MY_FRIEND + " BOOLEAN DEFAULT 0 " +
                         " ); ";
 
     }
@@ -65,14 +66,16 @@ public class TalkContract {
         public static final String PATH = TABLE_NAME;
         public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRooms.PATH).build();
         public static final String CHAT_ID = "chat_id";
+        public static final String CHAT_NAME = "chat_name";
         public static final String CREATED_TIME = "created_time";
         public static final String CHAT_ROOM_TYPE = "chat_type";
         public static final String IS_SYNCHRONIZED = "is_synchronized";
         public static final String CHAT_LIST_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE [" + TABLE_NAME + "] ( " +
                         CHAT_ID + " TEXT PRIMARY KEY , " +
+                        CHAT_NAME + " TEXT, " +
                         CHAT_ROOM_TYPE + " INTEGER DEFAULT 1, " +
-                        CREATED_TIME + " TIMESTAMP DEFAULT CURRENT_TIME, " +
+                        CREATED_TIME + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                         IS_SYNCHRONIZED + " BOOLEAN DEFAULT 0 " +
                         " ); ";
     }

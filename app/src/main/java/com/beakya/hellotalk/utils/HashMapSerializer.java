@@ -24,6 +24,7 @@ public class HashMapSerializer implements JsonSerializer<HashMap<String, User>> 
             JsonObject object = new JsonObject();
             object.addProperty("id", user.getId());
             object.addProperty("name", user.getName());
+            object.addProperty("hasProfileImg", user.hasProfileImg());
             array.add(object);
         }
         return array ;

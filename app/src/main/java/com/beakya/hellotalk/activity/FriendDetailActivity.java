@@ -55,8 +55,6 @@ public class FriendDetailActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if( user != null ) {
                     int chatType = 1;
-                    HashMap<String, User> receiveList = new HashMap<>();
-                    receiveList.put(user.getId(), user);
                     Intent intent = new Intent( mContext, ChatActivity.class );
                     boolean isSynchronized;
                     boolean isStored;
@@ -70,7 +68,7 @@ public class FriendDetailActivity extends AppCompatActivity {
 
                     if (chatCursor.getCount() > 0 ) {
                         chatCursor.moveToFirst();
-                        isSynchronized = chatCursor.getInt(chatCursor.getColumnIndex(TalkContract.ChatRooms.IS_SYNCHRONIZED)) > 0;
+                        isSynchronized = true;
                         isStored = true;
                     } else {
                         isSynchronized = false;

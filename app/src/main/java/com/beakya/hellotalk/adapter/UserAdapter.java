@@ -56,7 +56,6 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         String name = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_NAME));
         String id = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_ID));
         boolean hasPic = mCursor.getInt(mCursor.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0;
-
         User user = new User( id, name, hasPic );
         holder.bind( user );
     }

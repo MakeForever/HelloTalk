@@ -2,23 +2,28 @@ package com.beakya.hellotalk.utils;
 
 import android.content.Context;
 import android.content.Intent;
-import android.util.JsonWriter;
 import android.util.Log;
 
 import com.beakya.hellotalk.event.Events;
+import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.services.ChatService;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.net.URISyntaxException;
+import java.util.HashMap;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -41,6 +46,7 @@ public class SocketCreator {
         JSONObject object = new JSONObject();
         String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
         options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
+        options.timeout = 5000;
         return options;
     }
     public Socket createSocket(String token) throws URISyntaxException {
@@ -107,7 +113,7 @@ public class SocketCreator {
                 Intent intent = new Intent(context, ChatService.class);
                 intent.putExtra("message", message);
                 intent.putExtra("chatRoom", chatRoom);
-                intent.setAction(ChatTask.ACTION_STORAGE_CHAT_DATA);
+                intent.setAction(ChatTask.ACTION_STORAGE_PERSONAL_CHAT_DATA);
                 context.startService(intent);
             }
         });
@@ -116,11 +122,30 @@ public class SocketCreator {
             @Override
             public void call(Object... args) {
                 Log.d(TAG, "call: chat_read");
-                JSONObject object = (JSONObject) args[0];
                 Intent intent = new Intent(context, ChatService.class);
-                intent.putExtra("object", object.toString());
+                intent.putExtra("info", (String) args[0]);
                 intent.setAction(ChatTask.ACTION_HANDLE_READ_CHAT);
                 context.startService(intent);
+            }
+        });
+        socket.on("send_group_message", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("info", (String) args[0]);
+                intent.setAction(ChatTask.ACTION_STORAGE_GROUP_CHAT_DATA);
+                context.startService(intent);
+            }
+        });
+        socket.on("invite_group_chat", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("info", (String) args[0]);
+                intent.setAction(ChatTask.ACTION_STORAGE_GROUP_CHAT_INVITE);
+                context.startService(intent);
+                Log.d(TAG, "call: invite_group_chat" );
             }
         });
         socket.on("leave_room", new Emitter.Listener() {

@@ -13,15 +13,24 @@ import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
+import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import io.socket.client.Socket;
 
@@ -33,16 +42,38 @@ import static com.beakya.hellotalk.activity.ChatActivity.EVENT_NEW_MESSAGE_ARRIV
 
 public class ChatTask {
     public static final String TAG = ChatTask.class.getSimpleName();
-    public static final String ACTION_STORAGE_CHAT_DATA = "action_storage_chat_data";
+    public static final String ACTION_STORAGE_PERSONAL_CHAT_DATA = "action_storage_chat_data";
+    public static final String ACTION_STORAGE_GROUP_CHAT_DATA = "action_storage_group_chat_data";
     public static final String ACTION_HANDLE_INVITE_RESULT = "action_handle_invite_result";
     public static final String ACTION_HANDLE_READ_CHAT = "action_handle_read_chat";
+    public static final String ACTION_STORAGE_GROUP_CHAT_INVITE = "action_storage_group_chat_iuvite";
     public static final String ACTION_CHANGE_ALL_MESSAGE_READ_STATE = "action_change_all_message_read_state";
     String chatTableName;
     ContentResolver resolver;
+    String arg;
+    String chatId;
+    ArrayList<String> messageIdList;
     public void task(Intent intent, Context context ) throws JSONException {
         switch ( intent.getAction() )  {
-            case ACTION_STORAGE_CHAT_DATA :
-
+            case ACTION_STORAGE_GROUP_CHAT_INVITE:
+                arg = intent.getStringExtra("info");
+                Gson gson = new GsonBuilder().registerTypeAdapter(HashMap.class, new HashMapDeserializer()).create();
+                GroupChatRoom groupChatRoom = null;
+                try {
+                    JsonObject object = new JsonParser().parse( arg ).getAsJsonObject();
+                    JsonElement element = object.get("chatRoom");
+                    groupChatRoom = gson.fromJson(element, GroupChatRoom.class);
+                } catch ( JsonParseException e) {
+                    e.printStackTrace();
+                }
+                Utils.ChatInitialize(context, groupChatRoom);
+                EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
+                break;
+            case ACTION_STORAGE_GROUP_CHAT_DATA:
+                arg = intent.getStringExtra("info");
+                storeChatData(arg, context);
+                break;
+            case ACTION_STORAGE_PERSONAL_CHAT_DATA:
                 Message message = intent.getParcelableExtra("message");
                 PersonalChatRoom chatRoom = intent.getParcelableExtra("chatRoom");
                 resolver = context.getContentResolver();
@@ -66,16 +97,13 @@ public class ChatTask {
                 boolean result = intent.getBooleanExtra("result", true);
                 String messageId = intent.getStringExtra(TalkContract.Message.MESSAGE_ID);
                 resolver = context.getContentResolver();
-
                 contentValues.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, result);
-
                 int updateResult1 = resolver.update(
                         TalkContract.ChatRooms.CONTENT_URI,
                         contentValues,
                         TalkContract.ChatRooms.CHAT_ID + " = ? ",
                         new String[] { chatTableName }
                 );
-
                 contentValues.clear();
                 contentValues.put(TalkContract.Message.IS_SEND, result);
                 int updateResult2 = resolver.update(
@@ -88,21 +116,28 @@ public class ChatTask {
 //                EventBus.getDefault().post(new Events.MessageEvent( ChatActivity.EVENT_BUS_ACTION_INVITE_RESULT, chatTableName ));
                 break;
             case  ACTION_HANDLE_READ_CHAT:
-                String param = intent.getStringExtra("object");
-                JSONObject obj = new JSONObject(param);
-                String chatId = obj.getString(TalkContract.ChatRooms.CHAT_ID);
-                ArrayList<String> test = Utils.JSONArrayToArrayList(obj.getJSONArray("message_id_list"), TalkContract.Message.MESSAGE_ID);
-                bulkUpdateMessage(context, test);
+                messageIdList = new ArrayList<>();
+                String info = intent.getStringExtra("info");
+                JsonObject obj = new JsonParser().parse(info).getAsJsonObject();
+                chatId = obj.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
+                JsonArray array = obj.get("messages").getAsJsonArray();
+                for ( JsonElement element : array ) {
+                    String item = element.getAsString();
+                    messageIdList.add(item);
+                }
+
+                String from = obj.get("from").getAsString();
+                bulkUpdateMessage(context, messageIdList);
                 EventBus.getDefault().post(new Events.MessageEvent(ChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
                 break;
 
             case ACTION_CHANGE_ALL_MESSAGE_READ_STATE :
-                ArrayList<String> messageIdList = new ArrayList<>();
+                messageIdList = new ArrayList<>();
                 MyApp myApp = (MyApp) context.getApplicationContext();
                 Socket socket = myApp.getSocket();
                 chatId = intent.getStringExtra(TalkContract.ChatRooms.CHAT_ID);
                 String myId = intent.getStringExtra(TalkContract.User.USER_ID);
-                User user = intent.getParcelableExtra("user");
+                int chatType  = intent.getIntExtra("chatType", 1);
                 resolver = context.getContentResolver();
                 cursor = resolver.query(
                         TalkContract.Message.CONTENT_URI,
@@ -115,10 +150,19 @@ public class ChatTask {
                     String t = cursor.getString(cursor.getColumnIndex(TalkContract.Message.MESSAGE_ID));
                     messageIdList.add(t);
                 }
-                bulkUpdateMessage(context, messageIdList);
-                String messageObj = Utils.createIsReadMessageJsonObj(chatId, messageIdList, user);
-                socket.emit("chat_read" , messageObj);
-                EventBus.getDefault().post(new Events.MessageEvent(ChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
+                String event = "chat_read";
+                if ( messageIdList.size() > 0 ) {
+                    bulkUpdateMessage(context, messageIdList);
+                    array = ArrayListToJsonArray(messageIdList);
+                    JsonObject object = new JsonObject();
+                    object.addProperty( "chatType", chatType );
+                    object.addProperty( TalkContract.ChatRooms.CHAT_ID, chatId );
+                    object.addProperty( "from", myId );
+                    object.add("messages", array);
+
+                    socket.emit(event, object );
+                    EventBus.getDefault().post(new Events.MessageEvent(ChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
+                }
                 break;
 
         }
@@ -147,4 +191,19 @@ public class ChatTask {
         }
         db.close();
     }
+    void storeChatData ( String stringify, Context context ) {
+        JsonObject object = new JsonParser().parse(stringify).getAsJsonObject();
+        JsonElement element = object.get("message");
+        Message message = new Gson().fromJson(element, Message.class);
+        Utils.insertMessage(context, message, message.getChatId());
+        EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
+    }
+    JsonArray ArrayListToJsonArray ( ArrayList<String> list ) {
+        JsonArray array = new JsonArray();
+        for ( String item : list ) {
+            array.add(item);
+        }
+        return array;
+    }
+
 }

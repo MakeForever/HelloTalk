@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.ChatActivity;
@@ -19,7 +18,7 @@ import com.beakya.hellotalk.utils.Utils;
  * Created by goodlife on 2017. 6. 2..
  */
 
-public class PersonalChatViewHolder extends BaseViewHolder<ChatListItem> {
+public class PersonalChatListViewHolder extends BaseViewHolder<ChatListItem> {
 
     private TextView lastChatItemView;
     private ImageView userImageView;
@@ -27,17 +26,17 @@ public class PersonalChatViewHolder extends BaseViewHolder<ChatListItem> {
     private TextView notReadCountView;
     private TextView dateTextView;
     private Context context;
-    public static PersonalChatViewHolder newInstance(ViewGroup parent) {
+    public static PersonalChatListViewHolder newInstance(ViewGroup parent) {
 
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.chat_list_item, parent, false);
 
-        return new PersonalChatViewHolder(itemView);
+        return new PersonalChatListViewHolder(itemView);
     }
 
 
 
-    public PersonalChatViewHolder(View v) {
+    public PersonalChatListViewHolder(View v) {
         super(v);
         context = v.getContext();
         lastChatItemView = (TextView) v.findViewById(R.id.last_chat_view);

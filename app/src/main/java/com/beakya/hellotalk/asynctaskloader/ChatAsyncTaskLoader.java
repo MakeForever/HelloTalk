@@ -217,7 +217,6 @@ public class ChatAsyncTaskLoader extends AsyncTaskLoader<ArrayList<Message>> {
     @Override
     public ArrayList<Message> loadInBackground() {
         messagesList = new ArrayList<>();
-        DbHelper dbHelper = new DbHelper(mContext);
         ContentResolver resolver = mContext.getContentResolver();
         String[] queryItems = new String [] {
                 TalkContract.Message.CREATOR_ID,

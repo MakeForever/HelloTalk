@@ -98,21 +98,9 @@ public class SocketCreator {
         socket.on("invite_to_personal_chat", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                JSONObject data = null;
-                data = (JSONObject) args[0];
-                Message message = null;
-                PersonalChatRoom chatRoom = null;
-                try {
-                    User sender = Utils.extractUserFromJson(data.getJSONObject("from"));
-                    message = Utils.extractMessageFromJson(data.getJSONObject("message"));
-                    chatRoom = Utils.extractPersonalChatRoomFromJson(data.getJSONObject("chat_room"), sender);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
+                String info = (String) args[0];
                 Intent intent = new Intent(context, ChatService.class);
-                intent.putExtra("message", message);
-                intent.putExtra("chatRoom", chatRoom);
+                intent.putExtra( "info", info );
                 intent.setAction(ChatTask.ACTION_STORAGE_PERSONAL_CHAT_DATA);
                 context.startService(intent);
             }

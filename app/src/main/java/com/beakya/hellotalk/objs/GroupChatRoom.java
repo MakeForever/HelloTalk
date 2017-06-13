@@ -108,45 +108,6 @@ public class GroupChatRoom extends ChatRoom implements Parcelable{
     }
 
     @Override
-    public String toJson(Message message, User myInfo, String event) {
-        return null;
-    }
-
-
-    public String toJson(User myInfo, String event) {
-        JSONObject obj = new JSONObject();
-        JSONObject chatRoomJsonObj = new JSONObject();
-        JSONArray users = new JSONArray();
-        try {
-            //myInfo
-
-            JSONObject myJsonObj = new JSONObject();
-            myJsonObj.put(TalkContract.User.USER_NAME, myInfo.getName() );
-            myJsonObj.put(TalkContract.User.USER_ID, myInfo.getId() );
-            users.put(myJsonObj);
-            //chatRoom
-            chatRoomJsonObj.put(TalkContract.ChatRooms.CHAT_ID, getChatId());
-            chatRoomJsonObj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, getChatRoomType());
-
-            for( User user : this.users.values() ) {
-                JSONObject userObj = new JSONObject();
-                userObj.put(TalkContract.User.USER_ID, user.getId());
-                userObj.put(TalkContract.User.USER_NAME, user.getName());
-                users.put(userObj);
-            }
-            //message
-            obj.put("event", event);
-            obj.put("chat_room", chatRoomJsonObj);
-            obj.put("users", users);
-            obj.put("from", myJsonObj);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return obj.toString();
-    }
-
-
-    @Override
     public int describeContents() {
         return 0;
     }

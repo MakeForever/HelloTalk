@@ -50,5 +50,4 @@ public abstract class ChatRoom {
         isSynchronized = aSynchronized;
     }
 
-    public abstract String toJson(Message message, User myInfo, String event);
 }

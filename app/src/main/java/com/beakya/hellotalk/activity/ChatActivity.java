@@ -30,7 +30,13 @@ import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.services.ChatService;
 import com.beakya.hellotalk.utils.ChatTask;
+import com.beakya.hellotalk.utils.Serializers;
+import com.beakya.hellotalk.utils.UserTypeAdapter;
 import com.beakya.hellotalk.utils.Utils;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -63,7 +69,7 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
     private PersonalChatAdapter personalChatAdapter;
     private Socket socket;
     private Context mContext;
-    private ChatRoom mChatRoom;
+    private PersonalChatRoom mChatRoom;
     private LinearLayout chatEditTextView;
 
     @Override
@@ -106,16 +112,13 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
                     mChatRoom.setSynchronized(true);
                 }
                 String messageId = Utils.hashFunction(myId + chatId + System.currentTimeMillis(), "SHA-1");
-
-                Message message = null;
-
                 PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
-                message = new Message(messageId, myId, messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 1);
+                Message message = new Message(messageId, myId, messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 1);
                 int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
                 String event = getString(R.string.invite_to_personal_chat);
-                String messageJson = chatRoom.toJson(message, new User(myId, myName, null), event);
-                socket.emit(event, messageJson);
-                Log.d(TAG, "onClick: invite_to_personal_chat" + messageJson);
+//                String messageJson = chatRoom.toJson(message, new User(myId, myName, null), event);event
+                String messageString = createMessageJson( mChatRoom, message, Utils.getMyInfo(mContext) );
+                socket.emit( event, messageString );
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, ChatActivity.this);
                 button.setEnabled(true);
             }
@@ -207,5 +210,21 @@ public class ChatActivity extends AppCompatActivity implements LoaderManager.Loa
             default:
                 throw new RuntimeException("message not matched");
         }
+    }
+    String createMessageJson (PersonalChatRoom personalChatRoom, Message message, User myInfo ) {
+        JsonObject result = new JsonObject();
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(User.class, new Serializers.UserSerializer())
+                .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
+                .create();
+        JsonObject chatRoomElement = gson.toJsonTree(personalChatRoom).getAsJsonObject();
+        JsonElement messageElement = gson.toJsonTree(message);
+        JsonElement userElement = gson.toJsonTree(myInfo);
+        JsonElement targetElement = chatRoomElement.get("talkTo");
+        chatRoomElement.add("talkTo", userElement);
+        result.add("chatRoom", chatRoomElement);
+        result.add("message", messageElement);
+        result.add("receiver", targetElement);
+        return result.toString();
     }
 }

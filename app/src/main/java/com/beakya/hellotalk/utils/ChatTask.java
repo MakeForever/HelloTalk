@@ -24,6 +24,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
@@ -52,12 +53,15 @@ public class ChatTask {
     ContentResolver resolver;
     String arg;
     String chatId;
+    Cursor cursor;
     ArrayList<String> messageIdList;
     public void task(Intent intent, Context context ) throws JSONException {
         switch ( intent.getAction() )  {
             case ACTION_STORAGE_GROUP_CHAT_INVITE:
                 arg = intent.getStringExtra("info");
-                Gson gson = new GsonBuilder().registerTypeAdapter(HashMap.class, new HashMapDeserializer()).create();
+                Gson gson = new GsonBuilder()
+                        .registerTypeAdapter(HashMap.class, new HashMapDeserializer())
+                        .create();
                 GroupChatRoom groupChatRoom = null;
                 try {
                     JsonObject object = new JsonParser().parse( arg ).getAsJsonObject();
@@ -74,22 +78,8 @@ public class ChatTask {
                 storeChatData(arg, context);
                 break;
             case ACTION_STORAGE_PERSONAL_CHAT_DATA:
-                Message message = intent.getParcelableExtra("message");
-                PersonalChatRoom chatRoom = intent.getParcelableExtra("chatRoom");
-                resolver = context.getContentResolver();
-                Cursor cursor = resolver.query(
-                                TalkContract.ChatRooms.CONTENT_URI,
-                                null,
-                                TalkContract.ChatRooms.CHAT_ID + "= ?",
-                                new String[] { chatRoom.getChatId() } ,
-                                null
-                        );
-                if( !(cursor.getCount() > 0) ) {
-                    Log.d(TAG, "task: ChatInitialize ");
-                    Utils.ChatInitialize( context, chatRoom);
-                }
-                Utils.insertMessage(context, message, chatRoom.getChatId());
-                EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
+                arg = intent.getStringExtra("info");
+                handleStorePersonalChatData(arg, context);
                 break;
             case ACTION_HANDLE_INVITE_RESULT :
                 ContentValues contentValues = new ContentValues();
@@ -205,5 +195,53 @@ public class ChatTask {
         }
         return array;
     }
+    void handleStorePersonalChatData ( String arg, Context context ) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
+                .create();
 
+        JsonObject obj = new JsonParser().parse(arg).getAsJsonObject();
+        JsonElement messageElement = obj.get("message");
+        JsonObject chatRoomElement = obj.get("chatRoom").getAsJsonObject();
+        JsonObject senderJsonObj = chatRoomElement.get("talkTo").getAsJsonObject();
+
+
+        User sender = null;
+        PersonalChatRoom chatRoom = null;
+        Message message = null;
+        try {
+            sender = gson.fromJson(senderJsonObj, User.class);
+            chatRoom = gson.fromJson(chatRoomElement, PersonalChatRoom.class);
+            message = gson.fromJson(messageElement, Message.class);
+        } catch ( JsonSyntaxException e ) {
+            e.printStackTrace();
+        }
+        ContentResolver resolver = context.getContentResolver();
+        Cursor chatRoomQueryCursor = resolver.query(
+                TalkContract.ChatRooms.CONTENT_URI,
+                null,
+                TalkContract.ChatRooms.CHAT_ID + "= ?",
+                new String[] { chatRoom.getChatId() } ,
+                null
+        );
+        Cursor userQueryCursor = resolver.query(
+                TalkContract.User.CONTENT_URI,
+                null,
+                TalkContract.User.USER_ID + " = ? ",
+                new String [] { sender.getId() },
+                null
+        );
+
+
+        if( !(chatRoomQueryCursor.getCount() > 0) ) {
+            Log.d(TAG, "task: ChatInitialize ");
+            Utils.ChatInitialize( context, chatRoom);
+        }
+
+        if ( !(userQueryCursor.getCount() > 0) ) {
+            Utils.insertUser(context, sender);
+        }
+        Utils.insertMessage(context, message, chatRoom.getChatId());
+        EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
+    }
 }

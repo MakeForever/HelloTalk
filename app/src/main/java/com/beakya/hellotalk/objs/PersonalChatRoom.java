@@ -62,31 +62,5 @@ public class PersonalChatRoom extends ChatRoom implements Parcelable {
         this.talkTo = talkTo;
     }
 
-    public String toJson(Message message, User myInfo, String event) {
-        JSONObject obj = new JSONObject();
-        JSONObject chatRoomJsonObj = new JSONObject();
-        JSONObject userJsonObj = new JSONObject();
-        JSONObject myJsonObj = new JSONObject();
-        try {
-
-            //chatRoom
-            chatRoomJsonObj.put(TalkContract.ChatRooms.CHAT_ID, getChatId());
-            chatRoomJsonObj.put(TalkContract.ChatRooms.CHAT_ROOM_TYPE, getChatRoomType());
-            //User
-            userJsonObj.put(TalkContract.User.USER_NAME, talkTo.getName() );
-            userJsonObj.put(TalkContract.User.USER_ID, talkTo.getId());
-            //myJsonObj
-            myJsonObj.put(TalkContract.User.USER_NAME, myInfo.getName() );
-            myJsonObj.put(TalkContract.User.USER_ID, myInfo.getId() );
-            //message
-            obj.put("chat_room", chatRoomJsonObj);
-            obj.put("message", message.toJson());
-            obj.put("receive", userJsonObj );
-            obj.put("from", myJsonObj);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return obj.toString();
-    }
 
 }

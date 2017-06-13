@@ -31,6 +31,7 @@ import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.HashMapDeserializer;
 import com.beakya.hellotalk.utils.HashMapSerializer;
 import com.beakya.hellotalk.utils.SimpleDividerItemDecoration;
+import com.beakya.hellotalk.utils.UserTypeAdapter;
 import com.beakya.hellotalk.utils.Utils;
 import com.beakya.hellotalk.viewholder.NewChatViewHolder;
 import com.beakya.hellotalk.widget.ChatNameDialog;
@@ -99,7 +100,7 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
                             final GroupChatRoom chatRoom = new GroupChatRoom(chatName, users, Utils.hashFunction(String.valueOf(System.currentTimeMillis()), "SHA-256"), 2, true);
                             chatRoom.addUser(myInfo);
                             object.addProperty("event", event);
-                            object.addProperty("creator", myInfo.getId());
+                            object.addProperty("sender", myInfo.getId());
                             object.add("chatRoom", gson.toJsonTree(chatRoom));
                             socket.emit(event, object.toString(), new Ack() {
                                 @Override

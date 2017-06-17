@@ -53,26 +53,28 @@ public class GroupChatAdapter extends ChatAdapter {
     @Override
     public void onBindViewHolder(ChatViewHolder holder, int position) {
         Message message = messages.get((getItemCount() -1 ) - position );
+        User messageCreatorInfo = chatRoom.findUser(message.getCreatorId());
 
-        if ( holder.getItemViewType() == ChatAdapter.VIEW_TYPE_MY_CHAT ) {
-            String fileName = mContext.getString(R.string.setting_profile_img_name);
-            String extension = mContext.getString(R.string.setting_profile_img_extension);
-            String directory = mContext.getString(R.string.setting_profile_img_directory);
-            String content = message.getMessageContent();
-            Bitmap profileBitmap = Utils.getImageBitmap(mContext, fileName, extension, Arrays.asList(directory));
-            int readCount = message.isReadCount();
-            holder.bind(content, profileBitmap, readCount, myInfo.getName(), Utils.timeToString(message.getCreatedTime()) );
-        } else if ( holder.getItemViewType() == ChatAdapter.VIEW_TYPE_OTHER_CHAT ) {
-            String content = message.getMessageContent();
-            String creatorId = message.getCreatorId();
-            Bitmap bitmap = Utils.getImageBitmap(mContext,
-                    mContext.getString(R.string.setting_friends_profile_img_name),
-                    mContext.getString(R.string.setting_profile_img_extension),
-                    Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), creatorId }));
-            int readCount = message.isReadCount();
-            User user = chatRoom.getUsers().get(creatorId);
-            holder.bind(content, bitmap, readCount, user.getName(), Utils.timeToString(message.getCreatedTime()) );
-        }
+//        if ( holder.getItemViewType() == ChatAdapter.VIEW_TYPE_MY_CHAT ) {
+//            String fileName = mContext.getString(R.string.setting_profile_img_name);
+//            String extension = mContext.getString(R.string.setting_profile_img_extension);
+//            String directory = mContext.getString(R.string.setting_profile_img_directory);
+//            String content = message.getMessageContent();
+//            Bitmap profileBitmap = Utils.getImageBitmap(mContext, fileName, extension, Arrays.asList(directory));
+//            int readCount = message.isReadCount();
+//            holder.bind(content, profileBitmap, readCount, myInfo.getName(), Utils.timeToString(message.getCreatedTime()) );
+//        } else if ( holder.getItemViewType() == ChatAdapter.VIEW_TYPE_OTHER_CHAT ) {
+//            String content = message.getMessageContent();
+//            String creatorId = message.getCreatorId();
+//            Bitmap bitmap = Utils.getImageBitmap(mContext,
+//                    mContext.getString(R.string.setting_friends_profile_img_name),
+//                    mContext.getString(R.string.setting_profile_img_extension),
+//                    Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), creatorId }));
+//            int readCount = message.isReadCount();
+//            User user = chatRoom.getUsers().get(creatorId);
+//            holder.bind(content, bitmap, readCount, user.getName(), Utils.timeToString(message.getCreatedTime()) );
+//        }
+        holder.bind(message, messageCreatorInfo);
 
     }
 

@@ -11,7 +11,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.GroupChatActivity;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.GroupChatRoom;
@@ -102,7 +101,7 @@ public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implem
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(size,size);
         layoutParams.setMargins(0, 0, leftMargin ,0 );
         imageView.setLayoutParams(layoutParams);
-        return  imageView;
+        return imageView;
     }
 
     @Override

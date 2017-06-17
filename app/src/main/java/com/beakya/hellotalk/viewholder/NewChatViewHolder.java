@@ -1,12 +1,12 @@
 package com.beakya.hellotalk.viewholder;
 
 import android.content.Context;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RadioButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.NewChatAdapter;
@@ -19,7 +19,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
  * Created by goodlife on 2017. 6. 8..
  */
 
-public class NewChatViewHolder extends BaseViewHolder<User> {
+public class NewChatViewHolder extends RecyclerView.ViewHolder {
     private TextView nameTextView;
     private TextView emailTextView;
     private CircleImageView profileImageView;
@@ -32,7 +32,6 @@ public class NewChatViewHolder extends BaseViewHolder<User> {
 
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.new_chat_item, parent, false);
-
         return new NewChatViewHolder(itemView, parent.getContext());
     }
 
@@ -65,9 +64,17 @@ public class NewChatViewHolder extends BaseViewHolder<User> {
     public void setAdapter( NewChatAdapter adapter ) {
         this.adapter = adapter;
     }
-    @Override
-    public void bind(final User user) {
+
+
+    public void bind(final User user, boolean isInvited) {
         this.user = user;
+        if ( isInvited ) {
+            selectButton.setChecked(true);
+            selectButton.setEnabled(false);
+        } else {
+            selectButton.setChecked(false);
+            selectButton.setEnabled(true);
+        }
         nameTextView.setText(user.getName());
         emailTextView.setText(user.getId());
         profileImageView.setImageBitmap(user.getProfileImg(mContext));

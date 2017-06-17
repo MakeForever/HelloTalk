@@ -156,26 +156,25 @@ public class LoginActivity extends AppCompatActivity {
             public void onResponse(Call<LoginResponseBody> call, Response<LoginResponseBody> response) {
 
                 if ( response.isSuccessful() ) {
+                    String id = emailEditText.getText().toString();
                     LoginResponseBody body = response.body();
                     int login = body.getLogin();
                     boolean isFirstLogin = false;
                     if( login == 0) {
                         isFirstLogin = true;
                     }
-
                     if ( body.getImg() != null ) {
-                        String fileName = getString(R.string.setting_profile_img_name);
+                        String fileName =  getString(R.string.setting_friends_profile_img_name);
                         String extension = getString(R.string.setting_profile_img_extension);
-                        String directory = getString(R.string.setting_profile_img_directory);
+                        String directory = getString(R.string.setting_friends_img_directory);
                         Context context = LoginActivity.this;
                         Bitmap mBitmap = Utils.decodeImgStringBase64(body.getImg());
-                        Utils.saveToInternalStorage(context, mBitmap, fileName, extension, Arrays.asList(directory));
+                        Utils.saveToInternalStorage(context, mBitmap, fileName, extension, Arrays.asList(new String[] { directory, id }));
                     }
-
                     SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
                     SharedPreferences.Editor editor = tokenStorage.edit();
                     editor.putString(getString(R.string.token), body.getToken());
-                    editor.putString(getString(R.string.user_id), emailEditText.getText().toString());
+                    editor.putString(getString(R.string.user_id), id);
                     editor.putString(getString(R.string.user_name), body.getName());
                     editor.putBoolean(getString(R.string.user_img_boolean), !isFirstLogin);
                     editor.commit();

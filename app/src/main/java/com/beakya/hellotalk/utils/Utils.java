@@ -23,6 +23,9 @@ import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -486,5 +489,41 @@ public class Utils {
         String myName = preferences.getString(context.getString(R.string.user_name), null);
         boolean hasPic = preferences.getBoolean(context.getString(R.string.user_img_boolean), true);
         return new User(myId, myName, hasPic);
+    }
+    public static String groupChatReadObjCreator (int chatType, User sender, String chatId, ArrayList<String> messages ) {
+        Gson gson = new Gson();
+        JsonElement msgElement = gson.toJsonTree(messages);
+        JsonObject object = new JsonObject();
+        object.addProperty(TalkContract.ChatRooms.CHAT_ID, chatId);
+        object.add("messages", msgElement);
+        object.addProperty("event", "chat_read");
+        object.addProperty("sender", sender.getId());
+        object.addProperty("chatType", chatType);
+        return object.toString();
+    }
+    public static String personalChatReadObjCreator(int chatType, User sender, User receiver, String chatId, ArrayList<String> messages ) {
+        Gson gson = new Gson();
+        JsonElement msgElement = gson.toJsonTree(messages);
+        JsonObject object = new JsonObject();
+        object.addProperty(TalkContract.ChatRooms.CHAT_ID, chatId);
+        object.addProperty("receiver", receiver.getId());
+        object.add("messages", msgElement);
+        object.addProperty("event", "chat_read");
+        object.addProperty("sender", sender.getId());
+        object.addProperty("chatType", chatType);
+        return object.toString();
+    }
+    public static boolean checkUserInDb ( Context context, String userId ) {
+        ContentResolver resolver = context.getContentResolver();
+        Cursor cursor = resolver.query(
+                TalkContract.User.CONTENT_URI,
+                null,
+                TalkContract.User.USER_ID + " = ? ",
+                new String[] { userId },
+                null);
+
+        if( cursor.getCount() > 0 )
+            return true;
+        else return false;
     }
 }

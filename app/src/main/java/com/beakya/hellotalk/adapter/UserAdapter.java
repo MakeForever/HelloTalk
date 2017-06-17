@@ -13,7 +13,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -81,7 +80,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         private SwipeLayout swipeLayout;
         private ImageButton deleteButton;
         private boolean isSwiped = false;
-        private boolean hasProfileImg = false;
+
+        private User userInfo;
         public ViewHolder(final View itemView) {
             super(itemView);
 
@@ -137,9 +137,9 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
         public void bind( final User user ) {
             isSwiped = false;
+            this.userInfo = user;
             nameTextView.setText(user.getName());
             emailTextView.setText(user.getId());
-            hasProfileImg = user.hasProfileImg();
             userProfileImage.setImageBitmap(user.getProfileImg(mContext));
             deleteButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -160,7 +160,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
                     Uri uri = TalkContract.User.CONTENT_URI.buildUpon().appendPath(user.getId()).build();
                     int deletedRow = resolver.delete(uri, TalkContract.User.USER_ID+ "=?",new String[]{ user.getId() });
-                    if( hasProfileImg != false ) {
+                    if( userInfo.hasProfileImg() != false ) {
                         Utils.deleteFile(mContext,
                                 mContext.getString(R.string.setting_friends_profile_img_name),
                                 mContext.getString(R.string.setting_profile_img_extension),
@@ -174,11 +174,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         public void onClick(View v) {
             Log.d(TAG, "onClick: ");
             if ( !isSwiped ) {
-                String id = emailTextView.getText().toString();
-                String name = nameTextView.getText().toString();
-                Bitmap bitmap = userProfileImage.getDrawingCache(true);
-                User user = new User(id, name, bitmap);
-                mListener.onListItemClick(user);
+                mListener.onListItemClick(userInfo);
             } else {
                 Toast.makeText(mContext, "스와이프를 닫아주세요", Toast.LENGTH_SHORT).show();
             }

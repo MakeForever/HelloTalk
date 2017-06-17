@@ -35,18 +35,19 @@ import io.socket.emitter.Emitter;
 
 public class SocketCreator {
     private final String TAG = SocketCreator.class.getSimpleName();
-    private final String IP = "http://192.168.0.102:8888";
+    private final String IP = "http://192.168.0.101:8888";
     private Context context;
     public SocketCreator(Context context) {
         this.context = context;
     }
 
     public IO.Options getOptions(String token) {
+        int timeoutLimit = 5000;
         IO.Options options = new IO.Options();
         JSONObject object = new JSONObject();
         String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
         options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
-        options.timeout = 5000;
+        options.timeout = timeoutLimit;
         return options;
     }
     public Socket createSocket(String token) throws URISyntaxException {
@@ -136,10 +137,14 @@ public class SocketCreator {
                 Log.d(TAG, "call: invite_group_chat" );
             }
         });
-        socket.on("leave_room", new Emitter.Listener() {
+        socket.on("invite_friend", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("info", (String) args[0]);
+                intent.setAction(ChatTask.ACTION_INVITE_TO_GROUP_CHAT);
+                context.startService(intent);
+                Log.d(TAG, "call invite_friend:");
             }
         });
         socket.on("enter_room", new Emitter.Listener() {

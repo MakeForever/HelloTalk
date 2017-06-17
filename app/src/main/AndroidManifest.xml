@@ -57,7 +57,7 @@
         <activity
             android:name="com.linchaolong.android.imagepicker.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat" />
-        <activity android:name=".activity.ChatActivity" />
+        <activity android:name=".activity.PersonalChatActivity" />
         <activity android:name=".activity.GroupChatActivity" />
         <activity
             android:name=".activity.NotifyActivity"

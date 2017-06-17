@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private TextView headerNameTextView;
     private TextView headerEmailTextView;
     private TabLayout tabLayout;
+    NavigationView navigationView;
     private FloatingActionButton mainFabBtn;
     private FloatingActionButton addFriendFabBtn;
     private FloatingActionButton createNewChatFabBtn;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private boolean isFabOpen = false;
     private boolean isFabRunning = false;
     private View fabBackground;
+
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -74,13 +76,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             startActivity(loginIntent);
             finish();
         }
-        String firebaseToken = FirebaseInstanceId.getInstance().getToken();
-        Log.d(TAG, "onCreate: " + firebaseToken);
+        String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
+        Log.d(TAG, "onCreate: " + fireBaseToken);
         setContentView(R.layout.activity_main);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
         View headerView = navigationView.getHeaderView(0);
         navigationDrawerImageView = (ImageView) headerView.findViewById(R.id.navigation_header_image_view);
         headerNameTextView = (TextView) headerView.findViewById(R.id.navigation_header_name_text_view);
@@ -92,28 +95,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
         SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
-        String myName = userInfoStorage.getString(getString(R.string.user_name), null);
-        String myId = userInfoStorage.getString((getString(R.string.user_id)), null);
-        if( myName != null ) {
-            headerNameTextView.setText(myName);
-        }
-        if( myId != null ) {
-            headerEmailTextView.setText(myId);
-        }
+        User myInfo =  Utils.getMyInfo(this);
+        headerNameTextView.setText(myInfo.getName());
+        headerEmailTextView.setText(myInfo.getId());
 
-
-        String fileName = getString(R.string.setting_profile_img_name);
+        String fileName =  getString(R.string.setting_friends_profile_img_name);
         String extension = getString(R.string.setting_profile_img_extension);
-        String directory = getString(R.string.setting_profile_img_directory);
+        String directory = getString(R.string.setting_friends_img_directory);
 
-        Bitmap profileBitmap = Utils.getImageBitmap(this, fileName, extension, Arrays.asList(directory));
+        Bitmap profileBitmap = Utils.getImageBitmap(this, fileName, extension, Arrays.asList(new String[] {directory, myInfo.getId() }));
         navigationDrawerImageView.setImageBitmap(profileBitmap);
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         mDrawer.addDrawerListener(toggle);
         toggle.syncState();
-
+//
         revealFrameLayout = (RevealFrameLayout) findViewById(R.id.fab_reveal_frame_layout);
         mainFabBtn = (FloatingActionButton) findViewById(R.id.main_fab);
         createNewChatFabBtn = (FloatingActionButton) findViewById(R.id.fab_create_new_group_chat);
@@ -152,24 +149,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         createNewChatFabBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                Intent activityIntent = new Intent(MainActivity.this, GroupChatActivity.class);
-//                HashMap<String, User> hashMap = new HashMap<>();
-//                hashMap.put("beak_ya@naver.com", new User("beak_ya@naver.com", "박철호", null));
-//                hashMap.put("qkrcjf332@naver.com", new User("qkrcjf332@naver.com", "김철호", null));
-//
-//                activityIntent.putExtra("chatRoom",new GroupChatRoom(hashMap, "12345", 2, true));
-//                activityIntent.putExtra("is_Stored", true);
-//                startActivity(activityIntent);
                 Intent activityIntent = new Intent(MainActivity.this, NewChatActivity.class);
                 startActivity(activityIntent);
                 setFabBackground();
             }
         });
     }
-
-
-
-
 
     @Override
     public void onBackPressed() {

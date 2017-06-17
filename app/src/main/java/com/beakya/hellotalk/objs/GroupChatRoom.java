@@ -37,8 +37,9 @@ public class GroupChatRoom extends ChatRoom implements Parcelable{
             String id =  in.readString();
             String name = in.readString();
             boolean isAdded = in.readByte() != 0;
+            boolean hasPic = in.readByte() != 0;
 //            Log.d(TAG, "GroupChatRoom: " + key + " id : " + id + " name : " + name + " is Added " + isAdded);
-            User user = new User(id, name, false);
+            User user = new User(id, name, hasPic);
             user.setAdded(isAdded);
             users.put(key, user);
         }
@@ -71,6 +72,7 @@ public class GroupChatRoom extends ChatRoom implements Parcelable{
                 dest.writeString(user.getId());
                 dest.writeString(user.getName());
                 dest.writeByte( ( byte) ( user.isAdded() ? 1 : 0 ));
+                dest.writeByte( (byte) ( user.hasProfileImg() ? 1 : 0 ));
                 System.out.println("user id " + user.getId());
             }
         }
@@ -88,7 +90,12 @@ public class GroupChatRoom extends ChatRoom implements Parcelable{
     public void setUsers(HashMap<String, User> users) {
         this.users = users;
     }
-
+    public User findUser( String userId ) {
+        if( users != null ) {
+            return users.get(userId);
+        } else
+            return null;
+    }
     public String getChatName() {
         return chatName;
     }

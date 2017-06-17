@@ -9,7 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.activity.ChatActivity;
+import com.beakya.hellotalk.activity.PersonalChatActivity;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.utils.Utils;
@@ -67,7 +67,7 @@ public class PersonalChatListViewHolder extends BaseViewHolder<ChatListItem> {
         itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(context, ChatActivity.class);
+                Intent intent = new Intent(context, PersonalChatActivity.class);
                 intent.putExtra("chatRoom", chatRoom);
                 intent.putExtra("is_stored", true);
                 context.startActivity(intent);

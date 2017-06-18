@@ -23,8 +23,10 @@ import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.NewChatAdapter;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.ChatRoom;
 import com.beakya.hellotalk.objs.GroupChatRoom;
+import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.HashMapDeserializer;
@@ -40,6 +42,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
+import org.greenrobot.eventbus.EventBus;
 import org.json.JSONArray;
 
 import java.util.ArrayList;
@@ -49,6 +52,8 @@ import java.util.HashMap;
 
 import io.socket.client.Ack;
 import io.socket.client.Socket;
+
+import static com.beakya.hellotalk.activity.PersonalChatActivity.EVENT_NEW_MESSAGE_ARRIVED;
 
 public class NewChatActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = NewChatActivity.class.getSimpleName();
@@ -134,6 +139,7 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
                                 @Override
                                 public void onOKClick(String chatName) {
                                     String event = "invite_group_chat";
+                                    users.put(myInfo.getId(), myInfo);
                                     createChatRoomAndSocketEmit(mContext, socket, myInfo, event, users, chatName);
                                 }
                             });
@@ -255,7 +261,7 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
     }
 
     public void storeNewFriendsAndSocketEmit(final Context context,
-                                             final ArrayList<User> users, final String chatId, String event, Socket socket, GroupChatRoom chatRoom ) {
+                                             final ArrayList<User> users, final String chatId, String event, Socket socket, final GroupChatRoom chatRoom ) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserSerializer())
                 .registerTypeAdapter(HashMap.class, new HashMapSerializer())
@@ -277,8 +283,16 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
         socket.emit(event, object.toString(), new Ack() {
             @Override
             public void call(Object... args) {
-                //TODO 업데이트 되었을때 recyclerview update
                 Utils.insertChatMembers(context.getContentResolver(), chatId, users);
+                for ( User user : users ) {
+                    String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
+                    Message message = new Message(messageId, "system", myInfo.getName() + "님이 " + user.getName() +"님을 초대했습니다.", chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 0);
+                    Utils.insertMessage(context, message, chatId);
+                }
+                Intent intent = new Intent();
+                intent.putExtra("users", users);
+                setResult(100, intent);
+                finish();
             }
         });
     }

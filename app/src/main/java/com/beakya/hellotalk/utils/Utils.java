@@ -95,7 +95,7 @@ public class Utils {
     public static File generateDirectory(Context c, List<String> directories) {
         StringBuilder builder = new StringBuilder();
         Iterator<String> iterator = directories.iterator();
-        File root = c.getDir(iterator.next(), Context.MODE_PRIVATE);
+        File root = c.getFilesDir();
         while(iterator.hasNext()) {
             builder.append(iterator.next());
             if(iterator.hasNext()) {
@@ -121,7 +121,13 @@ public class Utils {
         File directory = generateDirectory(c, directories);
         boolean result = false;
         try {
-            directory.delete();
+
+            String[] children = directory.list();
+            for ( String s : children ) {
+                boolean test = c.deleteFile( new File ( directory, s ).getName());
+                boolean isSuccess = new File ( directory, s ).delete();
+            }
+            boolean deleted = directory.delete();
             result = true;
         } catch ( Exception e ){
             e.printStackTrace();
@@ -330,6 +336,25 @@ public class Utils {
         }
 
     }
+    public static User findUser ( Context context, String userId ) {
+        ContentResolver resolver = context.getContentResolver();
+        Cursor cursor = resolver.query(
+                TalkContract.User.CONTENT_URI,
+                null,
+                TalkContract.User.USER_ID + " = ?",
+                new String[] { userId },
+                null);
+
+        if ( cursor.getCount() == 0 ) {
+            return null;
+        } else {
+            cursor.moveToFirst();
+            String id = cursor.getString(cursor.getColumnIndex(TalkContract.User.USER_ID));
+            String name = cursor.getString(cursor.getColumnIndex(TalkContract.User.USER_NAME));
+            boolean hasPic = cursor.getInt(cursor.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0;
+            return new User ( id, name, hasPic);
+        }
+    }
     public static void insertChatMembers ( ContentResolver resolver, String chatId, List<User> users ) {
         ArrayList<ContentValues> chatMemberContentValues = new ArrayList<ContentValues>();
         for( User user : users ) {
@@ -490,7 +515,7 @@ public class Utils {
         boolean hasPic = preferences.getBoolean(context.getString(R.string.user_img_boolean), true);
         return new User(myId, myName, hasPic);
     }
-    public static String groupChatReadObjCreator (int chatType, User sender, String chatId, ArrayList<String> messages ) {
+    public static String groupChatReadObjCreator (int chatType, User sender, String chatId, List<String> messages ) {
         Gson gson = new Gson();
         JsonElement msgElement = gson.toJsonTree(messages);
         JsonObject object = new JsonObject();

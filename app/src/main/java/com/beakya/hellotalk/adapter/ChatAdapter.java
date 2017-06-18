@@ -11,6 +11,7 @@ import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
+import com.beakya.hellotalk.viewholder.ChatItemViewHolder;
 import com.beakya.hellotalk.viewholder.ChatViewHolder;
 
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import static android.content.Context.MODE_PRIVATE;
  * Created by goodlife on 2017. 6. 7..
  */
 
-public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatViewHolder> {
+public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHolder> {
     public static final int VIEW_TYPE_MY_CHAT = 1;
     public static final int VIEW_TYPE_OTHER_CHAT = 2;
     public static final int VIEW_TYPE_SYSTEM = 3;
@@ -36,9 +37,9 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatViewHolder> 
     }
 
     @Override
-    public abstract ChatViewHolder onCreateViewHolder(ViewGroup parent, int viewType);
+    public abstract ChatItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType);
     @Override
-    public abstract void onBindViewHolder(ChatViewHolder holder, int position);
+    public abstract void onBindViewHolder(ChatItemViewHolder holder, int position);
 
     @Override
     public int getItemCount() {

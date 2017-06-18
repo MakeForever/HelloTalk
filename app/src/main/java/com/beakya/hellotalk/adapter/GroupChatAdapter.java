@@ -14,7 +14,9 @@ import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
+import com.beakya.hellotalk.viewholder.ChatItemViewHolder;
 import com.beakya.hellotalk.viewholder.ChatViewHolder;
+import com.beakya.hellotalk.viewholder.SystemAlertViewHolder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +33,7 @@ public class GroupChatAdapter extends ChatAdapter {
     }
 
     @Override
-    public ChatViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ChatItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = null;
@@ -39,42 +41,29 @@ public class GroupChatAdapter extends ChatAdapter {
         switch (viewType) {
             case VIEW_TYPE_MY_CHAT:
                 view = inflater.inflate(R.layout.my_chat_item_text, parent, false);
-                break;
+                return new ChatViewHolder(view);
             case VIEW_TYPE_OTHER_CHAT:
                 view = inflater.inflate(R.layout.other_chat_item_text, parent, false);
-                break;
+                return new ChatViewHolder(view);
             case VIEW_TYPE_SYSTEM:
-                break;
+                view = inflater.inflate(R.layout.system_chat_item, parent, false);
+                return new SystemAlertViewHolder(view);
+            default:
+                throw new RuntimeException("viewType not matched");
         }
-        ChatViewHolder viewHolder = new ChatViewHolder(view);
-        return viewHolder;
     }
 
     @Override
-    public void onBindViewHolder(ChatViewHolder holder, int position) {
-        Message message = messages.get((getItemCount() -1 ) - position );
-        User messageCreatorInfo = chatRoom.findUser(message.getCreatorId());
+    public void onBindViewHolder(ChatItemViewHolder holder, int position) {
+        if ( holder instanceof ChatViewHolder ) {
+            Message message = messages.get((getItemCount() -1 ) - position );
+            User messageCreatorInfo = chatRoom.findUser(message.getCreatorId());
+            holder.bind(message, messageCreatorInfo);
+        } else if ( holder instanceof SystemAlertViewHolder ) {
+            Message message = messages.get((getItemCount() -1 ) - position );
+            holder.bind(message, null);
+        }
 
-//        if ( holder.getItemViewType() == ChatAdapter.VIEW_TYPE_MY_CHAT ) {
-//            String fileName = mContext.getString(R.string.setting_profile_img_name);
-//            String extension = mContext.getString(R.string.setting_profile_img_extension);
-//            String directory = mContext.getString(R.string.setting_profile_img_directory);
-//            String content = message.getMessageContent();
-//            Bitmap profileBitmap = Utils.getImageBitmap(mContext, fileName, extension, Arrays.asList(directory));
-//            int readCount = message.isReadCount();
-//            holder.bind(content, profileBitmap, readCount, myInfo.getName(), Utils.timeToString(message.getCreatedTime()) );
-//        } else if ( holder.getItemViewType() == ChatAdapter.VIEW_TYPE_OTHER_CHAT ) {
-//            String content = message.getMessageContent();
-//            String creatorId = message.getCreatorId();
-//            Bitmap bitmap = Utils.getImageBitmap(mContext,
-//                    mContext.getString(R.string.setting_friends_profile_img_name),
-//                    mContext.getString(R.string.setting_profile_img_extension),
-//                    Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), creatorId }));
-//            int readCount = message.isReadCount();
-//            User user = chatRoom.getUsers().get(creatorId);
-//            holder.bind(content, bitmap, readCount, user.getName(), Utils.timeToString(message.getCreatedTime()) );
-//        }
-        holder.bind(message, messageCreatorInfo);
 
     }
 

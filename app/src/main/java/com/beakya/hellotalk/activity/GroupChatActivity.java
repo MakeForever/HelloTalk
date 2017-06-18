@@ -64,8 +64,9 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
     public static final String EVENT_BUS_ACTION_INVITE_RESULT = "event_bus_action_invite_result";
     public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
     public static final String EVENT_SOMEONE_READ_MESSAGE = "event_someone_read_message";
+    public static final String EVENT_INVITED_USER = "event_invited_user";
+    public static final int ADD_FRIEND_REQUEST_CODE = 10;
     private static final int ID_CHAT_CURSOR_LOADER = 3;
-
     private Button button;
     private EditText contentEditText;
     private RecyclerView memberRecyclerView;
@@ -120,7 +121,7 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
                 }
                 String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
 
-                Message message = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 1);
+                Message message = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), mChatRoom.getUsers().size() - 1);
                 int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
                 String event = getString(R.string.send_group_message);
 //                String messageJson = mChatRoom.toJson(message, new User(myId, myName, null), event);
@@ -153,21 +154,26 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(mContext, NewChatActivity.class);
-                ArrayList<User> users = new ArrayList<>(mChatRoom.getUsers().values());
                 intent.putExtra("chatType", mChatRoom.getChatRoomType());
                 intent.putExtra("chatRoom", mChatRoom);
-                startActivity(intent);
+                startActivityForResult(intent, ADD_FRIEND_REQUEST_CODE);
+                if (mDrawer.isDrawerOpen(Gravity.RIGHT)) {
+                    mDrawer.closeDrawer(Gravity.RIGHT);
+                }
             }
         });
         getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
+    }
 
-        //TODO : 채팅에 들어오면 읽는 emit 하는거 만들기
-        Intent intent = new Intent(this, ChatService.class);
-        intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
-        intent.putExtra("chatType", mChatRoom.getChatRoomType());
-        intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
-        intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
-        startService(intent);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if( requestCode == ADD_FRIEND_REQUEST_CODE && resultCode == 100 ) {
+            ArrayList<User> users = data.getParcelableArrayListExtra("users");
+            memberListAdapter.addMember(users);
+            getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
+        }
     }
 
     @Override
@@ -200,6 +206,12 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
     @Override
     protected void onStart() {
         super.onStart();
+        Intent intent = new Intent(this, ChatService.class);
+        intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
+        intent.putExtra("chatType", mChatRoom.getChatRoomType());
+        intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
+        intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
+        startService(intent);
         EventBus.getDefault().register(this);
 
     }
@@ -236,14 +248,23 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UserInviteEvent event ) {
+        if ( event.getMessage().equals( EVENT_INVITED_USER ) ) {
+            ArrayList<User> users = event.getStorage();
+            memberListAdapter.addMember(users);
+        }
+    }
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.MessageEvent event) {
         switch (event.getMessage()) {
             case EVENT_NEW_MESSAGE_ARRIVED:
                 Message message = event.getStorage();
                 if (message.getChatId().equals(mChatRoom.getChatId())) {
                     int count = message.isReadCount();
+                    --count;
                     ContentValues values = new ContentValues();
-                    values.put(TalkContract.Message.READING_COUNT, --count);
+                    values.put(TalkContract.Message.IS_READ, 1);
+                    values.put(TalkContract.Message.READING_COUNT, count);
                     ContentResolver resolver = getContentResolver();
                     resolver.update(
                             TalkContract.Message.CONTENT_URI,
@@ -253,21 +274,14 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
                     groupChatAdapter.addMessage(message);
                     message.setReadCount(count);
                     mChatRoom.setSynchronized(true);
-                    //TODO : 채팅에 들어오면 읽는 emit 하는거 만들기
-//                    PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
-//                    String t = Utils.createIsReadMessageJsonObj(message.getChatId(), Arrays.asList(new String[] { message.getMessageId()}), chatRoom.getTalkTo());
-//                    socket.emit("chat_read", t);
-                    JsonObject object = new JsonObject();
-                    JsonArray array = new JsonArray();
-                    object.addProperty("chatType", mChatRoom.getChatRoomType());
-                    object.addProperty(TalkContract.ChatRooms.CHAT_ID, message.getChatId());
-                    object.addProperty("from", myInfo.getId());
-                    array.add(message.getMessageId());
-                    object.add("messages", array);
-                    socket.emit("chat_read", object.toString());
+                    String emitParam = Utils.groupChatReadObjCreator(mChatRoom.getChatRoomType(), myInfo, mChatRoom.getChatId(), Arrays.asList(new String[] { message.getMessageId() }) );
+                    socket.emit("chat_read", emitParam);
                 }
                 break;
             case EVENT_SOMEONE_READ_MESSAGE:
+                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
+                break;
+            case EVENT_INVITED_USER:
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
                 break;
             default:

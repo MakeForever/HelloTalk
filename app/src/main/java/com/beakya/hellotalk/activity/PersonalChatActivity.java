@@ -132,8 +132,7 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
                 chatSendButton.setEnabled(true);
             }
         });
-        PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
-        personalChatAdapter = new PersonalChatAdapter(this, chatRoom, chatRecyclerView);
+        personalChatAdapter = new PersonalChatAdapter(this, mChatRoom, chatRecyclerView);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         linearLayoutManager.setReverseLayout(true);
         chatRecyclerView.setLayoutManager(linearLayoutManager);
@@ -156,14 +155,7 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
             }
         });
 
-        getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
-        Intent intent = new Intent(this, ChatService.class);
-        intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
-        intent.putExtra("receiver", chatRoom.getTalkTo());
-        intent.putExtra("chatType", chatRoom.getChatRoomType());
-        intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
-        intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
-        startService(intent);
+
     }
 
     @Override
@@ -180,10 +172,12 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
     }
     @Override
     public void onBackPressed() {
-        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
-            mDrawer.closeDrawer(GravityCompat.START);
+        Log.d(TAG, "onBackPressed: ");
+        if (mDrawer.isDrawerOpen(Gravity.RIGHT)) {
+            mDrawer.closeDrawer(Gravity.RIGHT);
+        } else {
+            super.onBackPressed();
         }
-        super.onBackPressed();
     }
 
     @Override
@@ -202,6 +196,14 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
     @Override
     protected void onStart() {
         super.onStart();
+        getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
+        Intent intent = new Intent(this, ChatService.class);
+        intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
+        intent.putExtra("receiver", mChatRoom.getTalkTo());
+        intent.putExtra("chatType", mChatRoom.getChatRoomType());
+        intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
+        intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
+        startService(intent);
         EventBus.getDefault().register(this);
 
     }
@@ -261,9 +263,6 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
                 }
                 break;
             case EVENT_SOMEONE_READ_MESSAGE:
-                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
-                break;
-            case EVENT_INVITED_USER:
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
                 break;
             default:

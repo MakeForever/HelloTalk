@@ -47,6 +47,10 @@ public class MemberListAdapter extends RecyclerView.Adapter<ChatMemberViewHolder
         this.storage = newData;
         notifyDataSetChanged();
     }
-
+    public void addMember( List<User> users ) {
+        int startPoint = storage.size();
+        storage.addAll(users);
+        notifyItemRangeInserted(startPoint, users.size());
+    }
 
 }

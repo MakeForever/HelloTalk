@@ -17,7 +17,7 @@ import com.beakya.hellotalk.utils.Utils;
  * Created by goodlife on 2017. 6. 7..
  */
 
-public class ChatViewHolder extends RecyclerView.ViewHolder {
+public class ChatViewHolder extends ChatItemViewHolder {
 
     TextView contentTextView;
     TextView readCountView;
@@ -35,18 +35,6 @@ public class ChatViewHolder extends RecyclerView.ViewHolder {
         context = itemView.getContext();
     }
 
-    public void bind(String content, Bitmap profileImg, int readCount, String name, String time) {
-        if (readCount == 0) {
-            readCountView.setVisibility(View.INVISIBLE);
-        } else {
-            readCountView.setVisibility(View.VISIBLE);
-            readCountView.setText(String.valueOf(readCount));
-        }
-        contentTextView.setText(content);
-        profileImageView.setImageBitmap(profileImg);
-        createTimeView.setText(time);
-        nameView.setText(name);
-    }
     public void bind(Message message, User user) {
         if (message.isReadCount() == 0) {
             readCountView.setVisibility(View.INVISIBLE);

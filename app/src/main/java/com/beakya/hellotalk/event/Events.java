@@ -1,8 +1,12 @@
 package com.beakya.hellotalk.event;
 
 import com.beakya.hellotalk.objs.Message;
+import com.beakya.hellotalk.objs.User;
 
+import org.greenrobot.eventbus.EventBus;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
 
 /**
  * Created by goodlife on 2017. 5. 30..
@@ -73,5 +77,23 @@ public class Events {
             return storage;
         }
     }
+    public static class UserInviteEvent implements Event<ArrayList<User>> {
+        private ArrayList<User> users;
+        private String message;
 
+        public UserInviteEvent( String message, ArrayList<User> users) {
+            this.users = users;
+            this.message = message;
+        }
+
+        @Override
+        public String getMessage() {
+            return message;
+        }
+
+        @Override
+        public ArrayList<User> getStorage() {
+            return users;
+        }
+    }
 }

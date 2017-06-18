@@ -10,8 +10,8 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 
 public class DbHelper extends SQLiteOpenHelper {
-    private static String dbName = "helloTalk.db";
-    private static int version = 1 ;
+    private static final String dbName = "helloTalk.db";
+    private static final int version = 1 ;
     public DbHelper(Context context) {
         super(context, dbName, null, version);
     }

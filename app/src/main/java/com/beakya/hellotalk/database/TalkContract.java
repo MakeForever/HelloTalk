@@ -45,7 +45,8 @@ public class TalkContract {
         public static final String MESSAGE_CONTENT = "message_content";
         public static final String CREATED_TIME = "created_time";
         public static final String IS_SEND = "is_send";
-        public static final String READING_COUNT = "is_read";
+        public static final String READING_COUNT = "reading_count";
+        public static final String IS_READ ="is_read";
         public static final String CHAT_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE [" + TABLE_NAME + "] ( " +
                         _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -56,7 +57,8 @@ public class TalkContract {
                         MESSAGE_TYPE + " INTEGER , " +
                         CREATED_TIME + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
                         IS_SEND + " BOOLEAN DEFAULT 0, " +
-                        READING_COUNT + " INTEGER DEFAULT 0 " +
+                        READING_COUNT + " INTEGER DEFAULT 0, " +
+                        IS_READ + " BOOLEAN DEFAULT 0" +
                             " ); ";
     }
     public static final class ChatRooms {

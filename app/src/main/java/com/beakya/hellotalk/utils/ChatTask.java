@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.beakya.hellotalk.MyApp;
+import com.beakya.hellotalk.activity.GroupChatActivity;
 import com.beakya.hellotalk.activity.PersonalChatActivity;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
@@ -177,6 +178,7 @@ public class ChatTask {
                 ContentValues values = new ContentValues();
                 --count;
                 values.put(TalkContract.Message.READING_COUNT, count);
+                values.put(TalkContract.Message.IS_READ, 1);
                 int result = db.update(TalkContract.Message.TABLE_NAME, values, TalkContract.Message.MESSAGE_ID + " = ? ", new String[] { messageId });
                 Log.d(TAG, "bulkUpdateMessage: " + result);
             }
@@ -284,7 +286,7 @@ public class ChatTask {
         Cursor cursor = resolver.query(
                 TalkContract.Message.CONTENT_URI,
                 new String[] { TalkContract.Message.MESSAGE_ID },
-                "NOT " + TalkContract.Message.CREATOR_ID + " = ? and " + TalkContract.ChatRooms.CHAT_ID + " = ? and " + TalkContract.Message.READING_COUNT + " > 0 ",
+                "NOT " + TalkContract.Message.CREATOR_ID + " = ? and " + TalkContract.ChatRooms.CHAT_ID + " = ? and " + TalkContract.Message.IS_READ + " = 0 ",
                 new String[] { myInfo.getId(), chatId },
                 null);
 
@@ -294,18 +296,24 @@ public class ChatTask {
         return result;
     }
     private void storeInvitedUserInfo ( String arg, Context context ) {
+        User myInfo = Utils.getMyInfo(context);
         gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
                 .create();
         JsonObject object = new JsonParser().parse(arg).getAsJsonObject();
         String chatId = object.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
         ArrayList<User> users = gson.fromJson(object.get("users"), new TypeToken<ArrayList<User>>(){}.getType());
+        String sender = object.get("sender").getAsString();
+        User senderUserObj = Utils.findUser(context, sender);
         for ( User user : users ) {
             if ( !Utils.checkUserInDb( context, user.getId()) ) {
                 Utils.insertUser(context, user);
             }
+            String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
+            Message message = new Message(messageId, "system", senderUserObj.getName() + "님이 " + user.getName() +"님을 초대했습니다.", chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 0);
+            Utils.insertMessage(context, message, chatId);
         }
         Utils.insertChatMembers(context.getContentResolver(), chatId, users);
-
+        EventBus.getDefault().post(new Events.UserInviteEvent(GroupChatActivity.EVENT_INVITED_USER, users));
     }
 }

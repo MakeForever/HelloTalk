@@ -14,5 +14,5 @@ public abstract class ChatItemViewHolder extends RecyclerView.ViewHolder {
     public ChatItemViewHolder(View itemView) {
         super(itemView);
     }
-    public abstract void bind(Message message, User user);
+    public abstract void bind(Message stringMessage, User user);
 }

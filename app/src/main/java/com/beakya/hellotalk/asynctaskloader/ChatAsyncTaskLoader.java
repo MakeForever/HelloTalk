@@ -5,9 +5,9 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 
-import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.Message;
+
 import java.util.ArrayList;
 
 /**
@@ -247,7 +247,7 @@ public class ChatAsyncTaskLoader extends AsyncTaskLoader<ArrayList<Message>> {
             boolean isSend = cursor.getInt(cursor.getColumnIndex(TalkContract.Message.IS_SEND)) > 0;
             int readCount = cursor.getInt(cursor.getColumnIndex(TalkContract.Message.READING_COUNT));
 
-            Message message = new Message(
+            Message stringMessage = new Message(
                     messageId,
                     creatorId,
                     messageContent,
@@ -257,7 +257,7 @@ public class ChatAsyncTaskLoader extends AsyncTaskLoader<ArrayList<Message>> {
                     isSend,
                     readCount);
 
-            messagesList.add(message);
+            messagesList.add(stringMessage);
         }
         return messagesList;
     }

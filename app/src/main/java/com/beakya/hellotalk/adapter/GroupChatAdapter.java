@@ -1,9 +1,7 @@
 package com.beakya.hellotalk.adapter;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,15 +9,12 @@ import android.view.ViewGroup;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
-import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
-import com.beakya.hellotalk.utils.Utils;
 import com.beakya.hellotalk.viewholder.ChatItemViewHolder;
 import com.beakya.hellotalk.viewholder.ChatViewHolder;
 import com.beakya.hellotalk.viewholder.SystemAlertViewHolder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Created by goodlife on 2017. 6. 7..
@@ -56,12 +51,12 @@ public class GroupChatAdapter extends ChatAdapter {
     @Override
     public void onBindViewHolder(ChatItemViewHolder holder, int position) {
         if ( holder instanceof ChatViewHolder ) {
-            Message message = messages.get((getItemCount() -1 ) - position );
-            User messageCreatorInfo = chatRoom.findUser(message.getCreatorId());
-            holder.bind(message, messageCreatorInfo);
+            Message stringMessage = stringMessages.get((getItemCount() -1 ) - position );
+            User messageCreatorInfo = chatRoom.findUser(stringMessage.getCreatorId());
+            holder.bind(stringMessage, messageCreatorInfo);
         } else if ( holder instanceof SystemAlertViewHolder ) {
-            Message message = messages.get((getItemCount() -1 ) - position );
-            holder.bind(message, null);
+            Message stringMessage = stringMessages.get((getItemCount() -1 ) - position );
+            holder.bind(stringMessage, null);
         }
 
 
@@ -73,12 +68,12 @@ public class GroupChatAdapter extends ChatAdapter {
     }
 
     @Override
-    public void swapCursor(ArrayList<Message> messages) {
-        super.swapCursor(messages);
+    public void swapCursor(ArrayList<Message> stringMessages) {
+        super.swapCursor(stringMessages);
     }
 
     @Override
-    public void addMessage(Message message) {
-        super.addMessage(message);
+    public void addMessage(Message stringMessage) {
+        super.addMessage(stringMessage);
     }
 }

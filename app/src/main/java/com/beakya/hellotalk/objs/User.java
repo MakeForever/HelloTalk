@@ -23,6 +23,7 @@ public class User implements Parcelable {
     private Bitmap profileImage;
     private boolean hasProfileImg;
     private boolean isAdded = false;
+    private boolean isMyFriend = false;
     public User(String id, String name, Bitmap profileImage) {
         this.id = id;
         this.name = name;
@@ -40,6 +41,15 @@ public class User implements Parcelable {
         this.isAdded = in.readInt() == 1;
         this.hasProfileImg = in.readByte() != 0;
     }
+
+    public boolean isMyFriend() {
+        return isMyFriend;
+    }
+
+    public void setMyFriend(boolean myFriend) {
+        isMyFriend = myFriend;
+    }
+
     public boolean isAdded() {
         return isAdded;
     }

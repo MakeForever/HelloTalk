@@ -1,6 +1,7 @@
 package com.beakya.hellotalk.adapter;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -16,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.User;
@@ -25,6 +27,7 @@ import com.daimajia.swipe.SwipeLayout;
 import java.util.Arrays;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.socket.client.Socket;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -158,14 +161,22 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                         Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
                     }
 
-                    Uri uri = TalkContract.User.CONTENT_URI.buildUpon().appendPath(user.getId()).build();
-                    int deletedRow = resolver.delete(uri, TalkContract.User.USER_ID+ "=?",new String[]{ user.getId() });
+                    ContentValues values = new ContentValues();
+                    values.put(TalkContract.User.IS_MY_FRIEND, 0);
+                    int deletedRow = resolver.update(
+                            TalkContract.User.CONTENT_URI,
+                            values,
+                            TalkContract.User.USER_ID + " = ?",
+                            new String[] { user.getId() });
                     if( userInfo.hasProfileImg() != false ) {
-                        Utils.deleteFile(mContext,
-                                mContext.getString(R.string.setting_friends_profile_img_name),
-                                mContext.getString(R.string.setting_profile_img_extension),
-                                Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), user.getId() }));
+                        //TODO test 할것
+//                        Utils.deleteFile(mContext,
+//                                mContext.getString(R.string.setting_friends_profile_img_name),
+//                                mContext.getString(R.string.setting_profile_img_extension),
+//                                Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), user.getId() }));
                     }
+                    Socket socket = ((MyApp) mContext.getApplicationContext()).getSocket();
+                    socket.emit("delete_friend", user.getId());
                     isSwiped = false;
                 }
             });
@@ -179,9 +190,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                 Toast.makeText(mContext, "스와이프를 닫아주세요", Toast.LENGTH_SHORT).show();
             }
         }
-        private void deleteFriend() {
 
-        }
     }
     public interface mOnClickListener {
         void onListItemClick(User user);

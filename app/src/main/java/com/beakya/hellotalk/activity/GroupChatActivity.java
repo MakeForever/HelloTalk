@@ -39,7 +39,6 @@ import com.beakya.hellotalk.utils.ChatTask;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -47,11 +46,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.TimeZone;
 
 import io.socket.client.Socket;
 
@@ -82,6 +78,7 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
     private GroupChatRoom mChatRoom;
     private LinearLayout chatEditTextView;
     private DrawerLayout mDrawer;
+    private boolean isMessageUpdated = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -121,10 +118,10 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
                 }
                 String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
 
-                Message message = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), mChatRoom.getUsers().size() - 1);
-                int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
+                Message message = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), false, mChatRoom.getUsers().size() - 1);
+                int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId, false);
                 String event = getString(R.string.send_group_message);
-//                String messageJson = mChatRoom.toJson(message, new User(myId, myName, null), event);
+//                String messageJson = mChatRoom.toJson(stringMessage, new User(myId, myName, null), event);
                 Gson gson = new GsonBuilder().create();
                 JsonElement messageJson = gson.toJsonTree(message);
                 JsonObject object = new JsonObject();
@@ -206,12 +203,17 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
     @Override
     protected void onStart() {
         super.onStart();
-        Intent intent = new Intent(this, ChatService.class);
-        intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
-        intent.putExtra("chatType", mChatRoom.getChatRoomType());
-        intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
-        intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
-        startService(intent);
+        if ( !isMessageUpdated ) {
+            isMessageUpdated = true;
+            Intent intent = new Intent(this, ChatService.class);
+            intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
+            intent.putExtra("chatType", mChatRoom.getChatRoomType());
+            intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
+            intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
+            startService(intent);
+            isMessageUpdated = false;
+        }
+
         EventBus.getDefault().register(this);
 
     }
@@ -258,9 +260,9 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
     public void onMessageEvent(Events.MessageEvent event) {
         switch (event.getMessage()) {
             case EVENT_NEW_MESSAGE_ARRIVED:
-                Message message = event.getStorage();
-                if (message.getChatId().equals(mChatRoom.getChatId())) {
-                    int count = message.isReadCount();
+                Message stringMessage = event.getStorage();
+                if (stringMessage.getChatId().equals(mChatRoom.getChatId())) {
+                    int count = stringMessage.isReadCount();
                     --count;
                     ContentValues values = new ContentValues();
                     values.put(TalkContract.Message.IS_READ, 1);
@@ -270,11 +272,11 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
                             TalkContract.Message.CONTENT_URI,
                             values,
                             TalkContract.Message.MESSAGE_ID + " = ?",
-                            new String[]{message.getMessageId()});
-                    groupChatAdapter.addMessage(message);
-                    message.setReadCount(count);
+                            new String[]{stringMessage.getMessageId()});
+                    groupChatAdapter.addMessage(stringMessage);
+                    stringMessage.setReadCount(count);
                     mChatRoom.setSynchronized(true);
-                    String emitParam = Utils.groupChatReadObjCreator(mChatRoom.getChatRoomType(), myInfo, mChatRoom.getChatId(), Arrays.asList(new String[] { message.getMessageId() }) );
+                    String emitParam = Utils.groupChatReadObjCreator(mChatRoom.getChatRoomType(), myInfo, mChatRoom.getChatId(), Arrays.asList(new String[] { stringMessage.getMessageId() }) );
                     socket.emit("chat_read", emitParam);
                 }
                 break;
@@ -285,7 +287,7 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
                 break;
             default:
-                throw new RuntimeException("message not matched");
+                throw new RuntimeException("stringMessage not matched");
         }
     }
 }

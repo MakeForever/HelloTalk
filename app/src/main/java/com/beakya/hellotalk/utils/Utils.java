@@ -84,7 +84,8 @@ public class Utils {
         path.mkdirs();
         FileOutputStream out;
         try {
-            out = new FileOutputStream(myPath);
+            myPath.createNewFile();
+            out = new FileOutputStream(myPath, false);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.close();
         } catch (Exception e) {
@@ -123,11 +124,18 @@ public class Utils {
         try {
 
             String[] children = directory.list();
-            for ( String s : children ) {
-                boolean test = c.deleteFile( new File ( directory, s ).getName());
-                boolean isSuccess = new File ( directory, s ).delete();
+            if ( children != null ) {
+                for ( String s : children ) {
+                    File file = new File ( directory, s );
+                    String[] secondDir = file.list();
+                    for ( String t : secondDir ) {
+                        File k = new File( file.getPath(), t);
+                        k.delete();
+                    }
+                    file.delete();
+                }
+                boolean deleted = directory.delete();
             }
-            boolean deleted = directory.delete();
             result = true;
         } catch ( Exception e ){
             e.printStackTrace();
@@ -188,11 +196,9 @@ public class Utils {
     }
 
     public static boolean dropAllProfileImg( Context c ) {
-        String myProfileDirectory = c.getString(R.string.setting_profile_img_directory);
         String FriendsFileDirectory = c.getString(R.string.setting_friends_img_directory);
-        boolean r1 = deleteDirectory(c, Arrays.asList( myProfileDirectory ));
         boolean r2 = deleteDirectory(c, Arrays.asList( FriendsFileDirectory ));
-        if( r1 && r2 ) {
+        if( r2 ) {
             return true;
         } else
             return false;
@@ -231,16 +237,21 @@ public class Utils {
     }
 
 
-    public static int insertMessage ( Context context, Message message, String chatId ) {
+    public static int insertMessage (Context context, Message stringMessage, String chatId, boolean isRead ) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues chatParams = new ContentValues();
         chatParams.put(TalkContract.ChatRooms.CHAT_ID, chatId);
-        chatParams.put(TalkContract.Message.MESSAGE_ID, message.getMessageId());
-        chatParams.put(TalkContract.Message.CREATOR_ID, message.getCreatorId());
-        chatParams.put(TalkContract.Message.MESSAGE_CONTENT, message.getMessageContent());
-        chatParams.put(TalkContract.Message.MESSAGE_TYPE, message.getMessageType());
-        chatParams.put(TalkContract.Message.READING_COUNT, message.isReadCount());
-        chatParams.put(TalkContract.Message.CREATED_TIME, message.getCreatedTime());
+        chatParams.put(TalkContract.Message.MESSAGE_ID, stringMessage.getMessageId());
+        chatParams.put(TalkContract.Message.CREATOR_ID, stringMessage.getCreatorId());
+        chatParams.put(TalkContract.Message.MESSAGE_CONTENT, stringMessage.getMessageContent());
+        chatParams.put(TalkContract.Message.MESSAGE_TYPE, stringMessage.getMessageType());
+        chatParams.put(TalkContract.Message.READING_COUNT, stringMessage.isReadCount());
+        chatParams.put(TalkContract.Message.CREATED_TIME, stringMessage.getCreatedTime());
+        if ( isRead ){
+            chatParams.put(TalkContract.Message.IS_READ, 1);
+        } else {
+            chatParams.put(TalkContract.Message.IS_READ, 0);
+        }
         Uri insertedUri = resolver.insert(TalkContract.Message.CONTENT_URI, chatParams);
         return Integer.parseInt(insertedUri.getLastPathSegment());
     }
@@ -472,16 +483,7 @@ public class Utils {
         boolean isSynchronized = true;
         return null;
     }
-    public static Message extractMessageFromJson ( JSONObject object) throws JSONException {
-        int messageType = object.getInt(TalkContract.Message.MESSAGE_TYPE);
-        String creatorId = object.getString(TalkContract.Message.CREATOR_ID);
-        String messageContent = object.getString(TalkContract.Message.MESSAGE_CONTENT);
-        String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
-        String messageId = object.getString(TalkContract.Message.MESSAGE_ID);
-        int readCount = object.getInt(TalkContract.Message.READING_COUNT);
-        String createdTime = object.getString(TalkContract.Message.CREATED_TIME);
-        return new Message(messageId, creatorId, messageContent, chatId, messageType, createdTime, readCount);
-    }
+
     public static User extractUserFromJson ( JSONObject object ) throws JSONException {
         return new User (object.getString(TalkContract.User.USER_ID), object.getString(TalkContract.User.USER_NAME), true);
     }

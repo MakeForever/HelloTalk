@@ -113,7 +113,6 @@ public class FriendAddActivity extends AppCompatActivity {
             users = new User[array.length()];
             for ( int i = 0; i< array.length(); i++) {
                 JSONObject o = array.getJSONObject(i);
-
                 String imgStringData = o.getString("img");
                 Bitmap decodedImage = null;
                 if( imgStringData != null) {
@@ -123,8 +122,16 @@ public class FriendAddActivity extends AppCompatActivity {
                 User user = new User(o.getString("id"), o.getString("name"), decodedImage);
                 ContentResolver resolver = getContentResolver();
                 Cursor cursor = resolver.query(targetUri, null, USER_ID+"=?", new String[]{o.getString("id")}, null );
+
+                boolean isMyFriend = false;
+                while( cursor.moveToNext() ) {
+                    isMyFriend = cursor.getInt(cursor.getColumnIndex(TalkContract.User.IS_MY_FRIEND)) > 0;
+                }
                 if( cursor.getCount() > 0 ) {
                     user.setAdded(true);
+                }
+                if ( isMyFriend ) {
+                    user.setMyFriend(isMyFriend);
                 }
                 users[i] = user;
             }

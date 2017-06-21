@@ -23,6 +23,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.retrofit.PhotoProfileService;
 import com.beakya.hellotalk.utils.Utils;
 import com.linchaolong.android.imagepicker.ImagePicker;
@@ -170,15 +171,16 @@ public class ImageSelectionActivity extends AppCompatActivity {
         @Override
         protected Response<ResponseBody> doInBackground(Bitmap... params) {
             Bitmap mBitmap = params[0];
-            String fileName = getString(R.string.setting_profile_img_name);
+            String fileName = getString(R.string.setting_friends_profile_img_name);
             String extension = getString(R.string.setting_profile_img_extension);
-            String directory = getString(R.string.setting_profile_img_directory);
+            String directory = getString(R.string.setting_friends_img_directory);
             Context context = ImageSelectionActivity.this;
-            Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory }));
+            User myInfo = Utils.getMyInfo(context);
+            Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory, myInfo.getId()}));
 
-
-            File directoryFile = context.getDir(directory, Context.MODE_PRIVATE);
-            File originalImageFile = new File(directoryFile, fileName + '.' + extension);
+            File directoryFile = new File ( context.getFilesDir(), directory);
+            File test = new File ( directoryFile, myInfo.getId());
+            File originalImageFile = new File(test, fileName + '.' + extension);
             Uri mUri = Uri.fromFile(originalImageFile);
             Log.d(TAG, "doInBackground: " + mUri.toString());
             String mimeType = Utils.getMimeType(ImageSelectionActivity.this, mUri);

@@ -25,6 +25,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 
+import static com.beakya.hellotalk.activity.GroupChatActivity.EVENT_INVITED_USER;
 import static com.beakya.hellotalk.activity.PersonalChatActivity.EVENT_NEW_MESSAGE_ARRIVED;
 
 /**
@@ -79,6 +80,18 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
         }
 
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UserInviteEvent event) {
+        switch ( event.getMessage() ) {
+            case EVENT_INVITED_USER :
+                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
+                break;
+            default :
+                throw new RuntimeException("message not matched : " + event.getMessage());
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.MessageEvent event) {
         switch ( event.getMessage() ) {
@@ -86,7 +99,7 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
                 getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
                 break;
             default :
-                throw new RuntimeException("message not matched");
+                throw new RuntimeException("message not matched message : " + event.getMessage());
         }
     }
     @Override

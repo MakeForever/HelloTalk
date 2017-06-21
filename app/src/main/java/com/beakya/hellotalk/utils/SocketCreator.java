@@ -5,26 +5,16 @@ import android.content.Intent;
 import android.util.Log;
 
 import com.beakya.hellotalk.event.Events;
-import com.beakya.hellotalk.objs.GroupChatRoom;
-import com.beakya.hellotalk.objs.Message;
-import com.beakya.hellotalk.objs.PersonalChatRoom;
-import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.services.ChatService;
 import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.util.HashMap;
 
+import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
@@ -35,6 +25,12 @@ import io.socket.emitter.Emitter;
 
 public class SocketCreator {
     private final String TAG = SocketCreator.class.getSimpleName();
+    public static final String INVITE_TO_PERSONAL_CHAT = "invite_to_personal_chat";
+    public static final String SEND_GROUP_CHAT_MESSAGE = "send_group_message";
+    public static final String SOMEONE_CHAT_READ = "chat_read";
+    public static final String INVITE_GROUP_CHAT ="invite_group_chat";
+    public static final String INVITE_FRIEND = "invite_friend";
+    public static final String RECEIVE_ALL_EVENT = "read_all_event";
     private final String IP = "http://192.168.0.101:8888";
     private Context context;
     public SocketCreator(Context context) {
@@ -44,7 +40,6 @@ public class SocketCreator {
     public IO.Options getOptions(String token) {
         int timeoutLimit = 5000;
         IO.Options options = new IO.Options();
-        JSONObject object = new JSONObject();
         String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
         options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
         options.timeout = timeoutLimit;
@@ -96,7 +91,7 @@ public class SocketCreator {
             }
         });
         // 처음 채팅이 왔을때 초기화해야 한다
-        socket.on("invite_to_personal_chat", new Emitter.Listener() {
+        socket.on(INVITE_TO_PERSONAL_CHAT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 String info = (String) args[0];
@@ -107,7 +102,7 @@ public class SocketCreator {
             }
         });
 
-        socket.on("chat_read", new Emitter.Listener() {
+        socket.on(SOMEONE_CHAT_READ, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 Log.d(TAG, "call: chat_read");
@@ -117,7 +112,7 @@ public class SocketCreator {
                 context.startService(intent);
             }
         });
-        socket.on("send_group_message", new Emitter.Listener() {
+        socket.on(SEND_GROUP_CHAT_MESSAGE, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 Intent intent = new Intent(context, ChatService.class);
@@ -126,7 +121,7 @@ public class SocketCreator {
                 context.startService(intent);
             }
         });
-        socket.on("invite_group_chat", new Emitter.Listener() {
+        socket.on(INVITE_GROUP_CHAT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
 
@@ -137,7 +132,7 @@ public class SocketCreator {
                 Log.d(TAG, "call: invite_group_chat" );
             }
         });
-        socket.on("invite_friend", new Emitter.Listener() {
+        socket.on(INVITE_FRIEND, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 Intent intent = new Intent(context, ChatService.class);
@@ -152,6 +147,19 @@ public class SocketCreator {
             public void call(Object... args) {
 
             }
+        });
+        socket.on(RECEIVE_ALL_EVENT, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("info", (String) args[0]);
+                intent.setAction(ChatTask.ACTION_READ_ALL_CHAT);
+                context.startService(intent);
+                Ack ack = (Ack) args[args.length - 1];
+                ack.call();
+                Log.d(TAG, "call RECEIVE_ALL_EVENT");
+            }
+
         });
         socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
             @Override

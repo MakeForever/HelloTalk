@@ -8,7 +8,6 @@ import android.content.SharedPreferences;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
-import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -122,11 +121,11 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
                 }
                 String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
                 PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
-                Message message = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 1);
-                int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId);
+                Message stringMessage = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), false,1);
+                int insertedChatRowNumber = Utils.insertMessage(mContext, stringMessage, chatId, true);
                 String event = getString(R.string.invite_to_personal_chat);
-//                String messageJson = chatRoom.toJson(message, new User(myId, myName, null), event);event
-                String messageString = createMessageJson( mChatRoom, message, Utils.getMyInfo(mContext) );
+//                String messageJson = chatRoom.toJson(stringMessage, new User(myId, myName, null), event);event
+                String messageString = createMessageJson( mChatRoom, stringMessage, Utils.getMyInfo(mContext) );
                 socket.emit( event, messageString );
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, PersonalChatActivity.this);
                 chatSendButton.setEnabled(true);
@@ -237,18 +236,18 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
     public void onMessageEvent(Events.MessageEvent event) {
         switch (event.getMessage()) {
             case EVENT_NEW_MESSAGE_ARRIVED:
-                Message message = event.getStorage();
-                if (message.getChatId().equals(mChatRoom.getChatId())) {
+                Message stringMessage = event.getStorage();
+                if (stringMessage.getChatId().equals(mChatRoom.getChatId())) {
                     PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
                     String t = Utils.personalChatReadObjCreator(
                             chatRoom.getChatRoomType(),
                             Utils.getMyInfo(mContext),
                             chatRoom.getTalkTo(),
                             chatRoom.getChatId(),
-                            new ArrayList<String>(Arrays.asList(new String[] { message.getMessageId()}))
+                            new ArrayList<String>(Arrays.asList(new String[] { stringMessage.getMessageId()}))
                     );
                     socket.emit("chat_read", t);
-                    int count = message.isReadCount();
+                    int count = stringMessage.isReadCount();
                     ContentValues values = new ContentValues();
                     values.put(TalkContract.Message.READING_COUNT, --count);
                     ContentResolver resolver = getContentResolver();
@@ -256,10 +255,10 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
                             TalkContract.Message.CONTENT_URI,
                             values,
                             TalkContract.Message.MESSAGE_ID + " = ?",
-                            new String[]{message.getMessageId()});
-                    message.setReadCount(count);
+                            new String[]{stringMessage.getMessageId()});
+                    stringMessage.setReadCount(count);
                     mChatRoom.setSynchronized(true);
-                    personalChatAdapter.addMessage(message);
+                    personalChatAdapter.addMessage(stringMessage);
                 }
                 break;
             case EVENT_SOMEONE_READ_MESSAGE:
@@ -269,14 +268,14 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
                 throw new RuntimeException("message not matched");
         }
     }
-    String createMessageJson (PersonalChatRoom personalChatRoom, Message message, User myInfo ) {
+    String createMessageJson (PersonalChatRoom personalChatRoom, Message stringMessage, User myInfo ) {
         JsonObject result = new JsonObject();
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserSerializer())
                 .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
                 .create();
         JsonObject chatRoomElement = gson.toJsonTree(personalChatRoom).getAsJsonObject();
-        JsonElement messageElement = gson.toJsonTree(message);
+        JsonElement messageElement = gson.toJsonTree(stringMessage);
         JsonElement userElement = gson.toJsonTree(myInfo);
         JsonElement targetElement = chatRoomElement.get("talkTo");
         chatRoomElement.add("talkTo", userElement);

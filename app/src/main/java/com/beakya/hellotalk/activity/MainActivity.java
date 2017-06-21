@@ -3,6 +3,7 @@ package com.beakya.hellotalk.activity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -12,6 +13,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.MenuCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -36,6 +38,10 @@ import com.beakya.hellotalk.fragment.ChatListFragment;
 import com.beakya.hellotalk.fragment.UserFragment;
 import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.beakya.hellotalk.retrofit.LoginResponseBody;
+import com.beakya.hellotalk.retrofit.LoginService;
+import com.beakya.hellotalk.retrofit.LogoutBody;
+import com.beakya.hellotalk.retrofit.LogoutService;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
@@ -45,6 +51,12 @@ import java.util.HashMap;
 
 import io.codetail.animation.ViewAnimationUtils;
 import io.codetail.widget.RevealFrameLayout;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import static com.beakya.hellotalk.retrofit.RetrofitCreator.retrofit;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     public static final int ACTION_CHAT_LIST_ASYNC = 0;
@@ -65,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private boolean isFabOpen = false;
     private boolean isFabRunning = false;
     private View fabBackground;
-
+    private Context mContext;
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -76,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             startActivity(loginIntent);
             finish();
         }
+        mContext = this;
         String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
         Log.d(TAG, "onCreate: " + fireBaseToken);
         setContentView(R.layout.activity_main);
@@ -209,12 +222,31 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Intent socketIntent = new Intent(MainActivity.this, SocketService.class);
             socketIntent.setAction(SocketTask.ACTION_SOCKET_DISCONNECT);
             startService(socketIntent);
-            boolean success = Utils.logout(this);
-            if( success ) {
-                Intent intent = new Intent(this, LoginActivity.class);
-                startActivity(intent);
-                finish();
-            }
+
+            String token = Utils.getToken(this);
+            LogoutBody body = new LogoutBody(token);
+            LogoutService logoutService = retrofit.create(LogoutService.class);
+            Call<ResponseBody> call = logoutService.logout(body);
+            call.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    if( response.code() != 200 ) {
+                        //TODO : snackbar
+                    } else {
+                        boolean success = Utils.logout(mContext);
+                        if( success ) {
+                            Intent intent = new Intent(mContext, LoginActivity.class);
+                            startActivity(intent);
+                            finish();
+                        }
+                    }
+                }
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    //TODO : snackbar
+                }
+            });
+
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);

@@ -1,22 +1,15 @@
 package com.beakya.hellotalk.adapter;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.ViewGroup;
 
-import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.objs.Message;
-import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 import com.beakya.hellotalk.viewholder.ChatItemViewHolder;
-import com.beakya.hellotalk.viewholder.ChatViewHolder;
 
 import java.util.ArrayList;
-
-import static android.content.Context.MODE_PRIVATE;
 
 /**
  * Created by goodlife on 2017. 6. 7..
@@ -26,7 +19,7 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHold
     public static final int VIEW_TYPE_MY_CHAT = 1;
     public static final int VIEW_TYPE_OTHER_CHAT = 2;
     public static final int VIEW_TYPE_SYSTEM = 3;
-    protected ArrayList<Message> messages = new ArrayList<>();
+    protected ArrayList<Message> stringMessages = new ArrayList<>();
     User myInfo;
     Context mContext;
     private RecyclerView recyclerView;
@@ -43,15 +36,15 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHold
 
     @Override
     public int getItemCount() {
-        if (messages != null)
-            return messages.size();
+        if (stringMessages != null)
+            return stringMessages.size();
         else
             return 0;
     }
     @Override
     public int getItemViewType(int position) {
-        Message message = messages.get( ( messages.size() - 1 ) - position);
-        String id = message.getCreatorId();
+        Message stringMessage = stringMessages.get( ( stringMessages.size() - 1 ) - position);
+        String id = stringMessage.getCreatorId();
 
         if( id.equals( myInfo.getId() ) ) {
             return VIEW_TYPE_MY_CHAT;
@@ -61,16 +54,16 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHold
             return VIEW_TYPE_OTHER_CHAT;
         }
     }
-    public void swapCursor(ArrayList<Message> messages) {
-        this.messages = messages;
+    public void swapCursor(ArrayList<Message> stringMessages) {
+        this.stringMessages = stringMessages;
         notifyDataSetChanged();
     }
-    public void addMessage ( Message message ) {
-        messages.add(message);
+    public void addMessage ( Message stringMessage) {
+        stringMessages.add(stringMessage);
         notifyItemInserted(0);
         recyclerView.smoothScrollToPosition(0);
     }
     public Message getMessage(int index) {
-        return messages.get(index);
+        return stringMessages.get(index);
     }
 }

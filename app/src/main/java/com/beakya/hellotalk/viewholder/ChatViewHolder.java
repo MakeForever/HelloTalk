@@ -1,14 +1,11 @@
 package com.beakya.hellotalk.viewholder;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
@@ -35,16 +32,16 @@ public class ChatViewHolder extends ChatItemViewHolder {
         context = itemView.getContext();
     }
 
-    public void bind(Message message, User user) {
-        if (message.isReadCount() == 0) {
+    public void bind(Message stringMessage, User user) {
+        if (stringMessage.isReadCount() == 0) {
             readCountView.setVisibility(View.INVISIBLE);
         } else {
             readCountView.setVisibility(View.VISIBLE);
-            readCountView.setText(String.valueOf(message.isReadCount()));
+            readCountView.setText(String.valueOf(stringMessage.isReadCount()));
         }
-        contentTextView.setText(message.getMessageContent());
+        contentTextView.setText(stringMessage.getMessageContent());
         profileImageView.setImageBitmap(user.getProfileImg(context));
-        createTimeView.setText(Utils.timeToString(message.getCreatedTime()));
+        createTimeView.setText(Utils.timeToString(stringMessage.getCreatedTime()));
         nameView.setText(user.getName());
     }
 }

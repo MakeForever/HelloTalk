@@ -54,6 +54,7 @@ public class ChatTask {
     public static final String ACTION_CHANGE_ALL_MESSAGE_READ_STATE = "action_change_all_message_read_state";
     public static final String ACTION_CHANGE_SPECIFIC_MESSAGE_READ_STATE ="action_change_specific_message_read_state";
     public static final String ACTION_INVITE_TO_GROUP_CHAT = "invite_to_group_chat";
+    public static final String ACTION_READ_ALL_CHAT = "action_read_all_chat";
     String chatTableName;
     ContentResolver resolver;
     String arg;
@@ -65,6 +66,7 @@ public class ChatTask {
     public void task(Intent intent, Context context ) throws JSONException {
         switch ( intent.getAction() )  {
             case ACTION_STORAGE_GROUP_CHAT_INVITE:
+                Log.d(TAG, "task: ACTION_STORAGE_GROUP_CHAT_INVITE ");
                 arg = intent.getStringExtra("info");
                 gson = new GsonBuilder()
                         .registerTypeAdapter(HashMap.class, new HashMapDeserializer())
@@ -81,38 +83,17 @@ public class ChatTask {
                 EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
                 break;
             case ACTION_STORAGE_GROUP_CHAT_DATA:
+                Log.d(TAG, "task: ACTION_STORAGE_GROUP_CHAT_DATA");
                 arg = intent.getStringExtra("info");
                 storeChatData(arg, context);
                 break;
             case ACTION_STORAGE_PERSONAL_CHAT_DATA:
+                Log.d(TAG, "task: ACTION_STORAGE_PERSONAL_CHAT_DATA");
                 arg = intent.getStringExtra("info");
                 handleStorePersonalChatData(arg, context);
                 break;
-            case ACTION_HANDLE_INVITE_RESULT :
-//                ContentValues contentValues = new ContentValues();
-//                chatTableName = intent.getStringExtra(TalkContract.ChatRooms.CHAT_ID);
-//                boolean result = intent.getBooleanExtra("result", true);
-//                String messageId = intent.getStringExtra(TalkContract.Message.MESSAGE_ID);
-//                resolver = context.getContentResolver();
-//                contentValues.put(TalkContract.ChatRooms.IS_SYNCHRONIZED, result);
-//                int updateResult1 = resolver.update(
-//                        TalkContract.ChatRooms.CONTENT_URI,
-//                        contentValues,
-//                        TalkContract.ChatRooms.CHAT_ID + " = ? ",
-//                        new String[] { chatTableName }
-//                );
-//                contentValues.clear();
-//                contentValues.put(TalkContract.Message.IS_SEND, result);
-//                int updateResult2 = resolver.update(
-//                        TalkContract.Message.CONTENT_URI,
-//                        contentValues,
-//                        TalkContract.Message.MESSAGE_ID + " = ?",
-//                        new String[] { messageId } );
-//
-//                Log.d(TAG, "task: " + updateResult1 + " : " + updateResult2);
-//                EventBus.getDefault().post(new Events.MessageEvent( PersonalChatActivity.EVENT_BUS_ACTION_INVITE_RESULT, chatTableName ));
-                break;
             case  ACTION_HANDLE_READ_CHAT:
+                Log.d(TAG, "task: ACTION_HANDLE_READ_CHAT");
                 messageIdList = new ArrayList<>();
                 String info = intent.getStringExtra("info");
                 JsonObject obj = new JsonParser().parse(info).getAsJsonObject();
@@ -123,11 +104,12 @@ public class ChatTask {
                     messageIdList.add(item);
                 }
 
-                bulkUpdateMessage(context, messageIdList);
+                bulkUpdateCountOfMessage(context, messageIdList);
                 EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
                 break;
 
             case ACTION_CHANGE_ALL_MESSAGE_READ_STATE :
+                Log.d(TAG, "task: ACTION_CHANGE_ALL_MESSAGE_READ_STATE");
                 chatId = intent.getStringExtra(TalkContract.ChatRooms.CHAT_ID);
                 chatType  = intent.getIntExtra("chatType", 1);
                 ArrayList<String> notReadMessageList = getNotReadMessages(context, chatId);
@@ -142,6 +124,7 @@ public class ChatTask {
                 }
                 break;
             case ACTION_CHANGE_SPECIFIC_MESSAGE_READ_STATE:
+                Log.d(TAG, "task: ACTION_CHANGE_ALL_MESSAGE_READ_STATE");
                 chatId = intent.getStringExtra(TalkContract.ChatRooms.CHAT_ID);
                 chatType = intent.getIntExtra("chatType", 1);
                 String messageId = intent.getStringExtra("messageId");
@@ -154,13 +137,32 @@ public class ChatTask {
                 }
                 break;
             case ACTION_INVITE_TO_GROUP_CHAT:
+                Log.d(TAG, "task: ACTION_CHANGE_ALL_MESSAGE_READ_STATE");
                 arg = intent.getStringExtra("info");
                 storeInvitedUserInfo(arg, context);
                 EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_INVITED_USER, null));
                 break;
+            case ACTION_READ_ALL_CHAT:
+                Log.d(TAG, "task: ACTION_READ_ALL_CHAT");
+                arg = intent.getStringExtra("info");
+                storeAllEvents(context, arg);
+                break;
         }
     }
-    void bulkUpdateMessage (Context context, ArrayList<String> messageIdList ) {
+    void bulkUpdateReadStateOfMessage (Context context, ArrayList<String> messageIdList) {
+        ContentResolver resolver = context.getContentResolver();
+        for ( String messageId : messageIdList ) {
+            ContentValues value = new ContentValues();
+            value.put(TalkContract.Message.IS_READ, 1);
+            resolver.update(
+                    TalkContract.Message.CONTENT_URI,
+                    value,
+                    TalkContract.Message.MESSAGE_ID + " = ? ",
+                    new String[] { messageId }
+                    );
+        }
+    }
+    void bulkUpdateCountOfMessage(Context context, ArrayList<String> messageIdList ) {
         DbHelper dbHelper = new DbHelper(context);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         for( String messageId : messageIdList ) {
@@ -178,18 +180,17 @@ public class ChatTask {
                 ContentValues values = new ContentValues();
                 --count;
                 values.put(TalkContract.Message.READING_COUNT, count);
-                values.put(TalkContract.Message.IS_READ, 1);
                 int result = db.update(TalkContract.Message.TABLE_NAME, values, TalkContract.Message.MESSAGE_ID + " = ? ", new String[] { messageId });
-                Log.d(TAG, "bulkUpdateMessage: " + result);
+                Log.d(TAG, "bulkUpdateCountOfMessage: " + result);
             }
         }
         db.close();
     }
-    void storeChatData ( String stringify, Context context ) {
+    static void storeChatData(String stringify, Context context) {
         JsonObject object = new JsonParser().parse(stringify).getAsJsonObject();
         JsonElement element = object.get("message");
         Message message = new Gson().fromJson(element, Message.class);
-        Utils.insertMessage(context, message, message.getChatId());
+        Utils.insertMessage(context, message, message.getChatId(), false);
         EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
     }
     JsonArray ArrayListToJsonArray ( ArrayList<String> list ) {
@@ -244,14 +245,15 @@ public class ChatTask {
                 Utils.insertUser(context, sender);
             }
         }
-        Utils.insertMessage(context, message, chatRoom.getChatId());
+        Utils.insertMessage(context, message, chatRoom.getChatId(), false);
         EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
     }
     private void readAllMessage(Context context, int chatType, String chatId, ArrayList<String> messages ) {
         Socket socket = ((MyApp)context.getApplicationContext()).getSocket();
         String emitParam = Utils.groupChatReadObjCreator(chatType, Utils.getMyInfo(context), chatId, messages );
 
-        if ( socket != null && socket.connected() ) {
+        if ( socket != null && socket.connected() && messages.size() > 0 ) {
+            Log.d(TAG, "readAllMessage: " + messages.size());
             socket.emit("chat_read", emitParam, new Ack() {
                 @Override
                 public void call(Object... args) {
@@ -260,13 +262,15 @@ public class ChatTask {
             });
         }
         if( messages.size() > 0 ) {
-            bulkUpdateMessage(context, messages);
+            bulkUpdateCountOfMessage(context, messages);
+            bulkUpdateReadStateOfMessage(context, messages);
         }
     }
     private void readAllMessage(Context context, int chatType, String chatId, User receiver, ArrayList<String> messages ) {
         Socket socket = ((MyApp)context.getApplicationContext()).getSocket();
         String emitParam = Utils.personalChatReadObjCreator(chatType, Utils.getMyInfo(context), receiver, chatId, messages);
-        if ( socket != null && socket.connected() ) {
+        if ( socket != null && socket.connected() && messages.size() > 0 ) {
+            Log.d(TAG, "readAllMessage: " + messages.size());
             socket.emit("chat_read", emitParam, new Ack() {
                 @Override
                 public void call(Object... args) {
@@ -275,7 +279,8 @@ public class ChatTask {
             });
         }
         if( messages.size() > 0 ) {
-            bulkUpdateMessage(context, messages);
+            bulkUpdateCountOfMessage(context, messages);
+            bulkUpdateReadStateOfMessage(context, messages);
         }
     }
 
@@ -297,7 +302,7 @@ public class ChatTask {
     }
     private void storeInvitedUserInfo ( String arg, Context context ) {
         User myInfo = Utils.getMyInfo(context);
-        gson = new GsonBuilder()
+        Gson gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
                 .create();
         JsonObject object = new JsonParser().parse(arg).getAsJsonObject();
@@ -310,10 +315,65 @@ public class ChatTask {
                 Utils.insertUser(context, user);
             }
             String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
-            Message message = new Message(messageId, "system", senderUserObj.getName() + "님이 " + user.getName() +"님을 초대했습니다.", chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 0);
-            Utils.insertMessage(context, message, chatId);
+            Message message = new Message(messageId, "system", senderUserObj.getName() + "님이 " + user.getName() +"님을 초대했습니다.", chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), false,0);
+            Utils.insertMessage(context, message, chatId, true);
         }
         Utils.insertChatMembers(context.getContentResolver(), chatId, users);
         EventBus.getDefault().post(new Events.UserInviteEvent(GroupChatActivity.EVENT_INVITED_USER, users));
+    }
+    private void storeAllEvents ( Context context, String arg ) {
+        gson = new GsonBuilder()
+                .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
+                .registerTypeAdapter(HashMap.class, new HashMapDeserializer())
+                .create();
+        JsonParser jsonParser = new JsonParser();
+        JsonArray rootArray = jsonParser.parse(arg).getAsJsonArray();
+        for ( int i = 0; i < rootArray.size(); i++ ) {
+            String data = rootArray.get(i).getAsString();
+            JsonObject object = jsonParser.parse(data).getAsJsonObject();
+            String event = object.get("event").getAsString();
+            if ( event.equals(SocketCreator.INVITE_GROUP_CHAT)) {
+                JsonElement element = object.get("chatRoom");
+                GroupChatRoom groupChatRoom = gson.fromJson(element, GroupChatRoom.class);
+                Utils.ChatInitialize(context, groupChatRoom);
+                EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
+                Log.d(TAG, "storeAllEvents: INVITE_GROUP_CHAT");
+            } else if ( event.equals(SocketCreator.INVITE_FRIEND)) {
+                String chatId = object.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
+                ArrayList<User> users = gson.fromJson(object.get("users"), new TypeToken<ArrayList<User>>(){}.getType());
+                String sender = object.get("sender").getAsString();
+                User senderUserObj = Utils.findUser(context, sender);
+                for ( User user : users ) {
+                    if ( !Utils.checkUserInDb( context, user.getId()) ) {
+                        Utils.insertUser(context, user);
+                    }
+//                    String messageId = Utils.hashFunction(chatId + System.currentTimeMillis(), "SHA-1");
+//                    Message message = new Message(messageId, "system", senderUserObj.getName() + "님이 " + user.getName() +"님을 초대했습니다.", chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 0);
+//                    Utils.insertMessage(context, message, chatId, true);
+                }
+                Utils.insertChatMembers(context.getContentResolver(), chatId, users);
+                EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_INVITED_USER, null));
+                Log.d(TAG, "storeAllEvents: INVITE_FRIEND");
+            } else if ( event.equals(SocketCreator.SEND_GROUP_CHAT_MESSAGE)) {
+                JsonElement element = object.get("message");
+                Message message = new Gson().fromJson(element, Message.class);
+                Utils.insertMessage(context, message, message.getChatId(), false);
+                EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
+                Log.d(TAG, "storeAllEvents: SEND_GROUP_CHAT_MESSAGE");
+            } else if ( event.equals(SocketCreator.SOMEONE_CHAT_READ)) {
+                ArrayList<String> messageIdList = new ArrayList<>();
+                String chatId = object.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
+                JsonArray array = object.get("messages").getAsJsonArray();
+                for ( JsonElement element : array ) {
+                    String item = element.getAsString();
+                    messageIdList.add(item);
+                }
+                bulkUpdateCountOfMessage(context, messageIdList);
+                Log.d(TAG, "storeAllEvents: SOMEONE_CHAT_READ");
+            } else if (event.equals(SocketCreator.INVITE_TO_PERSONAL_CHAT)) {
+                handleStorePersonalChatData(data, context);
+                Log.d(TAG, "storeAllEvents: INVITE_TO_PERSONAL_CHAT");
+            }
+        }
     }
 }

@@ -13,12 +13,15 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 
 import java.util.Arrays;
+
+import io.socket.client.Socket;
 
 
 /**
@@ -50,8 +53,8 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
         String email = user.getId();
         boolean isAdded = user.isAdded();
         Bitmap profile = user.getProfileImage();
-        holder.bind( name, email, isAdded, profile);
-
+//        holder.bind( name, email, isAdded, profile);
+        holder.bind(user);
 
     }
 
@@ -73,9 +76,11 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
         private TextView emailTextView;
         private ImageView userProfileImage;
         private Button addButton;
-        private boolean mBoolean = false;
+        private boolean isAdded = false;
+        private boolean isMyFriend;
         private Bitmap mBitmap = null;
         private Context mContext;
+        private Socket socket;
         public ViewHolder(final View v) {
             super(v);
             mContext = v.getContext();
@@ -83,13 +88,14 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
             emailTextView = (TextView) v.findViewById(R.id.textView_email);
             userProfileImage = (ImageView) v.findViewById(R.id.user_profile_image_view);
             addButton = (Button) v.findViewById(R.id.friend_add_button);
+            socket = ((MyApp) mContext.getApplicationContext()).getSocket();
             addButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     ContentResolver resolver = v.getContext().getContentResolver();
                     String id = emailTextView.getText().toString();
                     String name = nameTextView.getText().toString();
-                    if( !mBoolean ) {
+                    if( !isAdded && !isMyFriend ) {
                         ContentValues values = new ContentValues();
                         values.put(TalkContract.User.USER_ID, id);
                         values.put(TalkContract.User.USER_NAME, name);
@@ -104,11 +110,24 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                                     mContext.getString(R.string.setting_profile_img_extension),
                                     Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), id }));
                         }
-                        addButton.setText("X");
-                        addButton.setVisibility(View.INVISIBLE);
-                        addButton.setEnabled(false);
-                        mBoolean = true;
+
+                        isAdded = true;
+                        isMyFriend = true;
+                    } else if ( isAdded && !isMyFriend ) {
+                        ContentValues values = new ContentValues();
+                        values.put(TalkContract.User.IS_MY_FRIEND, 1);
+                        resolver.update(
+                                TalkContract.User.CONTENT_URI,
+                                values,
+                                TalkContract.User.USER_ID + " = ? ",
+                                new String[] { id }
+                        );
+                        isMyFriend = true;
                     }
+                    socket.emit("add_friend", id);
+                    addButton.setText("X");
+                    addButton.setVisibility(View.INVISIBLE);
+                    addButton.setEnabled(false);
                 }
             });
 
@@ -118,14 +137,14 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
         public void bind( String name, String email, boolean isAdded, Bitmap profileImg ) {
             nameTextView.setText(name);
             emailTextView.setText(email);
-            mBoolean = isAdded;
+            this.isAdded = isAdded;
             mBitmap = profileImg;
             if( mBitmap != null ) {
                 userProfileImage.setImageBitmap(mBitmap);
             } else {
                 userProfileImage.setImageResource(R.mipmap.default_profile_img);
             }
-            if( isAdded ) {
+            if( isAdded  ) {
 //                changeButtonText("추가");
                 addButton.setText("X");
                 addButton.setVisibility(View.INVISIBLE);
@@ -136,6 +155,27 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                 addButton.setEnabled(true);
             }
             Log.d(TAG, "bind: " + isAdded);
+        }
+        public void bind( User user ) {
+            nameTextView.setText(user.getName());
+            emailTextView.setText(user.getId());
+            isAdded = user.isAdded();
+            mBitmap = user.getProfileImage();
+            isMyFriend = user.isMyFriend();
+            if( mBitmap != null ) {
+                userProfileImage.setImageBitmap(mBitmap);
+            } else {
+                userProfileImage.setImageResource(R.mipmap.default_profile_img);
+            }
+            if ( isAdded && isMyFriend ) {
+                addButton.setText("X");
+                addButton.setVisibility(View.INVISIBLE);
+                addButton.setEnabled(false);
+            } else {
+                addButton.setText("추가");
+                addButton.setVisibility(View.VISIBLE);
+                addButton.setEnabled(true);
+            }
         }
         private void changeButtonText(String value) {
             addButton.setText(value);

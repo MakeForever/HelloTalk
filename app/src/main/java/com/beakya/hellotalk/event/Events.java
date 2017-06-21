@@ -3,7 +3,6 @@ package com.beakya.hellotalk.event;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.User;
 
-import org.greenrobot.eventbus.EventBus;
 import org.json.JSONObject;
 
 import java.util.ArrayList;

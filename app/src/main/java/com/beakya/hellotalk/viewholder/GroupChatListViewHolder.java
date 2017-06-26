@@ -3,6 +3,7 @@ package com.beakya.hellotalk.viewholder;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +17,7 @@ import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
+import com.daimajia.swipe.SwipeLayout;
 
 import java.util.HashMap;
 
@@ -34,6 +36,9 @@ public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implem
     private TextView dateTextView;
     private Context mContext;
     private GroupChatRoom groupChatRoom;
+    private SwipeLayout swipeLayout;
+    private ConstraintLayout constraintLayout;
+    private boolean isSwiped = false;
     public static GroupChatListViewHolder newInstance(ViewGroup parent) {
 
         View itemView = LayoutInflater.from(parent.getContext())
@@ -45,12 +50,55 @@ public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implem
     public GroupChatListViewHolder(View itemView, Context context) {
         super(itemView);
         mContext = context;
+        constraintLayout = (ConstraintLayout) itemView.findViewById(R.id.group_constraint_layout);
         profileImageArea = (LinearLayout) itemView.findViewById(R.id.group_image_view_area);
         memberCountView = (TextView) itemView.findViewById(R.id.group_members_count);
         notReadCountView = (TextView) itemView.findViewById(R.id.not_read_count_view);
         dateTextView = (TextView) itemView.findViewById(R.id.date_text_view);
         chatNameTextView = (TextView) itemView.findViewById(R.id.name_text_view);
-        itemView.setOnClickListener(this);
+        constraintLayout.setOnClickListener(this);
+        swipeLayout =  (SwipeLayout)itemView.findViewById(R.id.my_swipe_layout);
+        swipeLayout.setShowMode(SwipeLayout.ShowMode.PullOut);
+        swipeLayout.addSwipeListener(new SwipeLayout.SwipeListener() {
+            @Override
+            public void onClose(SwipeLayout layout) {
+//                    Log.d(TAG, "onClose: ");
+                //when the SurfaceView totally cover the BottomView.
+                isSwiped = false;
+                constraintLayout.setEnabled(true);
+            }
+
+            @Override
+            public void onUpdate(SwipeLayout layout, int leftOffset, int topOffset) {
+//                    Log.d(TAG, "onUpdate: " +" leftOffset :" + leftOffset +"  topOffset: " + topOffset );
+                //you are swiping.
+            }
+
+            @Override
+            public void onStartOpen(SwipeLayout layout) {
+//                    Log.d(TAG, "onStartOpen: ");
+            }
+
+            @Override
+            public void onOpen(SwipeLayout layout) {
+//                    Log.d(TAG, "onOpen: ");
+                //when the BottomView totally show.
+                isSwiped = true;
+                constraintLayout.setEnabled(false);
+            }
+
+            @Override
+            public void onStartClose(SwipeLayout layout) {
+//                    Log.d(TAG, "onStartClose: ");
+            }
+
+            @Override
+            public void onHandRelease(SwipeLayout layout, float xvel, float yvel) {
+//                    Log.d(TAG, "onHandRelease: ");
+                //when user's hand released.
+            }
+        });
+
     }
 
     @Override
@@ -85,6 +133,7 @@ public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implem
             notReadCountView.setVisibility(View.INVISIBLE);
         } else {
             notReadCountView.setVisibility(View.VISIBLE);
+            notReadCountView.setText(String.valueOf(chatListItem.getNotReadCount()));
         }
         chatNameTextView.setText(groupChatRoom.getChatName());
     }

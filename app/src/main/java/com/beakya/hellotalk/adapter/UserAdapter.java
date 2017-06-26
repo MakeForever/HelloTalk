@@ -187,12 +187,13 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             if ( !isSwiped ) {
                 mListener.onListItemClick(userInfo);
             } else {
-                Toast.makeText(mContext, "스와이프를 닫아주세요", Toast.LENGTH_SHORT).show();
+                mListener.onSwipeOn();
             }
         }
 
     }
     public interface mOnClickListener {
         void onListItemClick(User user);
+        void onSwipeOn();
     }
 }

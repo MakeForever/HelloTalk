@@ -14,7 +14,6 @@ import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 
-import io.socket.client.Ack;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
@@ -148,15 +147,13 @@ public class SocketCreator {
 
             }
         });
-        socket.on(RECEIVE_ALL_EVENT, new Emitter.Listener() {
+        socket.on("send_initial_state", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 Intent intent = new Intent(context, ChatService.class);
                 intent.putExtra("info", (String) args[0]);
-                intent.setAction(ChatTask.ACTION_READ_ALL_CHAT);
+                intent.setAction(ChatTask.ACTION_READ_INITIAL_STATE);
                 context.startService(intent);
-                Ack ack = (Ack) args[args.length - 1];
-                ack.call();
                 Log.d(TAG, "call RECEIVE_ALL_EVENT");
             }
 

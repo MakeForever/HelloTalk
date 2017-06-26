@@ -169,6 +169,8 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
         if( requestCode == ADD_FRIEND_REQUEST_CODE && resultCode == 100 ) {
             ArrayList<User> users = data.getParcelableArrayListExtra("users");
             memberListAdapter.addMember(users);
+            for ( User user : users )
+                mChatRoom.addUser(user);
             getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
         }
     }

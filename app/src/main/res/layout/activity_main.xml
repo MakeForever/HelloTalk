@@ -18,6 +18,7 @@ tools:openDrawer="start">
 
 
         <io.codetail.widget.RevealFrameLayout
+            app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior"
             android:id="@+id/fab_reveal_frame_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -38,8 +39,7 @@ tools:openDrawer="start">
                 android:layout_marginRight="16dp"
                 android:clipToPadding="false"
                 android:gravity="center_vertical"
-                android:visibility="gone"
-                app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior">
+                android:visibility="gone" >
 
                 <android.support.design.widget.FloatingActionButton
                     android:id="@+id/fab_add_friend"
@@ -81,7 +81,6 @@ tools:openDrawer="start">
                 android:layout_marginBottom="@dimen/fab_margin"
                 android:layout_marginRight="@dimen/fab_margin"
                 app:fabSize="normal"
-                app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior"
                 app:srcCompat="@drawable/ic_add_black_24dp" />
         </io.codetail.widget.RevealFrameLayout>
 

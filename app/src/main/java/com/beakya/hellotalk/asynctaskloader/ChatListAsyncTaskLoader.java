@@ -56,13 +56,10 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
         String chatListTable = TalkContract.ChatRooms.TABLE_NAME;
         String createdTime = TalkContract.Message.CREATED_TIME;
         String myId = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE).getString(context.getString(R.string.user_id), null);
-        String query = "SELECT "+"ch."+ chatType + ", m.*" +" FROM " + chatListTable + " as ch " + " JOIN " + MessageTable + " as m " + " ON "+"m."+ messageId + " = " +
-                "( SELECT " + messageId + " FROM " + MessageTable + " AS m2 " +" WHERE " + "m2."+ chatId + " = " + "ch."+chatId + " order by " + "m2."+ createdTime + " DESC LIMIT 1 )";
-        Log.d(TAG, "loadInBackground query :" + query);
-
+//        String lastChatQuery = "SELECT "+"ch."+ chatType + ", m.*" +" FROM " + chatListTable + " as ch " + " JOIN " + MessageTable + " as m " + " ON "+"m."+ messageId + " = " +
+//                "( SELECT " + mesageId + " FROM " + MessageTable + " AS m2 " +" WHERE " + "m2."+ chatId + " = " + "ch."+chatId + " order by " + "m2."+ createdTime + " DESC LIMIT 1 )";
+//        Log.d(TAG, "loadInBackground query :" + lastChatQuery);
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-
-//        Cursor cursor = db.rawQuery(query, null);
         Cursor cursor = db.query(
                 TalkContract.ChatRooms.TABLE_NAME,
                 null,
@@ -86,7 +83,7 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
             Cursor notReadChatCountQuery = db.query(
                     TalkContract.Message.TABLE_NAME,
                     new String[] {"count(*) as count"},
-                    " NOT "+ TalkContract.Message.CREATOR_ID +" = ? and " + TalkContract.ChatRooms.CHAT_ID +"=? and "+ TalkContract.Message.READING_COUNT + ">?",
+                    " NOT "+ TalkContract.Message.CREATOR_ID +" = ? and " + TalkContract.ChatRooms.CHAT_ID +" = ? and "+ TalkContract.Message.IS_READ + " = ?",
                     new String[] { myId, mChatId, "0" },
                     null,
                     null,

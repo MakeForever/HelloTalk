@@ -182,7 +182,13 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new CursorLoader(this, TalkContract.User.CONTENT_URI, null, null, null, null);
+        return new CursorLoader(
+                this,
+                TalkContract.User.CONTENT_URI,
+                null,
+                TalkContract.User.IS_MY_FRIEND +" = ? ",
+                new String[] { "1" },
+                null);
     }
 
     @Override

@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -116,5 +117,9 @@ public class UserFragment extends Fragment implements
         Intent intent = new Intent( context, FriendDetailActivity.class );
         intent.putExtra("object", user);
         startActivity(intent);
+    }
+    @Override
+    public void onSwipeOn() {
+        Snackbar.make(getActivity().findViewById(R.id.layout_for_fab_add_friend),"스와이프를 닫아주세요", Snackbar.LENGTH_SHORT).show();
     }
 }

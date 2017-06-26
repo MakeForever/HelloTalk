@@ -31,6 +31,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.NewChatAdapter;
 import com.beakya.hellotalk.adapter.ViewPagerAdapter;
@@ -51,6 +52,7 @@ import java.util.HashMap;
 
 import io.codetail.animation.ViewAnimationUtils;
 import io.codetail.widget.RevealFrameLayout;
+import io.socket.client.Socket;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -78,6 +80,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private boolean isFabRunning = false;
     private View fabBackground;
     private Context mContext;
+    private boolean is_login;
+    private Socket mSocket;
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -111,19 +115,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         User myInfo =  Utils.getMyInfo(this);
         headerNameTextView.setText(myInfo.getName());
         headerEmailTextView.setText(myInfo.getId());
+//
+//        String fileName =  getString(R.string.setting_friends_profile_img_name);
+//        String extension = getString(R.string.setting_profile_img_extension);
+//        String directory = getString(R.string.setting_friends_img_directory);
 
-        String fileName =  getString(R.string.setting_friends_profile_img_name);
-        String extension = getString(R.string.setting_profile_img_extension);
-        String directory = getString(R.string.setting_friends_img_directory);
-
-        Bitmap profileBitmap = Utils.getImageBitmap(this, fileName, extension, Arrays.asList(new String[] {directory, myInfo.getId() }));
+//        Bitmap profileBitmap = Utils.getImageBitmap(this, fileName, extension, Arrays.asList(new String[] {directory, myInfo.getId() }));
+        Bitmap profileBitmap = myInfo.getProfileImg(this);
         navigationDrawerImageView.setImageBitmap(profileBitmap);
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         mDrawer.addDrawerListener(toggle);
         toggle.syncState();
-//
+
         revealFrameLayout = (RevealFrameLayout) findViewById(R.id.fab_reveal_frame_layout);
         mainFabBtn = (FloatingActionButton) findViewById(R.id.main_fab);
         createNewChatFabBtn = (FloatingActionButton) findViewById(R.id.fab_create_new_group_chat);
@@ -167,6 +172,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 setFabBackground();
             }
         });
+
+        is_login = getIntent().getBooleanExtra("is_login", false);
+        mSocket = ((MyApp)getApplicationContext()).getSocket();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if ( is_login ) {
+            mSocket.emit("if_login", "start");
+            is_login = false;
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
     }
 
     @Override
@@ -208,17 +230,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_my_setting) {
             // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
+            Intent intent = new Intent(this, MyInfoActivity.class);
+            startActivity(intent);
+        } else if (id == R.id.nav_logout) {
             Intent socketIntent = new Intent(MainActivity.this, SocketService.class);
             socketIntent.setAction(SocketTask.ACTION_SOCKET_DISCONNECT);
             startService(socketIntent);

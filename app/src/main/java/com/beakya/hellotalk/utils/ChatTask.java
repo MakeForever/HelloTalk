@@ -29,6 +29,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import org.greenrobot.eventbus.EventBus;
+import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class ChatTask {
     public static final String ACTION_CHANGE_ALL_MESSAGE_READ_STATE = "action_change_all_message_read_state";
     public static final String ACTION_CHANGE_SPECIFIC_MESSAGE_READ_STATE ="action_change_specific_message_read_state";
     public static final String ACTION_INVITE_TO_GROUP_CHAT = "invite_to_group_chat";
-    public static final String ACTION_READ_ALL_CHAT = "action_read_all_chat";
+    public static final String ACTION_READ_INITIAL_STATE = "action_read_all_chat";
     String chatTableName;
     ContentResolver resolver;
     String arg;
@@ -142,8 +143,8 @@ public class ChatTask {
                 storeInvitedUserInfo(arg, context);
                 EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_INVITED_USER, null));
                 break;
-            case ACTION_READ_ALL_CHAT:
-                Log.d(TAG, "task: ACTION_READ_ALL_CHAT");
+            case ACTION_READ_INITIAL_STATE:
+                Log.d(TAG, "task: ACTION_READ_INITIAL_STATE");
                 arg = intent.getStringExtra("info");
                 storeAllEvents(context, arg);
                 break;
@@ -170,7 +171,7 @@ public class ChatTask {
             Cursor cursor = db.query(TalkContract.Message.TABLE_NAME,
                     new String[] {TalkContract.Message.READING_COUNT},
                     TalkContract.Message.MESSAGE_ID + " = ? ",
-                    new String[] { messageId},
+                    new String[] { messageId },
                     null,
                     null,
                     null);
@@ -291,8 +292,8 @@ public class ChatTask {
         Cursor cursor = resolver.query(
                 TalkContract.Message.CONTENT_URI,
                 new String[] { TalkContract.Message.MESSAGE_ID },
-                "NOT " + TalkContract.Message.CREATOR_ID + " = ? and " + TalkContract.ChatRooms.CHAT_ID + " = ? and " + TalkContract.Message.IS_READ + " = 0 ",
-                new String[] { myInfo.getId(), chatId },
+                "NOT " + TalkContract.Message.CREATOR_ID + " = ? " +" and NOT " + TalkContract.Message.CREATOR_ID + " = ? and " + TalkContract.ChatRooms.CHAT_ID + " = ? and " + TalkContract.Message.IS_READ + " = 0 ",
+                new String[] {"system", myInfo.getId(), chatId },
                 null);
 
         while( cursor.moveToNext() ) {
@@ -324,14 +325,15 @@ public class ChatTask {
     private void storeAllEvents ( Context context, String arg ) {
         gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
-                .registerTypeAdapter(HashMap.class, new HashMapDeserializer())
                 .create();
         JsonParser jsonParser = new JsonParser();
-        JsonArray rootArray = jsonParser.parse(arg).getAsJsonArray();
-        for ( int i = 0; i < rootArray.size(); i++ ) {
-            String data = rootArray.get(i).getAsString();
+        JsonObject rootObject = jsonParser.parse(arg).getAsJsonObject();
+        String event = rootObject.get("event").getAsString();
+        JsonArray payload = rootObject.get("payload").getAsJsonArray();
+
+        for ( int i = 0; i < payload.size(); i++ ) {
+            String data = payload.get(i).getAsString();
             JsonObject object = jsonParser.parse(data).getAsJsonObject();
-            String event = object.get("event").getAsString();
             if ( event.equals(SocketCreator.INVITE_GROUP_CHAT)) {
                 JsonElement element = object.get("chatRoom");
                 GroupChatRoom groupChatRoom = gson.fromJson(element, GroupChatRoom.class);

@@ -190,8 +190,8 @@ public class LoginActivity extends AppCompatActivity {
                         mainIntent = new Intent(LoginActivity.this, ImageSelectionActivity.class);
                     } else {
                         mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+                        mainIntent.putExtra("is_login", true);
                     }
-
                     startActivity(mainIntent);
                     finish();
                 }

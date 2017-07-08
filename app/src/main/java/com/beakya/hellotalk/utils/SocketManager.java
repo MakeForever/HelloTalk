@@ -6,7 +6,6 @@ import android.util.Log;
 
 import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.services.ChatService;
-import com.google.firebase.iid.FirebaseInstanceId;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
@@ -22,36 +21,36 @@ import io.socket.emitter.Emitter;
  * Created by cheolho on 2017. 4. 1..
  */
 
-public class SocketCreator {
-    private final String TAG = SocketCreator.class.getSimpleName();
+public class SocketManager {
+    private final String TAG = SocketManager.class.getSimpleName();
     public static final String INVITE_TO_PERSONAL_CHAT = "invite_to_personal_chat";
     public static final String SEND_GROUP_CHAT_MESSAGE = "send_group_message";
     public static final String SOMEONE_CHAT_READ = "chat_read";
     public static final String INVITE_GROUP_CHAT ="invite_group_chat";
     public static final String INVITE_FRIEND = "invite_friend";
     public static final String RECEIVE_ALL_EVENT = "read_all_event";
-    private final String IP = "http://192.168.0.101:8888";
+    public static final String IP = "http://192.168.0.100:8888";
+
+    private SocketConnectionListener listener = null;
     private Context context;
-    public SocketCreator(Context context) {
+    public SocketManager(Context context) {
         this.context = context;
     }
 
-    public IO.Options getOptions(String token) {
-        int timeoutLimit = 5000;
-        IO.Options options = new IO.Options();
-        String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
-        options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
-        options.timeout = timeoutLimit;
-        return options;
+    public void setSocketConnectionListener ( SocketConnectionListener listener ) {
+        this.listener = listener;
     }
-    public Socket createSocket(String token) throws URISyntaxException {
-        IO.Options options = getOptions(token);
-        Socket socket;
-        socket = IO.socket(IP, options);
+    public Socket createSocket() throws URISyntaxException {
+        IO.Options options = Utils.getOptions(context);
+        final Socket socket = IO.socket(IP, options);
         socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
 
             @Override
             public void call(Object... args) {
+                socket.emit("send_event_and_message");
+                if ( listener != null ) {
+                    listener.onConnection(context);
+                }
                 Log.d(TAG, "call: EVENT_CONNECT");
             }
 

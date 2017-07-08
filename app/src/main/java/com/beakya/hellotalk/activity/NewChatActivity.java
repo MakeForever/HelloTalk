@@ -112,8 +112,8 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
                 if( chatType == 1 ) {
                     String event = "invite_group_chat";
                     String chatName = chatNameCreateByUsers(users.values());
+                    users.put(myInfo.getId(), myInfo);
                     createChatRoomAndSocketEmit(mContext, socket, myInfo, event, users, chatName);
-
                 } else if ( chatType == 2 ) {
                     //TODO addFriend
                     String event = "invite_friend";

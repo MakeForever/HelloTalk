@@ -36,17 +36,28 @@ public class Serializers {
         @Override
         public User deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             JsonObject object = json.getAsJsonObject();
+            boolean isMyFriend;
             String name = object.get("name").getAsString();
             String id = object.get("id").getAsString();
             boolean hasProfileImg = object.get("hasProfileImg").getAsBoolean();
+
+
+
             Bitmap bitmap = null;
             if( object.has("img") ) {
                 String bitmapBase64 = object.get("img").getAsString();
                 byte[] imageBytes = Base64.decode(bitmapBase64, Base64.DEFAULT);
                 bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
             }
+
+
             User user = new User( id, name, hasProfileImg);
             user.setProfileImage(bitmap);
+            if ( object.has("is_my_friend")) {
+                isMyFriend = object.get("is_my_friend").getAsInt() > 0;
+                user.setMyFriend(isMyFriend);
+            }
+
             return user;
         }
     }

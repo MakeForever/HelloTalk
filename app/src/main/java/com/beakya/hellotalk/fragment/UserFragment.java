@@ -26,8 +26,14 @@ import com.beakya.hellotalk.activity.FriendDetailActivity;
 import com.beakya.hellotalk.activity.MainActivity;
 import com.beakya.hellotalk.adapter.UserAdapter;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.SimpleDividerItemDecoration;
+
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import static com.beakya.hellotalk.activity.PersonalChatActivity.EVENT_NEW_MESSAGE_ARRIVED;
 
 /**
  * Created by goodlife on 2017. 5. 4..
@@ -99,7 +105,16 @@ public class UserFragment extends Fragment implements
     }
 
 
-
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.MessageEvent event) {
+        switch ( event.getMessage() ) {
+            case EVENT_NEW_MESSAGE_ARRIVED :
+                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
+                break;
+            default :
+                throw new RuntimeException("message not matched message : " + event.getMessage());
+        }
+    }
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mUserAdapter.swapCursor(data);

@@ -13,7 +13,6 @@ import org.json.JSONObject;
  */
 
 public class Message extends Test<String> implements Parcelable {
-
     public Message(String messageId, String creatorId, String messageContent, String chatId, int messageType, String createdTime, boolean isSend, int readCount) {
         super(
                 messageId,

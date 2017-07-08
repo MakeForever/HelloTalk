@@ -31,11 +31,16 @@ import com.beakya.hellotalk.asynctaskloader.ChatAsyncTaskLoader;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.Message;
+import com.beakya.hellotalk.objs.PayLoad;
+import com.beakya.hellotalk.objs.PersonalChatReadEventInfo;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
+import com.beakya.hellotalk.objs.SocketJob;
+import com.beakya.hellotalk.utils.SocketJobs;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.services.ChatService;
 import com.beakya.hellotalk.utils.ChatTask;
 import com.beakya.hellotalk.utils.Serializers;
+import com.beakya.hellotalk.utils.SocketTaskRunner;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -125,7 +130,7 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
                 int insertedChatRowNumber = Utils.insertMessage(mContext, stringMessage, chatId, true);
                 String event = getString(R.string.invite_to_personal_chat);
 //                String messageJson = chatRoom.toJson(stringMessage, new User(myId, myName, null), event);event
-                String messageString = createMessageJson( mChatRoom, stringMessage, Utils.getMyInfo(mContext) );
+                String messageString = createMessageJson( mChatRoom, stringMessage, Utils.getMyInfo(mContext), event );
                 socket.emit( event, messageString );
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, PersonalChatActivity.this);
                 chatSendButton.setEnabled(true);
@@ -195,16 +200,16 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
     @Override
     protected void onStart() {
         super.onStart();
-        getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
-        Intent intent = new Intent(this, ChatService.class);
-        intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
-        intent.putExtra("receiver", mChatRoom.getTalkTo());
-        intent.putExtra("chatType", mChatRoom.getChatRoomType());
-        intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
-        intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
-        startService(intent);
         EventBus.getDefault().register(this);
-
+        getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
+        SocketTaskRunner runner = SocketTaskRunner.getInstance();
+        PayLoad<PersonalChatReadEventInfo> payLoad = new PayLoad<PersonalChatReadEventInfo>(new PersonalChatReadEventInfo(
+                                                                                        mChatRoom.getTalkTo(),
+                                                                                        mChatRoom.getChatRoomType(),
+                                                                                        mChatRoom.getChatId(),
+                                                                                        myInfo.getId()
+                                                                                        ));
+        runner.addJob(new SocketJob("chat_read", payLoad));
     }
 
     @Override
@@ -268,7 +273,7 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
                 throw new RuntimeException("message not matched");
         }
     }
-    String createMessageJson (PersonalChatRoom personalChatRoom, Message stringMessage, User myInfo ) {
+    String createMessageJson (PersonalChatRoom personalChatRoom, Message stringMessage, User myInfo, String event ) {
         JsonObject result = new JsonObject();
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserSerializer())
@@ -282,6 +287,7 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
         result.add("chatRoom", chatRoomElement);
         result.add("message", messageElement);
         result.add("receiver", targetElement);
+        result.addProperty("event", event);
         return result.toString();
     }
 

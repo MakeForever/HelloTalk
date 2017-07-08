@@ -23,6 +23,7 @@ import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -48,6 +49,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+
+import io.socket.client.IO;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -336,6 +339,8 @@ public class Utils {
             ContentValues values = new ContentValues();
             values.put(TalkContract.User.USER_ID, user.getId());
             values.put(TalkContract.User.USER_NAME, user.getName());
+            values.put(TalkContract.User.IS_MY_FRIEND, user.isMyFriend());
+            values.put(TalkContract.User.HAVE_PROFILE_IMAGE, user.hasProfileImg());
             if( user.hasProfileImg() && user.getProfileImage() != null ) {
                 values.put(TalkContract.User.HAVE_PROFILE_IMAGE, 1);
                 saveToInternalStorage(c, user.getProfileImage(),
@@ -552,5 +557,14 @@ public class Utils {
         if( cursor.getCount() > 0 )
             return true;
         else return false;
+    }
+    public static IO.Options getOptions(Context context) {
+        int timeoutLimit = 5000;
+        IO.Options options = new IO.Options();
+        String token = Utils.getToken(context);
+        String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
+        options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
+        options.timeout = timeoutLimit;
+        return options;
     }
 }

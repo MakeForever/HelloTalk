@@ -5,123 +5,159 @@ package com.beakya.hellotalk.services;
  */
 
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
+
 import android.util.Log;
 
-import com.beakya.hellotalk.activity.NotifyActivity;
+import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.activity.MainActivity;
+import com.beakya.hellotalk.activity.PersonalChatActivity;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.beakya.hellotalk.utils.Serializers;
+import com.beakya.hellotalk.utils.SocketManager;
+import com.beakya.hellotalk.utils.Utils;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
+import java.net.URISyntaxException;
 import java.util.Map;
+
+import io.socket.client.IO;
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 public class MyFireBaseMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "MyFirebaseMsgService";
 
-    /**
-     * Called when message is received.
-     *
-     * @param remoteMessage Object representing the message received from Firebase Cloud Messaging.
-     */
-    // [START receive_message]
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        // [START_EXCLUDE]
-        // There are two types of stringMessages data stringMessages and notification stringMessages. Data stringMessages are handled
-        // here in onMessageReceived whether the app is in the foreground or background. Data stringMessages are the type
-        // traditionally used with GCM. Notification stringMessages are only received here in onMessageReceived when the app
-        // is in the foreground. When the app is in the background an automatically generated notification is displayed.
-        // When the user taps on the notification they are returned to the app. Messages containing both notification
-        // and data payloads are treated as notification stringMessages. The Firebase console always sends notification
-        // stringMessages. For more see: https://firebase.google.com/docs/cloud-messaging/concept-options
-        // [END_EXCLUDE]
+        Map<String, String> data = remoteMessage.getData();
+        String key = data.get("key");
+        try {
+            final Socket socket =  IO.socket(SocketManager.IP, Utils.getOptions(getApplicationContext()));
+//            final Runnable runnable = new Runnable() {
+//                @Override
+//                public void run() {
+//                    try {
+//                        this.wait();
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                    if (socket.connected() ) {
+//                        socket.off("send_Notification_data");
+//                        socket.off("end");
+//                        socket.disconnect();
+//                    }
+//                }
+//            };
+//            Thread thread =  new Thread(runnable);
+//
+            Emitter.Listener transferEndListener = new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    Log.d(TAG, "call: transferEndListener");
+                    socket.off("send_Notification_data");
+                    socket.off("end");
+                    socket.disconnect();
+                }
+            };
+            Emitter.Listener notificationDataListener = new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    Log.d(TAG, "call: " + (String) args[0]);
+                    JsonObject object = new JsonParser().parse( (String) args[0]).getAsJsonObject();
+                    String event = object.get("event").getAsString();
+                    switch ( event ) {
+                        case "send_group_message" :
+                            break;
+                        case "invite_group_chat" :
+                            break;
+                        case "invite_to_personal_chat" :
+                            sendPersonalNotification(object, getApplicationContext());
+                            break;
+                        default :
 
-        // TODO(developer): Handle FCM stringMessages here.
-        // Not getting stringMessages here? See why this may be: https://goo.gl/39bRNJ
-        Log.d(TAG, "From: " + remoteMessage.getFrom());
-
-        // Check if message contains a data payload.
-        if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
-
-//            if (/* Check if data needs to be processed by long running job */ true) {
-//                // For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
-//                scheduleJob();
-//            } else {
-//                // Handle message within 10 seconds
-//                handleNow();
-//            }
-            Map<String, String> map = remoteMessage.getData();
-            int chatType = Integer.parseInt(map.get("chat_type"));
-            if ( chatType == 1 ) {
-                String message = map.get("message");
-                User user = new User(map.get("user_id"), map.get("user_name"), false);
-                PersonalChatRoom chatRoom = new PersonalChatRoom(
-                        map.get("chat_id"),
-                        chatType,
-                        true,
-                        user
-                );
-//                sendPersonalNotification(chatRoom, getApplicationContext(), message);
-                scheduleJob();
-            }
-
+                    }
+                }
+            };
+            socket.connect();
+            socket.on("send_notification_data", notificationDataListener );
+            socket.on("end", transferEndListener );
+            socket.emit("send_notification_data", key);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
-
-        // Check if message contains a notification payload.
-        if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
-//            sendNotification(remoteMessage.getNotification().getBody(), getApplicationContext());
-        }
-
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
-    }
-    // [END receive_message]
-
-    /**
-     * Schedule a job using FirebaseJobDispatcher.
-     */
-    private void scheduleJob() {
-        // [START dispatch_job]
-//        FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
-//        Job myJob = dispatcher.newJobBuilder()
-//                .setService(MyJobService.class)
-//                .setTag("my-job-tag")
-//                .setTrigger(Trigger.executionWindow(0, 0))
-//                .build();
-//        dispatcher.schedule(myJob);
-        Intent intent = new Intent(this, NotifyActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.setClassName("com.beakya.hellotalk", "com.beakya.hellotalk.activity.NotifyActivity");
-//        startActivity(intent);
+        Log.d(TAG, "onMessageReceived: " + key);
     }
 
-    /**
-     * Handle time allotted to BroadcastReceivers.
-     */
-    private boolean handleNow( String chatId ) {
-        ContentResolver resolver = getContentResolver();
-        Cursor chatCursor = resolver.query(
+
+    private void sendPersonalNotification(JsonObject object, Context context ) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
+                .create();
+
+
+        JsonElement messageElement = object.get("message");
+        JsonObject chatRoomElement = object.get("chatRoom").getAsJsonObject();
+        JsonObject senderJsonObj = chatRoomElement.get("talkTo").getAsJsonObject();
+
+
+        User sender = null;
+        PersonalChatRoom chatRoom = null;
+        Message message = null;
+        try {
+            sender = gson.fromJson(senderJsonObj, User.class);
+            chatRoom = gson.fromJson(chatRoomElement, PersonalChatRoom.class);
+            message = gson.fromJson(messageElement, Message.class);
+        } catch ( JsonSyntaxException e ) {
+            e.printStackTrace();
+        }
+        ContentResolver resolver = context.getContentResolver();
+        Cursor chatRoomQueryCursor = resolver.query(
                 TalkContract.ChatRooms.CONTENT_URI,
-                new String[] { TalkContract.ChatRooms.CHAT_ROOM_TYPE, TalkContract.ChatRooms.IS_SYNCHRONIZED },
-                TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] { chatId },
-                null);
+                null,
+                TalkContract.ChatRooms.CHAT_ID + "= ?",
+                new String[] { chatRoom.getChatId() } ,
+                null
+        );
+        Cursor userQueryCursor = resolver.query(
+                TalkContract.User.CONTENT_URI,
+                null,
+                TalkContract.User.USER_ID + " = ? ",
+                new String [] { sender.getId() },
+                null
+        );
+
+        if( !(chatRoomQueryCursor.getCount() > 0) ) {
+            Log.d(TAG, "task: ChatInitialize ");
+            Utils.ChatInitialize( context, chatRoom);
+            if ( !(userQueryCursor.getCount() > 0) ) {
+                Utils.insertUser(context, sender);
+            }
+        }
+        Utils.insertMessage(context, message, chatRoom.getChatId(), false);
 
 
-        return (chatCursor.getCount() > 0) ? true : false;
-    }
-
-    private void sendPersonalNotification(PersonalChatRoom chatRoom, Context context, String message) {
-        Intent intent = new Intent(this, NotifyActivity.class);
-        intent.putExtra("chatRoom", chatRoom);
-        intent.putExtra("is_stored", handleNow(chatRoom.getChatId()));
 //        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 //        startActivity(intent);
 //        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
@@ -138,31 +174,49 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
 //                .setSound(defaultSoundUri)
 //                .setPriority(Notification.PRIORITY_DEFAULT)
 //                .setFullScreenIntent(pendingIntent, true);
-//
-//        NotificationManager notificationManager =
-//                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-//        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+        Intent intent = new Intent(context, PersonalChatActivity.class);
+        intent.putExtra("chatRoom", chatRoom);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(0, messageNotificationBuilder(sender, message, intent));
+//        notificationManager.notify(0,sendNotification(getApplicationContext()));
     }
-//    private void sendNotification(User user, Context context) {
-//        Log.d(TAG, "sendNotification: ");
+    private Notification sendNotification(Context context) {
+        Log.d(TAG, "sendNotification: ");
+        
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
+                .setSmallIcon(R.drawable.ic_menu_camera)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(PendingIntent.getActivity(context, 0, new Intent(context, MainActivity.class), 0))
+                .setContentTitle("alpg")
+                .setContentText("test")
+                .setAutoCancel(true)
+                .setSound(defaultSoundUri);
+
+        return notificationBuilder.build();
+    }
+    private Notification messageNotificationBuilder(User user, Message message, Intent intent ) {
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setLargeIcon(user.getProfileImg(this))
+                .setSmallIcon(R.drawable.ic_menu_camera)
+                .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                .setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0))
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentTitle(user.getName())
+                .setContentText(message.getMessageContent())
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setSound(defaultSoundUri);
+
+        return notificationBuilder.build();
+    }
+//    private Notification groupNotificationBuilder (GroupChatRoom groupChatRoom ) {
 //
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-//                PendingIntent.FLAG_ONE_SHOT);
-//        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-//        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-//                .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
-//                .setSmallIcon(R.drawable.ic_menu_camera)
-//
-//                .setContentTitle(user.getName())
-//                .setContentText()
-//                .setAutoCancel(true)
-//                .setSound(defaultSoundUri);
-//
-//
-//        NotificationManager notificationManager =
-//                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-//
-//        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
 //    }
 }

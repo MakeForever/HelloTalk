@@ -31,7 +31,7 @@ public class GroupChatAdapter extends ChatAdapter {
     public ChatItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
-        View view = null;
+        View view;
 
         switch (viewType) {
             case VIEW_TYPE_MY_CHAT:

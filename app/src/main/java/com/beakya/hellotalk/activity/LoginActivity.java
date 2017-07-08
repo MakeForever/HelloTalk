@@ -179,7 +179,7 @@ public class LoginActivity extends AppCompatActivity {
                     editor.putBoolean(getString(R.string.user_img_boolean), !isFirstLogin);
                     editor.commit();
                     Intent socketIntent = new Intent(LoginActivity.this, SocketService.class);
-                    socketIntent.setAction(SocketTask.ACTION_SOCKET_CREATE);
+                    socketIntent.setAction(SocketTask.ACTION_SOCKET_CREATE_AND_EMIT);
                     startService(socketIntent);
 
 

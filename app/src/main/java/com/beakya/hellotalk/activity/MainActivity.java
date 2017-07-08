@@ -174,16 +174,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
 
         is_login = getIntent().getBooleanExtra("is_login", false);
-        mSocket = ((MyApp)getApplicationContext()).getSocket();
+        mSocket = ((MyApp) getApplication()).getSocket();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        if ( is_login ) {
-            mSocket.emit("if_login", "start");
-            is_login = false;
-        }
+
     }
 
     @Override

@@ -60,11 +60,13 @@ public class SocketTask {
             try {
                 Log.d(TAG, "createSocketTask: ");
                 SocketManager manager = new SocketManager(context);
-                manager.setSocketConnectionListener(SocketTaskRunner.getInstance().getListener());
                 Socket socket = manager.createSocket();
                 MyApp app = Utils.getMyApp(context);
                 app.setSocket(socket);
                 socket.connect();
+                if ( flag ) {
+                    socket.emit("if_login");
+                }
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }

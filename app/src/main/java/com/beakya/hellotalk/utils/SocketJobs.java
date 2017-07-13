@@ -1,5 +1,6 @@
 package com.beakya.hellotalk.utils;
 
+import com.beakya.hellotalk.objs.Job;
 import com.beakya.hellotalk.objs.Jobs;
 import com.beakya.hellotalk.objs.SocketJob;
 
@@ -11,18 +12,18 @@ import java.util.LinkedList;
  */
 
 public class SocketJobs extends Jobs {
-    private LinkedList<SocketJob> jobList;
+    private LinkedList<Job> jobList;
     public SocketJobs() {
         jobList = new LinkedList<>();
     }
 
-    public LinkedList<SocketJob> getJobList() {
+    public LinkedList<Job> getJobList() {
         return jobList;
     }
-    public void addJob ( SocketJob job ) {
+    public void addJob ( Job job ) {
         jobList.addLast(job);
     }
-    public SocketJob getFirst() {
+    public Job getFirst() {
         if ( jobList.size() > 0 )
             return jobList.getFirst();
         else
@@ -31,11 +32,8 @@ public class SocketJobs extends Jobs {
     public boolean hasNext () {
         return jobList.size() > 0 ? true : false;
     }
-    public SocketJob next() {
-        if ( jobList.size() > 0 ) {
-            return jobList.getFirst();
-        } else
-            return null;
+    public Job next() {
+        return jobList.poll();
     }
     public void remove () {
         if ( jobList.size() > 0 ) {

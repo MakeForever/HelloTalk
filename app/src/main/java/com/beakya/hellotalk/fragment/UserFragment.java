@@ -30,6 +30,7 @@ import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.SimpleDividerItemDecoration;
 
+import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -83,10 +84,12 @@ public class UserFragment extends Fragment implements
     @Override
     public void onStart() {
         super.onStart();
+        EventBus.getDefault().register(this);
     }
     @Override
     public void onPause() {
         super.onPause();
+        EventBus.getDefault().unregister(this);
     }
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -109,7 +112,7 @@ public class UserFragment extends Fragment implements
     public void onMessageEvent(Events.MessageEvent event) {
         switch ( event.getMessage() ) {
             case EVENT_NEW_MESSAGE_ARRIVED :
-                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
+                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
                 break;
             default :
                 throw new RuntimeException("message not matched message : " + event.getMessage());

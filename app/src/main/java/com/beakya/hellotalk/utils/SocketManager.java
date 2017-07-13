@@ -31,15 +31,11 @@ public class SocketManager {
     public static final String RECEIVE_ALL_EVENT = "read_all_event";
     public static final String IP = "http://192.168.0.100:8888";
 
-    private SocketConnectionListener listener = null;
     private Context context;
     public SocketManager(Context context) {
         this.context = context;
     }
 
-    public void setSocketConnectionListener ( SocketConnectionListener listener ) {
-        this.listener = listener;
-    }
     public Socket createSocket() throws URISyntaxException {
         IO.Options options = Utils.getOptions(context);
         final Socket socket = IO.socket(IP, options);
@@ -47,10 +43,9 @@ public class SocketManager {
 
             @Override
             public void call(Object... args) {
+                TaskRunner.setSocketState(true);
+                TaskRunner.getInstance().execute();
                 socket.emit("send_event_and_message");
-                if ( listener != null ) {
-                    listener.onConnection(context);
-                }
                 Log.d(TAG, "call: EVENT_CONNECT");
             }
 
@@ -160,6 +155,7 @@ public class SocketManager {
         socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
+                TaskRunner.setSocketState(false);
                 Log.d(TAG, "call: disconnected");
             }
         });

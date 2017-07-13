@@ -153,7 +153,7 @@ public class ChatTask {
         }
     }
 
-    static void storeChatData(String stringify, Context context) {
+    public void storeChatData(String stringify, Context context) {
         JsonObject object = new JsonParser().parse(stringify).getAsJsonObject();
         JsonElement element = object.get("message");
         Message message = new Gson().fromJson(element, Message.class);
@@ -167,7 +167,7 @@ public class ChatTask {
         }
         return array;
     }
-    void handleStorePersonalChatData ( String arg, Context context ) {
+    public void handleStorePersonalChatData ( String arg, Context context ) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
                 .create();
@@ -284,52 +284,8 @@ public class ChatTask {
             String chatId = payload.get("chat_id").getAsString();
             String userId = payload.get("user_id").getAsString();
             Utils.insertChatMembers(resolver, chatId, Arrays.asList(new User[] { new User(userId, null, null)}));
-        } else if ( event.equals("result") ) {
+        } else if ( event.equals("end") ) {
             EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
         }
-
-//            if ( event.equals(SocketManager.INVITE_GROUP_CHAT)) {
-//                JsonElement element = object.get("chatRoom");
-//                GroupChatRoom groupChatRoom = gson.fromJson(element, GroupChatRoom.class);
-//                Utils.ChatInitialize(context, groupChatRoom);
-//                EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
-//                Log.d(TAG, "storeAllEvents: INVITE_GROUP_CHAT");
-//            } else if ( event.equals(SocketManager.INVITE_FRIEND)) {
-//                String chatId = object.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
-//                ArrayList<User> users = gson.fromJson(object.get("users"), new TypeToken<ArrayList<User>>(){}.getType());
-//                String sender = object.get("sender").getAsString();
-//                User senderUserObj = Utils.findUser(context, sender);
-//                for ( User user : users ) {
-//                    if ( !Utils.checkUserInDb( context, user.getId()) ) {
-//                        Utils.insertUser(context, user);
-//                    }
-////                    String messageId = Utils.hashFunction(chatId + System.currentTimeMillis(), "SHA-1");
-////                    Message message = new Message(messageId, "system", senderUserObj.getName() + "님이 " + user.getName() +"님을 초대했습니다.", chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), 0);
-////                    Utils.insertMessage(context, message, chatId, true);
-//                }
-//                Utils.insertChatMembers(context.getContentResolver(), chatId, users);
-//                EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_INVITED_USER, null));
-//                Log.d(TAG, "storeAllEvents: INVITE_FRIEND");
-//            } else if ( event.equals(SocketManager.SEND_GROUP_CHAT_MESSAGE)) {
-//                JsonElement element = object.get("message");
-//                Message message = new Gson().fromJson(element, Message.class);
-//                Utils.insertMessage(context, message, message.getChatId(), false);
-//                EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
-//                Log.d(TAG, "storeAllEvents: SEND_GROUP_CHAT_MESSAGE");
-//            } else if ( event.equals(SocketManager.SOMEONE_CHAT_READ)) {
-//                ArrayList<String> messageIdList = new ArrayList<>();
-//                String chatId = object.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
-//                JsonArray array = object.get("messages").getAsJsonArray();
-//                for ( JsonElement element : array ) {
-//                    String item = element.getAsString();
-//                    messageIdList.add(item);
-//                }
-//                bulkUpdateCountOfMessage(context, messageIdList);
-//                Log.d(TAG, "storeAllEvents: SOMEONE_CHAT_READ");
-//            } else if (event.equals(SocketManager.INVITE_TO_PERSONAL_CHAT)) {
-//                handleStorePersonalChatData(data, context);
-//                Log.d(TAG, "storeAllEvents: INVITE_TO_PERSONAL_CHAT");
-//            }
-
     }
 }

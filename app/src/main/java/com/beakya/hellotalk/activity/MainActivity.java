@@ -174,7 +174,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
 
         is_login = getIntent().getBooleanExtra("is_login", false);
-        mSocket = ((MyApp) getApplication()).getSocket();
     }
 
     @Override
@@ -199,12 +198,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main2, menu);
-        return true;
-    }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -260,6 +254,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             });
 
+        } else if ( id == R.id.nav_app_setting ) {
+            Intent intent = new Intent(this, GeneralSettingActivity.class);
+            startActivity(intent);
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -388,12 +385,5 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
         animator.start();
         isFabOpen = false;
-    }
-    @NonNull
-    private static Rect createRect(@NonNull ViewGroup parent, @NonNull View view) {
-        Rect rect = new Rect();
-        view.getDrawingRect(rect);
-        parent.offsetDescendantRectToMyCoords(view, rect);
-        return rect;
     }
 }

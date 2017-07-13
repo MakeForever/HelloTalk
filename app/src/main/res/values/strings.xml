@@ -32,7 +32,7 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="action_settings">설정</string>
+    <string name="action_settings">앱 설정</string>
     <string name="menu_string_my_options">내 설정</string>
     <string name="setting_change_password">비밀번호 변경</string>
     <string name="setting_remove_profile">계정 삭제</string>

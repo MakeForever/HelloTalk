@@ -8,11 +8,9 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -47,11 +45,10 @@ import java.util.HashMap;
 import io.socket.client.Ack;
 import io.socket.client.Socket;
 
-public class NewChatActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class NewChatActivity extends ToolBarActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = NewChatActivity.class.getSimpleName();
     private RecyclerView mRecyclerView;
     private NewChatAdapter newChatAdapter;
-    private Toolbar toolbar;
     private Socket socket;
     private User myInfo;
     private Context mContext;
@@ -63,7 +60,8 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_new_chat);
+        super.setToolbarContentView(R.layout.activity_new_chat);
+
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
         mContext = this;
@@ -74,8 +72,6 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
         mRecyclerView.setAdapter(newChatAdapter);
         mRecyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
         linearLayout = (LinearLayout) findViewById(R.id.new_chat_linear_layout);
-        toolbar = (Toolbar) findViewById(R.id.my_toolbar);
-        setSupportActionBar(toolbar);
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             chatType = extras.getInt("chatType");
@@ -171,13 +167,15 @@ public class NewChatActivity extends AppCompatActivity implements LoaderManager.
                 }
             }
 
+        } else if ( item.getItemId() == android.R.id.home ) {
+            finish();
         }
         return super.onOptionsItemSelected(item);
     }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.add_new_chat_menu, menu);
-        return super.onCreateOptionsMenu(menu);
+        return true;
     }
 
     @Override

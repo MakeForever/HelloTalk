@@ -121,6 +121,41 @@ public class Utils {
         }
         return b;
     }
+    public static GroupChatRoom getGroupChatRoom ( String chatId, Context c ) {
+        DbHelper dbHelper = new DbHelper(c);
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Cursor cursor = db.query(TalkContract.ChatRooms.TABLE_NAME,
+                null,
+                TalkContract.ChatRooms.CHAT_ID + " = ? ",
+                new String[] { chatId },
+                null,
+                null,
+                null);
+        GroupChatRoom chatRoom = null;
+
+        while ( cursor.moveToNext() ) {
+            String chatName = cursor.getString(cursor.getColumnIndex(TalkContract.ChatRooms.CHAT_NAME));
+            String roomUsersQuery = " SELECT " + " b.* "+" FROM " + TalkContract.ChatUserRooms.TABLE_NAME + " as a "+
+                    " INNER JOIN " + TalkContract.User.TABLE_NAME + " as b ON " + " a."+ TalkContract.User.USER_ID + " = " + " b." + TalkContract.User.USER_ID + " WHERE " +
+                    "a."+ TalkContract.ChatRooms.CHAT_ID + " = " +"'"+ chatId+"'";
+
+            Log.d(TAG, "loadInBackground roomUsersQuery :" + roomUsersQuery);
+            Cursor roomUsers = db.rawQuery(roomUsersQuery, null);
+            HashMap<String, User> userList = new HashMap<>();
+            while( roomUsers.moveToNext() ) {
+                userList.put(
+                        roomUsers.getString(roomUsers.getColumnIndex(TalkContract.User.USER_ID))
+                        ,new User(
+                                roomUsers.getString(roomUsers.getColumnIndex(TalkContract.User.USER_ID)),
+                                roomUsers.getString(roomUsers.getColumnIndex(TalkContract.User.USER_NAME)),
+                                roomUsers.getInt(roomUsers.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0
+                        )
+                );
+            }
+            chatRoom = new GroupChatRoom(chatName, userList, chatId, 2, true);
+        }
+        return chatRoom;
+    }
     public static boolean deleteDirectory( Context c, List<String> directories ) {
         File directory = generateDirectory(c, directories);
         boolean result = false;
@@ -461,54 +496,6 @@ public class Utils {
         return ( chatId == null ) ?  hashFunction(userId + System.currentTimeMillis(), "SHA-256") :  chatId;
     }
 
-    public static GroupChatRoom extractChatRoomFromJson (JSONObject object ) throws JSONException {
-        HashMap<String, User> users = new HashMap<>();
-        JSONArray array = object.getJSONArray("members");
-        String chatName = object.getString(TalkContract.ChatRooms.CHAT_NAME);
-        String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
-        int chatType = object.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
-        boolean isSynchronized = true;
-        for( int i = 0; i < array.length(); i++ ) {
-            JSONObject userObj = array.getJSONObject(i);
-            String id = userObj.getString(TalkContract.User.USER_ID);
-            String name = userObj.getString(TalkContract.User.USER_NAME);
-            users.put(id, new User(id, name, true));
-        }
-        return new GroupChatRoom(chatName, users, chatId, chatType, isSynchronized);
-    }
-    public static PersonalChatRoom extractPersonalChatRoomFromJson (JSONObject object, User user ) throws JSONException {
-        String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
-        int chatType = object.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
-        boolean isSynchronized = true;
-        return new PersonalChatRoom(chatId, chatType, isSynchronized, user );
-    }
-    public static GroupChatRoom extractGroupChatRoomFromJson (JSONObject object, Context context ) throws JSONException {
-        String chatId = object.getString(TalkContract.ChatRooms.CHAT_ID);
-        int chatType = object.getInt(TalkContract.ChatRooms.CHAT_ROOM_TYPE);
-        boolean isSynchronized = true;
-        return null;
-    }
-
-    public static User extractUserFromJson ( JSONObject object ) throws JSONException {
-        return new User (object.getString(TalkContract.User.USER_ID), object.getString(TalkContract.User.USER_NAME), true);
-    }
-    public static String createIsReadMessageJsonObj ( String event, String chatId, List<String> list , User user) {
-        JSONObject object = new JSONObject();
-        JSONArray array = new JSONArray();
-        try {
-            object.put("from", user.getId());
-            object.put(TalkContract.ChatRooms.CHAT_ID, chatId);
-            for( int i = 0 ; i < list.size(); i++ ) {
-                JSONObject arrayItem = new JSONObject();
-                arrayItem.put(TalkContract.Message.MESSAGE_ID, list.get(i));
-                array.put(i, arrayItem);
-            }
-            object.put("message_id_list", array);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return object.toString();
-    }
     public static String getCurrentTime() {
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -558,12 +545,20 @@ public class Utils {
             return true;
         else return false;
     }
-    public static IO.Options getOptions(Context context) {
+    public static IO.Options getOptions( Context context ) {
         int timeoutLimit = 5000;
         IO.Options options = new IO.Options();
         String token = Utils.getToken(context);
         String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
         options.query = "jwt_token=" + token +"&" + "fire_base_token=" + fireBaseToken;
+        options.timeout = timeoutLimit;
+        return options;
+    }
+    public static IO.Options getTemporaryOptions ( Context context ) {
+        int timeoutLimit = 5000;
+        IO.Options options = new IO.Options();
+        String token = Utils.getToken(context);
+        options.query = "jwt_token=" + token + "&" + "isTemporary=" + true;
         options.timeout = timeoutLimit;
         return options;
     }

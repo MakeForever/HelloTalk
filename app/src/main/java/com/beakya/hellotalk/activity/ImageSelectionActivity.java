@@ -111,7 +111,6 @@ public class ImageSelectionActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-
             @Override
             public void cropConfig(CropImage.ActivityBuilder builder) {
                 builder.setMultiTouchEnabled(false)

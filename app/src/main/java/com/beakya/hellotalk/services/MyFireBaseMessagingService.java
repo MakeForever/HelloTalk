@@ -12,6 +12,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
@@ -20,12 +21,16 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.activity.GroupChatActivity;
 import com.beakya.hellotalk.activity.MainActivity;
 import com.beakya.hellotalk.activity.PersonalChatActivity;
 import com.beakya.hellotalk.database.TalkContract;
+import com.beakya.hellotalk.event.Events;
+import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.beakya.hellotalk.utils.HashMapDeserializer;
 import com.beakya.hellotalk.utils.Serializers;
 import com.beakya.hellotalk.utils.SocketManager;
 import com.beakya.hellotalk.utils.Utils;
@@ -35,15 +40,22 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+
+import static android.R.id.message;
+import static com.beakya.hellotalk.activity.PersonalChatActivity.EVENT_NEW_MESSAGE_ARRIVED;
 
 public class MyFireBaseMessagingService extends FirebaseMessagingService {
 
@@ -54,7 +66,7 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         Map<String, String> data = remoteMessage.getData();
         String key = data.get("key");
         try {
-            final Socket socket =  IO.socket(SocketManager.IP, Utils.getOptions(getApplicationContext()));
+            final Socket socket =  IO.socket(SocketManager.IP, Utils.getTemporaryOptions(getApplicationContext()));
 //            final Runnable runnable = new Runnable() {
 //                @Override
 //                public void run() {
@@ -89,8 +101,10 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
                     String event = object.get("event").getAsString();
                     switch ( event ) {
                         case "send_group_message" :
+                            handleGroupMessageNotification(object, getApplicationContext());
                             break;
                         case "invite_group_chat" :
+                            handelGroupChatInvite(object, getApplicationContext());
                             break;
                         case "invite_to_personal_chat" :
                             sendPersonalNotification(object, getApplicationContext());
@@ -110,7 +124,30 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         Log.d(TAG, "onMessageReceived: " + key);
     }
 
-
+    private void handleGroupMessageNotification( JsonObject object, Context context ) {
+        JsonElement element = object.get("message");
+        Message message = new Gson().fromJson(element, Message.class);
+        GroupChatRoom chatRoom = Utils.getGroupChatRoom(message.getChatId(), context);
+        Utils.insertMessage(context, message, message.getChatId(), false);
+        Intent intent = new Intent(this, GroupChatActivity.class);
+        intent.putExtra("chatRoom", chatRoom);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
+                        R.mipmap.new_ic_launcher))
+                .setSmallIcon(R.drawable.ic_menu_camera)
+                .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentTitle(message.getCreatorId())
+                .setContentText(message.getMessageContent())
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setSound(defaultSoundUri);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(0, notificationBuilder.build());
+    }
     private void sendPersonalNotification(JsonObject object, Context context ) {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
@@ -156,56 +193,18 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
             }
         }
         Utils.insertMessage(context, message, chatRoom.getChatId(), false);
-
-
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//        startActivity(intent);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-//                PendingIntent.FLAG_ONE_SHOT);
-//        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-//        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-//                .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
-//                .setSmallIcon(R.mipmap.ic_launcher_round)
-//                .setStyle(new NotificationCompat.BigTextStyle())
-//                .setSmallIcon(R.drawable.ic_menu_camera)
-//                .setContentTitle(chatRoom.getTalkTo().getName())
-//                .setContentText(message)
-//                .setAutoCancel(true)
-//                .setSound(defaultSoundUri)
-//                .setPriority(Notification.PRIORITY_DEFAULT)
-//                .setFullScreenIntent(pendingIntent, true);
         Intent intent = new Intent(context, PersonalChatActivity.class);
         intent.putExtra("chatRoom", chatRoom);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(0, messageNotificationBuilder(sender, message, intent));
-//        notificationManager.notify(0,sendNotification(getApplicationContext()));
-    }
-    private Notification sendNotification(Context context) {
-        Log.d(TAG, "sendNotification: ");
-        
-        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
-                .setSmallIcon(R.drawable.ic_menu_camera)
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(PendingIntent.getActivity(context, 0, new Intent(context, MainActivity.class), 0))
-                .setContentTitle("alpg")
-                .setContentText("test")
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri);
-
-        return notificationBuilder.build();
     }
     private Notification messageNotificationBuilder(User user, Message message, Intent intent ) {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setLargeIcon(user.getProfileImg(this))
                 .setSmallIcon(R.drawable.ic_menu_camera)
                 .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
-                .setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0))
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentTitle(user.getName())
@@ -216,7 +215,37 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
 
         return notificationBuilder.build();
     }
-//    private Notification groupNotificationBuilder (GroupChatRoom groupChatRoom ) {
-//
-//    }
+    private void handelGroupChatInvite ( JsonObject object, Context context ) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(HashMap.class, new HashMapDeserializer())
+                .create();
+        GroupChatRoom groupChatRoom = null;
+        try {
+            JsonElement element = object.get("chatRoom");
+            groupChatRoom = gson.fromJson(element, GroupChatRoom.class);
+        } catch ( JsonParseException e) {
+            e.printStackTrace();
+        }
+        Utils.ChatInitialize(context, groupChatRoom);
+
+        Intent intent = new Intent(this, GroupChatActivity.class);
+        intent.putExtra("chatRoom", groupChatRoom);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 2, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
+                        R.mipmap.new_ic_launcher))
+                .setSmallIcon(R.drawable.ic_menu_camera)
+                .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentTitle("Hello Talk")
+                .setContentText(groupChatRoom.getChatName() + "에 초대되었습니다")
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .setSound(defaultSoundUri);
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(0, notificationBuilder.build());
+    }
 }

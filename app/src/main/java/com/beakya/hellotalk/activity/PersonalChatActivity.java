@@ -9,11 +9,9 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -35,12 +33,9 @@ import com.beakya.hellotalk.objs.PayLoad;
 import com.beakya.hellotalk.objs.PersonalChatReadEventInfo;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.SocketJob;
-import com.beakya.hellotalk.utils.SocketJobs;
 import com.beakya.hellotalk.objs.User;
-import com.beakya.hellotalk.services.ChatService;
-import com.beakya.hellotalk.utils.ChatTask;
 import com.beakya.hellotalk.utils.Serializers;
-import com.beakya.hellotalk.utils.SocketTaskRunner;
+import com.beakya.hellotalk.utils.TaskRunner;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -57,7 +52,7 @@ import java.util.Arrays;
 import io.socket.client.Socket;
 
 
-public class PersonalChatActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
+public class PersonalChatActivity extends ToolBarActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
     public static final String TAG = PersonalChatActivity.class.getSimpleName();
     public static final String EVENT_BUS_ACTION_INVITE_RESULT = "event_bus_action_invite_result";
     public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
@@ -84,7 +79,7 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_chat);
+        super.setToolbarContentView(R.layout.activity_chat);
 
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
@@ -103,8 +98,8 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
         }
 
         // ToolBar setup
-        Toolbar mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(mToolbar);
+        toolbar.setTitle(mChatRoom.getTalkTo().getName());
+
         mDrawer = (DrawerLayout) findViewById(R.id.chat_drawer_layout);
         chatSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -202,14 +197,14 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
         super.onStart();
         EventBus.getDefault().register(this);
         getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
-        SocketTaskRunner runner = SocketTaskRunner.getInstance();
+        TaskRunner runner = TaskRunner.getInstance();
         PayLoad<PersonalChatReadEventInfo> payLoad = new PayLoad<PersonalChatReadEventInfo>(new PersonalChatReadEventInfo(
                                                                                         mChatRoom.getTalkTo(),
                                                                                         mChatRoom.getChatRoomType(),
                                                                                         mChatRoom.getChatId(),
                                                                                         myInfo.getId()
                                                                                         ));
-        runner.addJob(new SocketJob("chat_read", payLoad));
+        runner.addJob(new SocketJob("chat_read", payLoad, this));
     }
 
     @Override
@@ -227,6 +222,8 @@ public class PersonalChatActivity extends AppCompatActivity implements LoaderMan
             } else {
                 mDrawer.openDrawer(Gravity.RIGHT);
             }
+        } else if ( item.getItemId() == android.R.id.home ) {
+            finish();
         }
         return false;
     }

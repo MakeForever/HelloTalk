@@ -11,10 +11,8 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -55,7 +53,7 @@ import io.socket.client.Socket;
  * Created by goodlife on 2017. 6. 7..
  */
 
-public class GroupChatActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
+public class GroupChatActivity extends ToolBarActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
     public static final String TAG = PersonalChatActivity.class.getSimpleName();
     public static final String EVENT_BUS_ACTION_INVITE_RESULT = "event_bus_action_invite_result";
     public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
@@ -82,8 +80,7 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_chat);
-
+        super.setToolbarContentView(R.layout.activity_chat);
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
         mContext = this;
@@ -101,8 +98,9 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
             mChatRoom.addUser(myInfo);
         }
         // ToolBar setup
-        final Toolbar mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(mToolbar);
+
+        toolbar.setTitle(mChatRoom.getChatName());
+
         mDrawer = (DrawerLayout) findViewById(R.id.chat_drawer_layout);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -216,6 +214,8 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
             isMessageUpdated = false;
         }
 
+
+
         EventBus.getDefault().register(this);
 
     }
@@ -247,6 +247,8 @@ public class GroupChatActivity extends AppCompatActivity implements LoaderManage
             } else {
                 mDrawer.openDrawer(Gravity.RIGHT);
             }
+        } else if ( item.getItemId() == android.R.id.home ) {
+            finish();
         }
         return false;
     }

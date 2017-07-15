@@ -2,18 +2,14 @@ package com.beakya.hellotalk.activity;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.Rect;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.MenuCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -21,34 +17,25 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.adapter.NewChatAdapter;
 import com.beakya.hellotalk.adapter.ViewPagerAdapter;
 import com.beakya.hellotalk.fragment.ChatListFragment;
 import com.beakya.hellotalk.fragment.UserFragment;
-import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.User;
-import com.beakya.hellotalk.retrofit.LoginResponseBody;
-import com.beakya.hellotalk.retrofit.LoginService;
 import com.beakya.hellotalk.retrofit.LogoutBody;
 import com.beakya.hellotalk.retrofit.LogoutService;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.firebase.iid.FirebaseInstanceId;
-import java.util.Arrays;
-import java.util.HashMap;
 
 import io.codetail.animation.ViewAnimationUtils;
 import io.codetail.widget.RevealFrameLayout;
@@ -73,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private FloatingActionButton mainFabBtn;
     private FloatingActionButton addFriendFabBtn;
     private FloatingActionButton createNewChatFabBtn;
-    private LinearLayout layoutForAddFriendFab;
+    private LinearLayout fabAddFriendLayout;
     private LinearLayout createNewChatFabLayout;
     private RevealFrameLayout revealFrameLayout;
     private boolean isFabOpen = false;
@@ -82,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private Context mContext;
     private boolean is_login;
     private Socket mSocket;
+    private User myInfo;
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -112,17 +100,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
         SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
-        User myInfo =  Utils.getMyInfo(this);
+        myInfo =  Utils.getMyInfo(this);
         headerNameTextView.setText(myInfo.getName());
         headerEmailTextView.setText(myInfo.getId());
-//
-//        String fileName =  getString(R.string.setting_friends_profile_img_name);
-//        String extension = getString(R.string.setting_profile_img_extension);
-//        String directory = getString(R.string.setting_friends_img_directory);
-
-//        Bitmap profileBitmap = Utils.getImageBitmap(this, fileName, extension, Arrays.asList(new String[] {directory, myInfo.getId() }));
-        Bitmap profileBitmap = myInfo.getProfileImg(this);
-        navigationDrawerImageView.setImageBitmap(profileBitmap);
+        navigationDrawerImageView.setImageBitmap(myInfo.getProfileImg(this));
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -133,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mainFabBtn = (FloatingActionButton) findViewById(R.id.main_fab);
         createNewChatFabBtn = (FloatingActionButton) findViewById(R.id.fab_create_new_group_chat);
         addFriendFabBtn = (FloatingActionButton) findViewById(R.id.fab_add_friend);
-        layoutForAddFriendFab = (LinearLayout) findViewById(R.id.layout_for_fab_add_friend);
+        fabAddFriendLayout = (LinearLayout) findViewById(R.id.layout_for_fab_add_friend);
         createNewChatFabLayout = (LinearLayout) findViewById(R.id.layout_for_fab_create_new_group_chat);
         fabBackground = findViewById(R.id.fab_background);
         mainFabBtn.setOnClickListener(new View.OnClickListener() {
@@ -254,9 +235,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             });
 
-        } else if ( id == R.id.nav_app_setting ) {
-            Intent intent = new Intent(this, GeneralSettingActivity.class);
-            startActivity(intent);
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -286,9 +264,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         isFabOpen = true;
         mainFabBtn.animate().rotation(45);
         createNewChatFabLayout.setVisibility(View.VISIBLE);
-        layoutForAddFriendFab.setVisibility(View.VISIBLE);
+        fabAddFriendLayout.setVisibility(View.VISIBLE);
         createNewChatFabLayout.animate().translationY(-170);
-        layoutForAddFriendFab.animate().translationY(-300);
+        fabAddFriendLayout.animate().translationY(-300);
 
         int cx = (mainFabBtn.getLeft() + mainFabBtn.getRight()) / 2;
         int cy = (mainFabBtn.getTop() + mainFabBtn.getBottom()) / 2;
@@ -318,9 +296,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     void fabClose() {
         mainFabBtn.animate().rotation(0);
         createNewChatFabLayout.animate().translationY(0);
-        layoutForAddFriendFab.animate().translationY(0).setListener(new Animator.AnimatorListener() {
+        fabAddFriendLayout.animate().translationY(0).setListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animator) {
+
 
             }
 
@@ -328,9 +307,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             public void onAnimationEnd(Animator animator) {
                 if(!isFabOpen){
                     createNewChatFabLayout.setVisibility(View.GONE);
-                    layoutForAddFriendFab.setVisibility(View.GONE);
+                    fabAddFriendLayout.setVisibility(View.GONE);
                 }
-
             }
 
             @Override

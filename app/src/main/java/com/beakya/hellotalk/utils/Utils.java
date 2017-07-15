@@ -448,9 +448,10 @@ public class Utils {
     public static String timeToString( String date ) {
 
         long second = 1000;
-        long minute = 1000 * 60;
+        long minute = second * 60;
         long hour = minute * 60;
         long day = hour * 24;
+        long year = day * 365;
         Date resultTime = null;
         Calendar calendar = Calendar.getInstance();
         Date currentDate = calendar.getTime();
@@ -472,9 +473,13 @@ public class Utils {
                 builder.append("오전 ");
             }
             builder.append(calendar.get(Calendar.HOUR)+ "시");
+            builder.append(" ");
             builder.append(calendar.get(Calendar.MINUTE) + "분");
-        } else {
-
+        } else if ( day < diff && diff < year ) {
+            builder.append(calendar.get(Calendar.MONTH) + "월");
+            builder.append(" ");
+            builder.append(calendar.get(Calendar.DAY_OF_MONTH));
+            builder.append("일");
         }
         return builder.toString();
     }

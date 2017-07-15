@@ -41,7 +41,8 @@ public class ChatViewHolder extends ChatItemViewHolder {
         }
         contentTextView.setText(stringMessage.getMessageContent());
         profileImageView.setImageBitmap(user.getProfileImg(context));
-        createTimeView.setText(Utils.timeToString(stringMessage.getCreatedTime()));
+        String time = Utils.timeToString(stringMessage.getCreatedTime());
+        createTimeView.setText(time);
         nameView.setText(user.getName());
     }
 }

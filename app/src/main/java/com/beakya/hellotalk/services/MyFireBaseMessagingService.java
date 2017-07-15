@@ -131,7 +131,8 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         Utils.insertMessage(context, message, message.getChatId(), false);
         Intent intent = new Intent(this, GroupChatActivity.class);
         intent.putExtra("chatRoom", chatRoom);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) Math.random(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
@@ -146,7 +147,7 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
                 .setContentIntent(pendingIntent)
                 .setSound(defaultSoundUri);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(0, notificationBuilder.build());
+        notificationManager.notify((int) Math.random(), notificationBuilder.build());
     }
     private void sendPersonalNotification(JsonObject object, Context context ) {
         Gson gson = new GsonBuilder()
@@ -195,17 +196,17 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         Utils.insertMessage(context, message, chatRoom.getChatId(), false);
         Intent intent = new Intent(context, PersonalChatActivity.class);
         intent.putExtra("chatRoom", chatRoom);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(0, messageNotificationBuilder(sender, message, intent));
+        notificationManager.notify(message.hashCode(), messageNotificationBuilder(sender, message, intent));
     }
     private Notification messageNotificationBuilder(User user, Message message, Intent intent ) {
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, message.hashCode(), intent, PendingIntent.FLAG_ONE_SHOT);
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+               NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setLargeIcon(user.getProfileImg(this))
                 .setSmallIcon(R.drawable.ic_menu_camera)
                 .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
-                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentTitle(user.getName())
                 .setContentText(message.getMessageContent())
@@ -230,7 +231,8 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
 
         Intent intent = new Intent(this, GroupChatActivity.class);
         intent.putExtra("chatRoom", groupChatRoom);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 2, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) Math.random(), intent, PendingIntent.FLAG_ONE_SHOT);
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
@@ -246,6 +248,6 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
                 .setSound(defaultSoundUri);
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(0, notificationBuilder.build());
+        notificationManager.notify((int) Math.random(), notificationBuilder.build());
     }
 }

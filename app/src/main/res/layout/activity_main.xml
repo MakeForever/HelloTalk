@@ -40,6 +40,14 @@ tools:openDrawer="start">
                 android:clipToPadding="false"
                 android:gravity="center_vertical"
                 android:visibility="gone" >
+                <TextView
+                    android:id="@+id/fab_add_friend_text_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/white"
+                    android:layout_marginRight="10dp"
+                    android:text="@string/fab_add_friend" />
 
                 <android.support.design.widget.FloatingActionButton
                     android:id="@+id/fab_add_friend"
@@ -62,6 +70,15 @@ tools:openDrawer="start">
                 android:gravity="center_vertical"
                 android:visibility="gone"
                 app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior">
+
+                <TextView
+                    android:id="@+id/fab_create_new_chat_text_view"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/white"
+                    android:layout_marginRight="10dp"
+                    android:text="@string/fab_add_chat" />
 
                 <android.support.design.widget.FloatingActionButton
                     android:id="@+id/fab_create_new_group_chat"

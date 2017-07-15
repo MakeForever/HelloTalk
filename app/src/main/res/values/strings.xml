@@ -33,7 +33,7 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">앱 설정</string>
-    <string name="menu_string_my_options">내 설정</string>
+    <string name="menu_string_my_options">계정 설정</string>
     <string name="setting_change_password">비밀번호 변경</string>
     <string name="setting_remove_profile">계정 삭제</string>
     <string name="setting_chagne_profile_image">변경</string>
@@ -44,4 +44,7 @@
     <string name="invite_to_group_chat">invite_to_group_chat</string>
     <string name="new_message_arrived">new_message_arrived</string>
     <string name="move_upward_behavior">com.beakya.hellotalk.utils.MoveUpwardBehavior</string>
+    <string name="fab_add_chat">채팅방 만들기</string>
+    <string name="fab_add_friend">친구 추가</string>
+    <string name="general_setting_photo_permission">사진 접근 권한</string>
 </resources>

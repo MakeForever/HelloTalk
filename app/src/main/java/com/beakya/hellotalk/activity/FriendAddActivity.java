@@ -12,6 +12,8 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
@@ -37,6 +39,7 @@ public class FriendAddActivity extends AppCompatActivity {
     private FriendAddAdapter friendAddAdapter;
     private RecyclerView SearchResultRecyclerView;
     private Socket socket;
+    private ImageButton backButton;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         //initialize socket
@@ -75,7 +78,13 @@ public class FriendAddActivity extends AppCompatActivity {
             }
         });
 
-
+        backButton = (ImageButton) findViewById(R.id.back_button);
+        backButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
         friendAddAdapter = new FriendAddAdapter(this);
         SearchResultRecyclerView = (RecyclerView) findViewById(R.id.search_result_recyclerView);
         SearchResultRecyclerView.setAdapter(friendAddAdapter);

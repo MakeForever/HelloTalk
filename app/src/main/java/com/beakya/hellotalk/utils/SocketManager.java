@@ -117,7 +117,6 @@ public class SocketManager {
         socket.on(INVITE_GROUP_CHAT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-
                 Intent intent = new Intent(context, ChatService.class);
                 intent.putExtra("info", (String) args[0]);
                 intent.setAction(ChatTask.ACTION_STORAGE_GROUP_CHAT_INVITE);
@@ -135,12 +134,6 @@ public class SocketManager {
                 Log.d(TAG, "call invite_friend:");
             }
         });
-        socket.on("enter_room", new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-
-            }
-        });
         socket.on("send_initial_state", new Emitter.Listener() {
             @Override
             public void call(Object... args) {
@@ -151,6 +144,16 @@ public class SocketManager {
                 Log.d(TAG, "call RECEIVE_ALL_EVENT");
             }
 
+        });
+        socket.on("someone_leave_chat_room", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("info", (String) args[0]);
+                intent.setAction(ChatTask.ACTION_SOMEONE_LEAVE_CHAT_ROOM);
+                context.startService(intent);
+                Log.d(TAG, "call: someone_leave_chat_room");
+            }
         });
         socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
             @Override

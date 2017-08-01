@@ -15,17 +15,21 @@ import com.beakya.hellotalk.R;
 public class ToolBarActivity extends AppCompatActivity {
     Toolbar toolbar;
 
-    protected void setToolbarContentView ( @Nullable int activityResId ) {
+
+
+    protected void setToolbarContentView (@Nullable int activityResId ) {
         setContentView(activityResId);
+
+    }
+    protected void setToolbar ( String title ) {
         toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitle( title );
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null){
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
     }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if ( item.getItemId() == android.R.id.home ) {
             finish();

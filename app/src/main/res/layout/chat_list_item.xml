@@ -21,7 +21,7 @@
             <!--What you want to show-->
 
             <ImageButton
-                android:id="@+id/delete_user_button"
+                android:id="@+id/delete_button"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"

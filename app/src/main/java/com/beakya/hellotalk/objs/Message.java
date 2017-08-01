@@ -13,7 +13,8 @@ import org.json.JSONObject;
  */
 
 public class Message extends Test<String> implements Parcelable {
-    public Message(String messageId, String creatorId, String messageContent, String chatId, int messageType, String createdTime, boolean isSend, int readCount) {
+    public Message(String messageId, String creatorId, String messageContent,
+                   String chatId, int messageType, String createdTime, boolean isSend, int readCount) {
         super(
                 messageId,
                 creatorId,
@@ -109,7 +110,7 @@ public class Message extends Test<String> implements Parcelable {
         isSend = send;
     }
 
-    public int isReadCount() {
+    public int getReadCount() {
         return readCount;
     }
 
@@ -148,7 +149,7 @@ public class Message extends Test<String> implements Parcelable {
             object.put(TalkContract.Message.CREATOR_ID, getCreatorId());
             object.put(TalkContract.Message.MESSAGE_CONTENT, getMessageContent());
             object.put(TalkContract.Message.MESSAGE_TYPE, getMessageType());
-            object.put(TalkContract.Message.READING_COUNT, isReadCount());
+            object.put(TalkContract.Message.READING_COUNT, getReadCount());
             object.put(TalkContract.Message.CREATED_TIME, getCreatedTime());
         } catch (JSONException e) {
             e.printStackTrace();

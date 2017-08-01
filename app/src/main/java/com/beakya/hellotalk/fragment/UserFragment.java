@@ -84,12 +84,12 @@ public class UserFragment extends Fragment implements
     @Override
     public void onStart() {
         super.onStart();
-        EventBus.getDefault().register(this);
+//        EventBus.getDefault().register(this);
     }
     @Override
     public void onPause() {
         super.onPause();
-        EventBus.getDefault().unregister(this);
+//        EventBus.getDefault().unregister(this);
     }
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -107,17 +107,14 @@ public class UserFragment extends Fragment implements
         }
     }
 
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void onMessageEvent(Events.MessageEvent event) {
-        switch ( event.getMessage() ) {
-            case EVENT_NEW_MESSAGE_ARRIVED :
-                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
-                break;
-            default :
-                throw new RuntimeException("message not matched message : " + event.getMessage());
-        }
-    }
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void onMessageEvent(Events.MessageEvent event) {
+//        switch ( event.getMessage() ) {
+//            case EVENT_NEW_MESSAGE_ARRIVED :
+//                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
+//                break;
+//        }
+//    }
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mUserAdapter.swapCursor(data);

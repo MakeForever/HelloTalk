@@ -62,8 +62,6 @@ public class TalkContract {
                             " ); ";
     }
     public static final class ChatRooms {
-
-
         public static final String TABLE_NAME = "chat_list";
         public static final String PATH = TABLE_NAME;
         public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRooms.PATH).build();
@@ -81,15 +79,17 @@ public class TalkContract {
                         IS_SYNCHRONIZED + " BOOLEAN DEFAULT 0 " +
                         " ); ";
     }
-    public static final class ChatUserRooms implements BaseColumns {
+    public static final class ChatRoomUsers implements BaseColumns {
         public static final String TABLE_NAME = "chat_members";
         public static final String PATH = TABLE_NAME;
-        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatUserRooms.PATH).build();
+        public static final String IS_MEMBER = "is_member";
+        public static final Uri CONTENT_URI = BASE_URI.buildUpon().appendPath(ChatRoomUsers.PATH).build();
         public static final String CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT =
                 " CREATE TABLE " + TABLE_NAME + " ( " +
                         _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                         ChatRooms.CHAT_ID + " TEXT, " +
-                        User.USER_ID + " TEXT " +
+                        User.USER_ID + " TEXT, " +
+                        IS_MEMBER + " BOOLEAN DEFAULT 1 " +
                         " ); ";
 
     }

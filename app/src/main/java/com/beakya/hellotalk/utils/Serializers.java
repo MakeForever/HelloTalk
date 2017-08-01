@@ -41,16 +41,12 @@ public class Serializers {
             String id = object.get("id").getAsString();
             boolean hasProfileImg = object.get("hasProfileImg").getAsBoolean();
 
-
-
             Bitmap bitmap = null;
-            if( object.has("img") ) {
+            if( object.has("img") && !object.get("img").isJsonNull() )  {
                 String bitmapBase64 = object.get("img").getAsString();
                 byte[] imageBytes = Base64.decode(bitmapBase64, Base64.DEFAULT);
                 bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
             }
-
-
             User user = new User( id, name, hasProfileImg);
             user.setProfileImage(bitmap);
             if ( object.has("is_my_friend")) {

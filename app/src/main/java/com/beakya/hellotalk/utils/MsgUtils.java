@@ -101,14 +101,15 @@ public class MsgUtils {
                     null,
                     null,
                     null);
-            cursor.moveToFirst();
-            int count = cursor.getInt(cursor.getColumnIndex(TalkContract.Message.READING_COUNT));
-            if ( count > 0 ) {
-                ContentValues values = new ContentValues();
-                --count;
-                values.put(TalkContract.Message.READING_COUNT, count);
-                int result = db.update(TalkContract.Message.TABLE_NAME, values, TalkContract.Message.MESSAGE_ID + " = ? ", new String[] { messageId });
-                Log.d(TAG, "bulkUpdateCountOfMessage: " + result);
+            while ( cursor.moveToNext() ) {
+                int count = cursor.getInt(cursor.getColumnIndex(TalkContract.Message.READING_COUNT));
+                if ( count > 0 ) {
+                    ContentValues values = new ContentValues();
+                    --count;
+                    values.put(TalkContract.Message.READING_COUNT, count);
+                    int result = db.update(TalkContract.Message.TABLE_NAME, values, TalkContract.Message.MESSAGE_ID + " = ? ", new String[] { messageId });
+                    Log.d(TAG, "bulkUpdateCountOfMessage: " + result);
+                }
             }
         }
         db.close();

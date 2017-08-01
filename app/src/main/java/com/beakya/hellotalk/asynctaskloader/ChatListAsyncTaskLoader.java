@@ -2,7 +2,6 @@ package com.beakya.hellotalk.asynctaskloader;
 
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.AsyncTaskLoader;
@@ -28,11 +27,10 @@ import static android.content.Context.MODE_PRIVATE;
 
 public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListItem>> {
     private static final String TAG = ChatListAsyncTaskLoader.class.getSimpleName();
-    final PackageManager packageManager;
-    private ArrayList<ChatListItem> chatRoomList = null;
+
+
     public ChatListAsyncTaskLoader(Context context) {
         super(context);
-        this.packageManager  = getContext().getPackageManager();
     }
 
     @Override
@@ -47,14 +45,14 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
     public ArrayList<ChatListItem> loadInBackground() {
         Context context = getContext();
         DbHelper dbHelper = new DbHelper(getContext());
-        chatRoomList = new ArrayList<>();
+        ArrayList<ChatListItem> chatRoomList = new ArrayList<>();
         String chatId = TalkContract.ChatRooms.CHAT_ID;
-        String chatType = TalkContract.ChatRooms.CHAT_ROOM_TYPE;
-        String messageId = TalkContract.Message.MESSAGE_ID;
-        String messageContent = TalkContract.Message.MESSAGE_CONTENT;
-        String MessageTable = TalkContract.Message.TABLE_NAME;
-        String chatListTable = TalkContract.ChatRooms.TABLE_NAME;
-        String createdTime = TalkContract.Message.CREATED_TIME;
+//        String chatType = TalkContract.ChatRooms.CHAT_ROOM_TYPE;
+//        String messageId = TalkContract.Message.MESSAGE_ID;
+//        String messageContent = TalkContract.Message.MESSAGE_CONTENT;
+//        String MessageTable = TalkContract.Message.TABLE_NAME;
+//        String chatListTable = TalkContract.ChatRooms.TABLE_NAME;
+//        String createdTime = TalkContract.Message.CREATED_TIME;
         String myId = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE).getString(context.getString(R.string.user_id), null);
 //        String lastChatQuery = "SELECT "+"ch."+ chatType + ", m.*" +" FROM " + chatListTable + " as ch " + " JOIN " + MessageTable + " as m " + " ON "+"m."+ messageId + " = " +
 //                "( SELECT " + mesageId + " FROM " + MessageTable + " AS m2 " +" WHERE " + "m2."+ chatId + " = " + "ch."+chatId + " order by " + "m2."+ createdTime + " DESC LIMIT 1 )";
@@ -74,11 +72,10 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
             //채팅 id
             String mChatId = cursor.getString(cursor.getColumnIndex(chatId));
             // 채팅 유저 쿼리
-            String roomUsersQuery = " SELECT " + " b.* "+" FROM " + TalkContract.ChatUserRooms.TABLE_NAME + " as a "+
+            String roomUsersQuery = " SELECT " + " b.*, a."+ TalkContract.ChatRoomUsers.IS_MEMBER+" FROM " + TalkContract.ChatRoomUsers.TABLE_NAME + " as a "+
                     " INNER JOIN " + TalkContract.User.TABLE_NAME + " as b ON " + " a."+ TalkContract.User.USER_ID + " = " + " b." + TalkContract.User.USER_ID + " WHERE " +
                     "a."+ TalkContract.ChatRooms.CHAT_ID + " = " +"'"+ mChatId+"'";
 
-            Log.d(TAG, "loadInBackground roomUsersQuery :" + roomUsersQuery);
             Cursor roomUsers = db.rawQuery(roomUsersQuery, null);
             Cursor notReadChatCountQuery = db.query(
                     TalkContract.Message.TABLE_NAME,
@@ -87,7 +84,8 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
                     new String[] { myId, mChatId, "0" },
                     null,
                     null,
-                    null);
+                    null
+            );
             Cursor lastMessage = db.query(
                     TalkContract.Message.TABLE_NAME,
                     null,
@@ -97,7 +95,7 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
                     null,
                     TalkContract.Message.CREATED_TIME + " desc",
                     "1"
-                    );
+            );
 
             Log.d(TAG, "loadInBackground: " + mChatId);
             Log.d(TAG, "loadInBackground: " + roomUsersQuery);
@@ -109,14 +107,18 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
             if( notReadChatCountQuery.moveToNext()) {
                 notReadChatCount = notReadChatCountQuery.getInt(notReadChatCountQuery.getColumnIndex("count"));
             }
-            Log.d(TAG, "loadInBackground: notReadChatCount " + notReadChatCount);
+            Log.d(TAG, "loadInBackground: notReadChatCount "+ mChatId+ " : " + notReadChatCount);
 
             String mLastMessage = null;
             int mMessageType = 0;
-            String date = null;
+            String date;
             if ( lastMessage.getCount() > 0 ) {
                 lastMessage.moveToFirst();
                 mLastMessage = lastMessage.getString(lastMessage.getColumnIndex(TalkContract.Message.MESSAGE_CONTENT));
+                String[] mLastMessageSplitByEnter = mLastMessage.split("\n");
+                if ( mLastMessageSplitByEnter.length > 2 ) {
+                    mLastMessage = mLastMessageSplitByEnter[0] + "\n" + mLastMessageSplitByEnter[1] + "\n" + "...";
+                }
                 mMessageType = lastMessage.getInt(lastMessage.getColumnIndex(TalkContract.Message.MESSAGE_TYPE));
                 date = lastMessage.getString(lastMessage.getColumnIndex(TalkContract.Message.CREATED_TIME));
             } else {
@@ -135,14 +137,14 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
                             new User(
                                     roomUsers.getString(roomUsers.getColumnIndex(TalkContract.User.USER_ID)),
                                     roomUsers.getString(roomUsers.getColumnIndex(TalkContract.User.USER_NAME)),
-                                    roomUsers.getInt(roomUsers.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0
+                                    roomUsers.getInt(roomUsers.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0,
+                                    roomUsers.getInt(roomUsers.getColumnIndex(TalkContract.ChatRoomUsers.IS_MEMBER)) > 0
                             )
                     );
 
                 }
                 chatRoom = new PersonalChatRoom(mChatId, mChatRoomType, true, userList.get(0));
             } else {
-                //TODO : 그룹챗 만들것
                 String chatName = cursor.getString(cursor.getColumnIndex(TalkContract.ChatRooms.CHAT_NAME));
                 HashMap<String, User> userList = new HashMap<>();
                 while( roomUsers.moveToNext() ) {
@@ -151,14 +153,20 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
                             ,new User(
                                     roomUsers.getString(roomUsers.getColumnIndex(TalkContract.User.USER_ID)),
                                     roomUsers.getString(roomUsers.getColumnIndex(TalkContract.User.USER_NAME)),
-                                    roomUsers.getInt(roomUsers.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0
+                                    roomUsers.getInt(roomUsers.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0,
+                                    roomUsers.getInt(roomUsers.getColumnIndex(TalkContract.ChatRoomUsers.IS_MEMBER)) > 0
                             )
                     );
                 }
                 chatRoom = new GroupChatRoom(chatName, userList, mChatId, mChatRoomType, true);
             }
             chatRoomList.add(new ChatListItem(chatRoom, mLastMessage, mMessageType, date, notReadChatCount));
+            roomUsers.close();
+            notReadChatCountQuery.close();
+            lastMessage.close();
         }
+
+        cursor.close();
         db.close();
         return chatRoomList;
     }

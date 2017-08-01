@@ -5,9 +5,9 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private FloatingActionButton mainFabBtn;
     private FloatingActionButton addFriendFabBtn;
     private FloatingActionButton createNewChatFabBtn;
+    private DrawerLayout drawerLayout;
     private LinearLayout fabAddFriendLayout;
     private LinearLayout createNewChatFabLayout;
     private RevealFrameLayout revealFrameLayout;
@@ -110,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mDrawer.addDrawerListener(toggle);
         toggle.syncState();
 
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         revealFrameLayout = (RevealFrameLayout) findViewById(R.id.fab_reveal_frame_layout);
         mainFabBtn = (FloatingActionButton) findViewById(R.id.main_fab);
         createNewChatFabBtn = (FloatingActionButton) findViewById(R.id.fab_create_new_group_chat);
@@ -183,9 +185,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
@@ -219,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 @Override
                 public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                     if( response.code() != 200 ) {
-                        //TODO : snackbar
+                        //TODO : Snackbar
                     } else {
                         boolean success = Utils.logout(mContext);
                         if( success ) {
@@ -231,13 +230,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    //TODO : snackbar
+                    //TODO : Snackbar
                 }
             });
 
         }
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        boolean flag = item.isChecked();
+        item.setChecked(false);
+        drawerLayout.closeDrawer(GravityCompat.START);
         return true;
     }
 

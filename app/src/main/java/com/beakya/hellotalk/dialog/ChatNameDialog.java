@@ -1,4 +1,4 @@
-package com.beakya.hellotalk.widget;
+package com.beakya.hellotalk.dialog;
 
 import android.app.Activity;
 import android.content.Context;
@@ -15,7 +15,6 @@ import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.NewChatActivity;
-import com.beakya.hellotalk.objs.GroupChatRoom;
 
 
 /**

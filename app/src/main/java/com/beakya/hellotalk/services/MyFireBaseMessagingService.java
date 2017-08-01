@@ -49,6 +49,7 @@ import org.greenrobot.eventbus.EventBus;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -96,7 +97,6 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
             Emitter.Listener notificationDataListener = new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    Log.d(TAG, "call: " + (String) args[0]);
                     JsonObject object = new JsonParser().parse( (String) args[0]).getAsJsonObject();
                     String event = object.get("event").getAsString();
                     switch ( event ) {
@@ -132,7 +132,7 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         Intent intent = new Intent(this, GroupChatActivity.class);
         intent.putExtra("chatRoom", chatRoom);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) Math.random(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) Math.random(), intent, PendingIntent.FLAG_ONE_SHOT);
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
@@ -147,9 +147,9 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
                 .setContentIntent(pendingIntent)
                 .setSound(defaultSoundUri);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify((int) Math.random(), notificationBuilder.build());
+        notificationManager.notify(message.getMessageId().hashCode(), notificationBuilder.build());
     }
-    private void sendPersonalNotification(JsonObject object, Context context ) {
+    private void sendPersonalNotification(JsonObject object, Context context ) throws JsonSyntaxException {
         Gson gson = new GsonBuilder()
                 .registerTypeAdapter(User.class, new Serializers.UserDeserializer())
                 .create();
@@ -163,13 +163,10 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         User sender = null;
         PersonalChatRoom chatRoom = null;
         Message message = null;
-        try {
-            sender = gson.fromJson(senderJsonObj, User.class);
-            chatRoom = gson.fromJson(chatRoomElement, PersonalChatRoom.class);
-            message = gson.fromJson(messageElement, Message.class);
-        } catch ( JsonSyntaxException e ) {
-            e.printStackTrace();
-        }
+
+        sender = gson.fromJson(senderJsonObj, User.class);
+        chatRoom = gson.fromJson(chatRoomElement, PersonalChatRoom.class);
+        message = gson.fromJson(messageElement, Message.class);
         ContentResolver resolver = context.getContentResolver();
         Cursor chatRoomQueryCursor = resolver.query(
                 TalkContract.ChatRooms.CONTENT_URI,
@@ -198,7 +195,7 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         intent.putExtra("chatRoom", chatRoom);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(message.hashCode(), messageNotificationBuilder(sender, message, intent));
+        notificationManager.notify(message.getMessageId().hashCode(), messageNotificationBuilder(sender, message, intent));chatRoomQueryCursor.close();;
     }
     private Notification messageNotificationBuilder(User user, Message message, Intent intent ) {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, message.hashCode(), intent, PendingIntent.FLAG_ONE_SHOT);
@@ -232,7 +229,7 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         Intent intent = new Intent(this, GroupChatActivity.class);
         intent.putExtra("chatRoom", groupChatRoom);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, (int) Math.random(), intent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 100, intent, PendingIntent.FLAG_ONE_SHOT);
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setLargeIcon(BitmapFactory.decodeResource(context.getResources(),
@@ -242,12 +239,12 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentTitle("Hello Talk")
-                .setContentText(groupChatRoom.getChatName() + "에 초대되었습니다")
+                .setContentText((groupChatRoom != null ? groupChatRoom.getChatName() : null) + "에 초대되었습니다")
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .setSound(defaultSoundUri);
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify((int) Math.random(), notificationBuilder.build());
+        notificationManager.notify( groupChatRoom.getChatId().hashCode(), notificationBuilder.build());
     }
 }

@@ -116,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
         String password = passwordEditText.getText().toString();
 
         if( email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailEditText.setError("enter a valid email address");
+            emailEditText.setError(getString(R.string.login_error_when_validate_email));
             valid = false;
 
         } else {
@@ -124,7 +124,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         if (password.isEmpty() || password.length() < 4 ) {
-            passwordEditText.setError("more then 4 alphanumeric characters");
+            passwordEditText.setError(getString(R.string.login_error_when_validate_password));
             valid = false;
         } else {
             passwordEditText.setError(null);

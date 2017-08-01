@@ -1,33 +1,46 @@
 package com.beakya.hellotalk.viewholder;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.GroupChatActivity;
+import com.beakya.hellotalk.adapter.ChatListAdapter;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 import com.daimajia.swipe.SwipeLayout;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonWriter;
 
 import java.util.HashMap;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.socket.client.Socket;
 
 /**
  * Created by goodlife on 2017. 6. 2..
  */
 
-public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implements View.OnClickListener{
+public class GroupChatViewHolder extends ChatListItemViewHolder<ChatListItem> implements View.OnClickListener {
+    public static final String TAG = GroupChatViewHolder.class.getSimpleName();
     private static final int MEMBER_MAX = 5;
     private LinearLayout profileImageArea;
     private TextView chatNameTextView;
@@ -38,16 +51,17 @@ public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implem
     private GroupChatRoom groupChatRoom;
     private SwipeLayout swipeLayout;
     private ConstraintLayout constraintLayout;
+    private ImageButton deleteButton;
     private boolean isSwiped = false;
-    public static GroupChatListViewHolder newInstance(ViewGroup parent) {
+    public static GroupChatViewHolder newInstance(ViewGroup parent) {
 
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.group_chat_list_item, parent, false);
 
-        return new GroupChatListViewHolder(itemView, parent.getContext());
+        return new GroupChatViewHolder(itemView, parent.getContext());
     }
 
-    public GroupChatListViewHolder(View itemView, Context context) {
+    public GroupChatViewHolder(View itemView, final Context context) {
         super(itemView);
         mContext = context;
         constraintLayout = (ConstraintLayout) itemView.findViewById(R.id.group_constraint_layout);
@@ -98,46 +112,13 @@ public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implem
                 //when user's hand released.
             }
         });
+        deleteButton = (ImageButton) itemView.findViewById(R.id.delete_button);
+
 
     }
 
-    @Override
-    public void bind(ChatListItem chatListItem) {
-        int userCount = 0;
-        groupChatRoom = (GroupChatRoom) chatListItem.getChatRoom();
-        HashMap<String, User> map = groupChatRoom.getUsers();
-        int childCount = profileImageArea.getChildCount();
-        for ( int i = 0;  i < childCount; i++ ) {
 
-            //[ view, view ] 일때 0번의 view를 지우면 1번이 0번으로 인덱스가 변경 된다.
-            View view = profileImageArea.getChildAt(0);
-            profileImageArea.removeView(view);
-        }
-        for( User user : map.values()) {
-            CircleImageView imageView = createImageView(mContext, user.getProfileImg(mContext));
-
-            profileImageArea.addView(imageView);
-            userCount++;
-            if( userCount > 4) {
-                break;
-            }
-        }
-        if( map.size() > MEMBER_MAX ){
-            memberCountView.setVisibility(View.VISIBLE);
-            memberCountView.setText("외 " + (map.size() - MEMBER_MAX) +"명");
-        } else {
-            memberCountView.setVisibility(View.INVISIBLE);
-        }
-        dateTextView.setText(Utils.timeToString(chatListItem.getLastMessageCreatedTime()));
-        if(chatListItem.getNotReadCount() == 0 ) {
-            notReadCountView.setVisibility(View.INVISIBLE);
-        } else {
-            notReadCountView.setVisibility(View.VISIBLE);
-            notReadCountView.setText(String.valueOf(chatListItem.getNotReadCount()));
-        }
-        chatNameTextView.setText(groupChatRoom.getChatName());
-    }
-    CircleImageView createImageView (Context context, Bitmap bitmap) {
+    private CircleImageView createImageView(Context context, Bitmap bitmap) {
 
         float d = context.getResources().getDisplayMetrics().density;
         int sizeParam = 40;
@@ -159,5 +140,81 @@ public class GroupChatListViewHolder extends BaseViewHolder<ChatListItem> implem
         intent.putExtra("chatRoom", groupChatRoom);
         intent.putExtra("is_stored", true);
         mContext.startActivity(intent);
+    }
+
+    @Override
+    public void bind(ChatListItem chatListItem, final ChatListAdapter.onDeleteBtnClickListener mListener) {
+        int userCount = 0;
+        groupChatRoom = (GroupChatRoom) chatListItem.getChatRoom();
+        HashMap<String, User> map = groupChatRoom.getUsers();
+        int childCount = profileImageArea.getChildCount();
+        for ( int i = 0;  i < childCount; i++ ) {
+
+            //[ view, view ] 일때 0번의 view를 지우면 1번이 0번으로 인덱스가 변경 된다.
+            View view = profileImageArea.getChildAt(0);
+            profileImageArea.removeView(view);
+        }
+        for( User user : map.values()) {
+            if ( !user.isMember() )
+                continue;
+            CircleImageView imageView = createImageView(mContext, user.getProfileImg(mContext));
+            profileImageArea.addView(imageView);
+            userCount++;
+            if( userCount > 4) {
+                break;
+            }
+        }
+        if( map.size() > MEMBER_MAX ){
+            memberCountView.setVisibility(View.VISIBLE);
+            memberCountView.setText("외 " + (map.size() - MEMBER_MAX) +"명");
+        } else {
+            memberCountView.setVisibility(View.INVISIBLE);
+        }
+        dateTextView.setText(Utils.changeMessageString(chatListItem.getLastMessageCreatedTime()));
+        if(chatListItem.getNotReadCount() == 0 ) {
+            notReadCountView.setVisibility(View.INVISIBLE);
+        } else {
+            notReadCountView.setVisibility(View.VISIBLE);
+            notReadCountView.setText(String.valueOf(chatListItem.getNotReadCount()));
+        }
+        chatNameTextView.setText(groupChatRoom.getChatName());
+
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+                builder.setTitle("채팅방 나가기");
+                builder.setMessage("이 채팅방을 나가시겠습니까?");
+                builder.setPositiveButton("나가기", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        JsonObject object = new JsonObject();
+                        JsonObject chatRoomObj = new JsonObject();
+                        chatRoomObj.addProperty("chatId", groupChatRoom.getChatId());
+                        chatRoomObj.addProperty("chatType", groupChatRoom.getChatRoomType());
+                        object.add("chatRoom", chatRoomObj );
+                        object.addProperty("userId", Utils.getMyInfo(mContext).getId());
+                        Socket socket = ((MyApp)mContext.getApplicationContext()).getSocket();
+                        socket.emit("someone_leave_chat_room", object.toString());
+                        Utils.deleteChatRoom(mContext, groupChatRoom.getChatId());
+                        mListener.onClick(getAdapterPosition());
+                    }
+                });
+                builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                        swipeLayout.close();
+                    }
+                });
+                builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        swipeLayout.close();
+                    }
+                });
+                builder.show();
+            }
+        });
     }
 }

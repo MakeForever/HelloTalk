@@ -4,7 +4,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
@@ -29,12 +29,17 @@ import com.beakya.hellotalk.adapter.MemberListAdapter;
 import com.beakya.hellotalk.asynctaskloader.ChatAsyncTaskLoader;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
+import com.beakya.hellotalk.objs.GroupChatReadEventInfo;
 import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.Message;
+import com.beakya.hellotalk.objs.PayLoad;
+import com.beakya.hellotalk.objs.SocketJob;
 import com.beakya.hellotalk.objs.User;
-import com.beakya.hellotalk.services.ChatService;
-import com.beakya.hellotalk.utils.ChatTask;
+import com.beakya.hellotalk.utils.SocketEmitFunctions;
+import com.beakya.hellotalk.utils.SocketUtil;
+import com.beakya.hellotalk.utils.TaskRunner;
 import com.beakya.hellotalk.utils.Utils;
+import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -46,6 +51,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import io.socket.client.Socket;
 
@@ -53,7 +59,7 @@ import io.socket.client.Socket;
  * Created by goodlife on 2017. 6. 7..
  */
 
-public class GroupChatActivity extends ToolBarActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
+public class GroupChatActivity extends ChatActivity  {
     public static final String TAG = PersonalChatActivity.class.getSimpleName();
     public static final String EVENT_BUS_ACTION_INVITE_RESULT = "event_bus_action_invite_result";
     public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
@@ -77,6 +83,7 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
     private LinearLayout chatEditTextView;
     private DrawerLayout mDrawer;
     private boolean isMessageUpdated = false;
+    LoaderManager.LoaderCallbacks<ArrayList<Message>> messageLoaderCallBacks;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,7 +91,6 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
         mContext = this;
-        SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myInfo = Utils.getMyInfo(mContext);
         button = (Button) findViewById(R.id.chat_send_button);
         contentEditText = (EditText) findViewById(R.id.chat_content_edit_text);
@@ -99,7 +105,7 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
         }
         // ToolBar setup
 
-        toolbar.setTitle(mChatRoom.getChatName());
+        super.setToolbar(mChatRoom.getChatName());
 
         mDrawer = (DrawerLayout) findViewById(R.id.chat_drawer_layout);
         button.setOnClickListener(new View.OnClickListener() {
@@ -143,8 +149,11 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
         memberRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
         memberRecyclerView.setAdapter(memberListAdapter);
         ArrayList<User> users = new ArrayList<>(mChatRoom.getUsers().values());
-        memberListAdapter.swapData(users);
-
+        List<User> newUsers = new ArrayList<>();
+        for ( User user : users ) {
+            if ( user.isMember()) newUsers.add(user);
+        }
+        memberListAdapter.swapData(newUsers);
         addFriendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -157,7 +166,29 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
                 }
             }
         });
-        getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
+
+        messageLoaderCallBacks = new LoaderManager.LoaderCallbacks<ArrayList<Message>>() {
+            @Override
+            public Loader<ArrayList<Message>> onCreateLoader(int id, Bundle args) {
+                switch (id) {
+                    case ID_CHAT_CURSOR_LOADER:
+                        return new ChatAsyncTaskLoader(mContext, mChatRoom.getChatId());
+                    default:
+                        throw new RuntimeException("asyncTaskLoader id not matched");
+                }
+            }
+
+            @Override
+            public void onLoadFinished(Loader<ArrayList<Message>> loader, ArrayList<Message> data) {
+                groupChatAdapter.swapCursor(data);
+            }
+
+            @Override
+            public void onLoaderReset(Loader<ArrayList<Message>> loader) {
+                groupChatAdapter.swapCursor(null);
+            }
+        };
+        getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, messageLoaderCallBacks);
     }
 
     @Override
@@ -169,55 +200,39 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
             memberListAdapter.addMember(users);
             for ( User user : users )
                 mChatRoom.addUser(user);
-            getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
+            getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, messageLoaderCallBacks);
         }
-    }
-
-    @Override
-    public Loader<ArrayList<Message>> onCreateLoader(int id, Bundle args) {
-        switch (id) {
-            case ID_CHAT_CURSOR_LOADER:
-                Log.d(TAG, "onCreateLoader:  new CursorLoader call");
-//                return new CursorLoader( this, TalkContract.Message.CONTENT_URI, null, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatId}, null );
-                return new ChatAsyncTaskLoader(this, mChatRoom.getChatId());
-            default:
-                throw new RuntimeException("Loader Not Implemented: " + id);
-        }
-
-    }
-
-
-    @Override
-    public void onLoadFinished(Loader<ArrayList<Message>> loader, ArrayList<Message> data) {
-        Log.d(TAG, "onLoadFinished: ");
-        groupChatAdapter.swapCursor(data);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<ArrayList<Message>> loader) {
-        Log.d(TAG, "onLoaderReset: ");
-        groupChatAdapter.swapCursor(null);
     }
 
 
     @Override
     protected void onStart() {
         super.onStart();
-        if ( !isMessageUpdated ) {
-            isMessageUpdated = true;
-            Intent intent = new Intent(this, ChatService.class);
-            intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
-            intent.putExtra("chatType", mChatRoom.getChatRoomType());
-            intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
-            intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
-            startService(intent);
-            isMessageUpdated = false;
-        }
-
-
-
         EventBus.getDefault().register(this);
+//        if ( !isMessageUpdated ) {
+//            isMessageUpdated = true;
+//            Intent intent = new Intent(this, ChatService.class);
+//            intent.putExtra(TalkContract.User.USER_ID, myInfo.getId());
+//            intent.putExtra("chatType", mChatRoom.getChatRoomType());
+//            intent.putExtra(TalkContract.ChatRooms.CHAT_ID, mChatRoom.getChatId());
+//            intent.setAction(ChatTask.ACTION_CHANGE_ALL_MESSAGE_READ_STATE);
+//            startService(intent);
+//            isMessageUpdated = false;
+//        }
 
+        TaskRunner runner = TaskRunner.getInstance();
+        PayLoad<SocketEmitFunctions.bFunction> payLoad = new PayLoad<>(
+                SocketUtil.handleNotReadMessageFunction(
+                        new GroupChatReadEventInfo(
+                                myInfo,
+                                mChatRoom.getChatId(),
+                                mChatRoom.getChatRoomType()
+                        ),
+                        this
+                )
+
+        );
+        runner.addJob(new SocketJob("chat_read", payLoad, this));
     }
 
     @Override
@@ -264,9 +279,10 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
     public void onMessageEvent(Events.MessageEvent event) {
         switch (event.getMessage()) {
             case EVENT_NEW_MESSAGE_ARRIVED:
-                Message stringMessage = event.getStorage();
-                if (stringMessage.getChatId().equals(mChatRoom.getChatId())) {
-                    int count = stringMessage.isReadCount();
+                Log.d(TAG, "onMessageEvent: new message arrived");
+                Message message = event.getStorage();
+                if (message.getChatId().equals(mChatRoom.getChatId())) {
+                    int count = message.getReadCount();
                     --count;
                     ContentValues values = new ContentValues();
                     values.put(TalkContract.Message.IS_READ, 1);
@@ -276,19 +292,19 @@ public class GroupChatActivity extends ToolBarActivity implements LoaderManager.
                             TalkContract.Message.CONTENT_URI,
                             values,
                             TalkContract.Message.MESSAGE_ID + " = ?",
-                            new String[]{stringMessage.getMessageId()});
-                    groupChatAdapter.addMessage(stringMessage);
-                    stringMessage.setReadCount(count);
+                            new String[]{message.getMessageId()});
+                    groupChatAdapter.addMessage(message);
+                    message.setReadCount(count);
                     mChatRoom.setSynchronized(true);
-                    String emitParam = Utils.groupChatReadObjCreator(mChatRoom.getChatRoomType(), myInfo, mChatRoom.getChatId(), Arrays.asList(new String[] { stringMessage.getMessageId() }) );
+                    String emitParam = Utils.groupChatReadObjCreator(mChatRoom.getChatRoomType(), myInfo, mChatRoom.getChatId(), Arrays.asList(new String[] { message.getMessageId() }) );
                     socket.emit("chat_read", emitParam);
                 }
                 break;
             case EVENT_SOMEONE_READ_MESSAGE:
-                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
+                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, messageLoaderCallBacks);
                 break;
             case EVENT_INVITED_USER:
-                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
+                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, messageLoaderCallBacks);
                 break;
             default:
                 throw new RuntimeException("stringMessage not matched");

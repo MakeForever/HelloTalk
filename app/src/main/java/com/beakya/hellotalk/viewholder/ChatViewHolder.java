@@ -32,16 +32,16 @@ public class ChatViewHolder extends ChatItemViewHolder {
         context = itemView.getContext();
     }
 
-    public void bind(Message stringMessage, User user) {
-        if (stringMessage.isReadCount() == 0) {
+    public void bind(Message message, User user) {
+        if (message.getReadCount() == 0) {
             readCountView.setVisibility(View.INVISIBLE);
         } else {
             readCountView.setVisibility(View.VISIBLE);
-            readCountView.setText(String.valueOf(stringMessage.isReadCount()));
+            readCountView.setText(String.valueOf(message.getReadCount()));
         }
-        contentTextView.setText(stringMessage.getMessageContent());
+        contentTextView.setText(message.getMessageContent());
         profileImageView.setImageBitmap(user.getProfileImg(context));
-        String time = Utils.timeToString(stringMessage.getCreatedTime());
+        String time = Utils.changeMessageString(message.getCreatedTime());
         createTimeView.setText(time);
         nameView.setText(user.getName());
     }

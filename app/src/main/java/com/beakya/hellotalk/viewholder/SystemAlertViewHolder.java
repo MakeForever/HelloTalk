@@ -19,7 +19,7 @@ public class SystemAlertViewHolder extends ChatItemViewHolder {
     }
 
     @Override
-    public void bind(Message stringMessage, User user) {
-        textView.setText(stringMessage.getMessageContent());
+    public void bind(Message message, User user) {
+        textView.setText(message.getMessageContent());
     }
 }

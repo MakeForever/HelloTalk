@@ -4,7 +4,6 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
@@ -35,6 +34,8 @@ import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.SocketJob;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Serializers;
+import com.beakya.hellotalk.utils.SocketEmitFunctions;
+import com.beakya.hellotalk.utils.SocketUtil;
 import com.beakya.hellotalk.utils.TaskRunner;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.gson.Gson;
@@ -52,7 +53,7 @@ import java.util.Arrays;
 import io.socket.client.Socket;
 
 
-public class PersonalChatActivity extends ToolBarActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
+public class PersonalChatActivity extends ChatActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
     public static final String TAG = PersonalChatActivity.class.getSimpleName();
     public static final String EVENT_BUS_ACTION_INVITE_RESULT = "event_bus_action_invite_result";
     public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
@@ -84,7 +85,6 @@ public class PersonalChatActivity extends ToolBarActivity implements LoaderManag
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
         mContext = this;
-        SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myInfo = Utils.getMyInfo(mContext);
         chatSendButton = (Button) findViewById(R.id.chat_send_button);
         contentEditText = (EditText) findViewById(R.id.chat_content_edit_text);
@@ -98,8 +98,7 @@ public class PersonalChatActivity extends ToolBarActivity implements LoaderManag
         }
 
         // ToolBar setup
-        toolbar.setTitle(mChatRoom.getTalkTo().getName());
-
+        super.setToolbar(mChatRoom.getTalkTo().getName());
         mDrawer = (DrawerLayout) findViewById(R.id.chat_drawer_layout);
         chatSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -122,7 +121,7 @@ public class PersonalChatActivity extends ToolBarActivity implements LoaderManag
                 String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
                 PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
                 Message stringMessage = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), false,1);
-                int insertedChatRowNumber = Utils.insertMessage(mContext, stringMessage, chatId, true);
+                Utils.insertMessage(mContext, stringMessage, chatId, true);
                 String event = getString(R.string.invite_to_personal_chat);
 //                String messageJson = chatRoom.toJson(stringMessage, new User(myId, myName, null), event);event
                 String messageString = createMessageJson( mChatRoom, stringMessage, Utils.getMyInfo(mContext), event );
@@ -198,12 +197,24 @@ public class PersonalChatActivity extends ToolBarActivity implements LoaderManag
         EventBus.getDefault().register(this);
         getSupportLoaderManager().initLoader(ID_CHAT_CURSOR_LOADER, null, this);
         TaskRunner runner = TaskRunner.getInstance();
-        PayLoad<PersonalChatReadEventInfo> payLoad = new PayLoad<PersonalChatReadEventInfo>(new PersonalChatReadEventInfo(
-                                                                                        mChatRoom.getTalkTo(),
-                                                                                        mChatRoom.getChatRoomType(),
-                                                                                        mChatRoom.getChatId(),
-                                                                                        myInfo.getId()
-                                                                                        ));
+//        PayLoad<PersonalChatReadEventInfo> payLoad = new PayLoad<PersonalChatReadEventInfo>(new PersonalChatReadEventInfo(
+//                                                                                        mChatRoom.getTalkTo(),
+//                                                                                        mChatRoom.getChatRoomType(),
+//                                                                                        mChatRoom.getChatId(),
+//                                                                                        myInfo.getId()
+//                                                                                        ));
+
+        PayLoad<SocketEmitFunctions.bFunction> payLoad = new PayLoad<>(
+                SocketUtil.handleNotReadMessageFunction(
+                        new PersonalChatReadEventInfo(
+                                mChatRoom.getTalkTo(),
+                                mChatRoom.getChatRoomType(),
+                                mChatRoom.getChatId(),
+                                myInfo.getId()
+                        ),
+                        this
+                )
+        );
         runner.addJob(new SocketJob("chat_read", payLoad, this));
     }
 
@@ -238,29 +249,31 @@ public class PersonalChatActivity extends ToolBarActivity implements LoaderManag
     public void onMessageEvent(Events.MessageEvent event) {
         switch (event.getMessage()) {
             case EVENT_NEW_MESSAGE_ARRIVED:
-                Message stringMessage = event.getStorage();
-                if (stringMessage.getChatId().equals(mChatRoom.getChatId())) {
+                Log.d(TAG, "onMessageEvent: new message arrived");
+                Message message = event.getStorage();
+                if (message.getChatId().equals(mChatRoom.getChatId())) {
                     PersonalChatRoom chatRoom = (PersonalChatRoom) mChatRoom;
                     String t = Utils.personalChatReadObjCreator(
                             chatRoom.getChatRoomType(),
                             Utils.getMyInfo(mContext),
                             chatRoom.getTalkTo(),
                             chatRoom.getChatId(),
-                            new ArrayList<String>(Arrays.asList(new String[] { stringMessage.getMessageId()}))
+                            new ArrayList<String>(Arrays.asList(new String[] { message.getMessageId()}))
                     );
                     socket.emit("chat_read", t);
-                    int count = stringMessage.isReadCount();
+                    int count = message.getReadCount();
                     ContentValues values = new ContentValues();
                     values.put(TalkContract.Message.READING_COUNT, --count);
+                    values.put(TalkContract.Message.IS_READ, 1);
                     ContentResolver resolver = getContentResolver();
                     resolver.update(
                             TalkContract.Message.CONTENT_URI,
                             values,
                             TalkContract.Message.MESSAGE_ID + " = ?",
-                            new String[]{stringMessage.getMessageId()});
-                    stringMessage.setReadCount(count);
+                            new String[]{message.getMessageId()});
+                    message.setReadCount(count);
                     mChatRoom.setSynchronized(true);
-                    personalChatAdapter.addMessage(stringMessage);
+                    personalChatAdapter.addMessage(message);
                 }
                 break;
             case EVENT_SOMEONE_READ_MESSAGE:

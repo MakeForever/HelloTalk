@@ -70,7 +70,7 @@ public class MyApp extends Application {
         return mAppStatus.ordinal() > AppStatus.BACKGROUND.ordinal();
     }
 
-    public enum AppStatus {
+    private enum AppStatus {
         BACKGROUND,                // app is background
         RETURNED_TO_FOREGROUND,    // app returned to foreground(or first launch)
         FOREGROUND;                // app is foreground

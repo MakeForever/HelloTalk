@@ -178,8 +178,10 @@ public class ImageSelectionActivity extends AppCompatActivity {
             String directory = getString(R.string.setting_friends_img_directory);
             Context context = ImageSelectionActivity.this;
             User myInfo = Utils.getMyInfo(context);
+            if ( mBitmap.getWidth() > 256 ) {
+                mBitmap = Utils.resizeBitmapImage(bitmap, 256);
+            }
             Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory, myInfo.getId()}));
-
             File directoryFile = new File ( context.getFilesDir(), directory);
             File test = new File ( directoryFile, myInfo.getId());
             File originalImageFile = new File(test, fileName + '.' + extension);

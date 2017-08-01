@@ -44,7 +44,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -60,6 +59,11 @@ import static android.content.Context.MODE_PRIVATE;
 
 public class Utils {
     public static final String TAG = Utils.class.getSimpleName();
+    public static long second = 1000;
+    public static long minute = second * 60;
+    public static long hour = minute * 60;
+    public static long day = hour * 24;
+    public static long year = day * 365;
     public static String getToken(Context context) {
         SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE);
         String token = preferences.getString(context.getString(R.string.token), null);
@@ -68,17 +72,41 @@ public class Utils {
     public static boolean checkToken( Context context ) {
         SharedPreferences preferences = context.getSharedPreferences(context.getString(R.string.my_info), MODE_PRIVATE);
         String token = preferences.getString(context.getString(R.string.token), null);
-        if( token == null ) {
-            return false;
-        } else {
-            return true;
-        }
+        return token != null;
     }
     public static MyApp getMyApp(Context context ) {
         MyApp app = (MyApp) context.getApplicationContext();
         return app;
     }
+    public static Bitmap resizeBitmapImage(Bitmap source, int maxResolution)
+    {
+        int width = source.getWidth();
+        int height = source.getHeight();
+        int newWidth = width;
+        int newHeight = height;
+        float rate = 0.0f;
 
+        if(width > height)
+        {
+            if(maxResolution < width)
+            {
+                rate = maxResolution / (float) width;
+                newHeight = (int) (height * rate);
+                newWidth = maxResolution;
+            }
+        }
+        else
+        {
+            if(maxResolution < height)
+            {
+                rate = maxResolution / (float) height;
+                newWidth = (int) (width * rate);
+                newHeight = maxResolution;
+            }
+        }
+
+        return Bitmap.createScaledBitmap(source, newWidth, newHeight, true);
+    }
     public static String saveToInternalStorage( Context c, Bitmap bitmap, String name , String extension,  List<String> directories ) {
 
 //        File directory = c.getDir(de, Context.MODE_PRIVATE);
@@ -114,6 +142,7 @@ public class Utils {
         Bitmap b;
         File directory = generateDirectory(c, directories);
         File f = new File(directory, name + "." + extension);
+
         try {
             b = BitmapFactory.decodeStream(new FileInputStream(f));
         } catch (FileNotFoundException e) {
@@ -135,7 +164,7 @@ public class Utils {
 
         while ( cursor.moveToNext() ) {
             String chatName = cursor.getString(cursor.getColumnIndex(TalkContract.ChatRooms.CHAT_NAME));
-            String roomUsersQuery = " SELECT " + " b.* "+" FROM " + TalkContract.ChatUserRooms.TABLE_NAME + " as a "+
+            String roomUsersQuery = " SELECT " + " b.* "+" FROM " + TalkContract.ChatRoomUsers.TABLE_NAME + " as a "+
                     " INNER JOIN " + TalkContract.User.TABLE_NAME + " as b ON " + " a."+ TalkContract.User.USER_ID + " = " + " b." + TalkContract.User.USER_ID + " WHERE " +
                     "a."+ TalkContract.ChatRooms.CHAT_ID + " = " +"'"+ chatId+"'";
 
@@ -220,7 +249,7 @@ public class Utils {
         int userDeletedRow = resolver.delete(TalkContract.User.CONTENT_URI, null, null);
         int chatDeletedRow = resolver.delete( TalkContract.Message.CONTENT_URI, null, null );
         int chatListDeletedRow = resolver.delete( TalkContract.ChatRooms.CONTENT_URI, null, null );
-        int chatMembersDeleteRow = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, null, null);
+        int chatMembersDeleteRow = resolver.delete(TalkContract.ChatRoomUsers.CONTENT_URI, null, null);
         boolean imageDeleteResult = dropAllProfileImg(c);
         if ( userDeletedRow != -1 && imageDeleteResult ) {
             SharedPreferences storage = c.getSharedPreferences(c.getString(R.string.my_info), MODE_PRIVATE);
@@ -235,21 +264,17 @@ public class Utils {
 
     public static boolean dropAllProfileImg( Context c ) {
         String FriendsFileDirectory = c.getString(R.string.setting_friends_img_directory);
-        boolean r2 = deleteDirectory(c, Arrays.asList( FriendsFileDirectory ));
-        if( r2 ) {
-            return true;
-        } else
-            return false;
+        return deleteDirectory(c, Arrays.asList( FriendsFileDirectory ));
     }
     public static String hashFunction(String base, String hashingType) {
         try{
             MessageDigest digest = MessageDigest.getInstance(hashingType);
             byte[] hash = digest.digest(base.getBytes("UTF-8"));
-            StringBuffer hexString = new StringBuffer();
+            StringBuilder hexString = new StringBuilder();
 
-            for (int i = 0; i < hash.length; i++) {
-                String hex = Integer.toHexString(0xff & hash[i]);
-                if(hex.length() == 1) hexString.append('0');
+            for (byte aHash : hash) {
+                String hex = Integer.toHexString(0xff & aHash);
+                if (hex.length() == 1) hexString.append('0');
                 hexString.append(hex);
             }
 
@@ -283,7 +308,7 @@ public class Utils {
         chatParams.put(TalkContract.Message.CREATOR_ID, stringMessage.getCreatorId());
         chatParams.put(TalkContract.Message.MESSAGE_CONTENT, stringMessage.getMessageContent());
         chatParams.put(TalkContract.Message.MESSAGE_TYPE, stringMessage.getMessageType());
-        chatParams.put(TalkContract.Message.READING_COUNT, stringMessage.isReadCount());
+        chatParams.put(TalkContract.Message.READING_COUNT, stringMessage.getReadCount());
         chatParams.put(TalkContract.Message.CREATED_TIME, stringMessage.getCreatedTime());
         if ( isRead ){
             chatParams.put(TalkContract.Message.IS_READ, 1);
@@ -315,6 +340,64 @@ public class Utils {
         }
     }
 
+    public static void deleteChatRoom(Context context, String chatId ) {
+        DbHelper dbHelper = new DbHelper(context);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        ContentResolver resolver = context.getContentResolver();
+        String userIdCol = TalkContract.User.USER_ID;
+        String chatIdCol = TalkContract.ChatRooms.CHAT_ID;
+        String chatMembersCol = TalkContract.ChatRoomUsers.TABLE_NAME;
+
+        String query = " select cm1." + userIdCol +" from " + chatMembersCol + " as cm1 " + " where " + " cm1." + chatIdCol + " = " +" '" + chatId+ "' " +
+                " and (select count(*) as count from " + chatMembersCol + " as cm2 " + " where " + "cm2." + userIdCol + " = " + "cm1." + userIdCol  + " ) < 2" +
+                " and ( select count(*) as count from " + TalkContract.User.TABLE_NAME + " as us " + " where us." + TalkContract.User.IS_MY_FRIEND + " = 0 and " + "us." + userIdCol + " = cm1." + userIdCol + " ) > 0 " ;
+
+        Cursor cursor = null;
+        try {
+            db.beginTransaction();
+            cursor = db.rawQuery(query, null);
+            //채팅 맴버중 삭제 가능한 맴버 삭제
+            while( cursor.moveToNext() ) {
+                String id = cursor.getString(cursor.getColumnIndex(TalkContract.User.USER_ID));
+                db.delete(
+                        TalkContract.User.TABLE_NAME,
+                        TalkContract.User.USER_ID + " = ? ",
+                        new String[] { id }
+                );
+                // 프로필 이미지 삭제
+                Utils.deleteFile(context, id, "png", Arrays.asList("users", id));
+            }
+
+            // 메세지 삭제
+            db.delete(
+                TalkContract.Message.TABLE_NAME,
+                TalkContract.ChatRooms.CHAT_ID + " = ? ",
+                new String[] { chatId }
+            );
+            //채팅 맴버 삭제
+            db.delete(
+                TalkContract.ChatRoomUsers.TABLE_NAME,
+                TalkContract.ChatRooms.CHAT_ID + " = ? ",
+                new String[] { chatId }
+            );
+            // 채팅룸 삭제 삭제
+            db.delete(
+                    TalkContract.ChatRooms.TABLE_NAME,
+                    TalkContract.ChatRooms.CHAT_ID + " = ? ",
+                    new String[] { chatId }
+            );
+            db.setTransactionSuccessful();
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+            db.endTransaction();
+            db.close();
+        }
+
+
+//        Log.d(TAG, "deleteChatRoom: deleteChatRoomColumns" + deleteChatRoomResult + " deletedMessagesCount : " + deleteMessagesResult );
+    }
     public static int insertChatRoom ( ContentResolver resolver, PersonalChatRoom chatRoom) {
         ContentValues params = new ContentValues();
         params.put(TalkContract.ChatRooms.CHAT_ID, chatRoom.getChatId());
@@ -355,21 +438,21 @@ public class Utils {
             chatMemberContentValues.add( params );
         }
         for( ContentValues value : chatMemberContentValues ) {
-            resolver.insert(TalkContract.ChatUserRooms.CONTENT_URI, value);
+            resolver.insert(TalkContract.ChatRoomUsers.CONTENT_URI, value);
         }
     }
     public static void insertUser( Context c, User user ) {
         DbHelper dbHelper = new DbHelper(c);
+        ContentResolver resolver = c.getContentResolver();
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        Cursor cursor = db.query(
-                TalkContract.User.TABLE_NAME,
+        Cursor cursor = resolver.query(
+                TalkContract.User.CONTENT_URI,
                 null,
                 TalkContract.User.USER_ID + " = ?",
                 new String[] { user.getId() },
-                null,
-                null,
                 null
-                );
+        );
+
         if (cursor.getCount() == 0 ) {
             ContentValues values = new ContentValues();
             values.put(TalkContract.User.USER_ID, user.getId());
@@ -381,10 +464,11 @@ public class Utils {
                 saveToInternalStorage(c, user.getProfileImage(),
                         c.getString(R.string.setting_friends_profile_img_name),
                         c.getString(R.string.setting_profile_img_extension),
-                        Arrays.asList( new String[]{ c.getString(R.string.setting_friends_img_directory), user.getId() }));
+                        Arrays.asList(c.getString(R.string.setting_friends_img_directory), user.getId()));
             }
-            db.insert(TalkContract.User.TABLE_NAME, null, values);
+            resolver.insert(TalkContract.User.CONTENT_URI, values);
         }
+        cursor.close();
 
     }
     public static User findUser ( Context context, String userId ) {
@@ -415,7 +499,7 @@ public class Utils {
             chatMemberContentValues.add( params );
         }
         for( ContentValues value : chatMemberContentValues ) {
-            resolver.insert(TalkContract.ChatUserRooms.CONTENT_URI, value);
+            resolver.insert(TalkContract.ChatRoomUsers.CONTENT_URI, value);
         }
     }
 
@@ -445,45 +529,37 @@ public class Utils {
     }
 
 
-    public static String timeToString( String date ) {
+    public static String changeMessageString(String date ) {
 
-        long second = 1000;
-        long minute = second * 60;
-        long hour = minute * 60;
-        long day = hour * 24;
-        long year = day * 365;
-        Date resultTime = null;
-        Calendar calendar = Calendar.getInstance();
-        Date currentDate = calendar.getTime();
+        Calendar targetTime = Calendar.getInstance();
+        Calendar currentTime = Calendar.getInstance();
         try {
-            resultTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(date);
+            targetTime.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(date));
         } catch (ParseException e) {
             e.printStackTrace();
         }
-
-        resultTime.setTime(resultTime.getTime());
-        long diff = Math.abs(currentDate.getTime() - resultTime.getTime());
+        long diff = Math.abs(currentTime.getTime().getTime() - targetTime.getTime().getTime());
+        int currentDay = currentTime.get(Calendar.DAY_OF_MONTH);
+        int targetDay = targetTime.get(Calendar.DAY_OF_MONTH);
         StringBuilder builder = new StringBuilder();
-        calendar.setTime(resultTime);
-        if (diff < day) {
-            int i = calendar.get(Calendar.AM_PM);
+        if ( currentDay == targetDay ) {
+            int i = targetTime.get(Calendar.AM_PM);
             if ( i == 1 ){
                 builder.append("오후 ");
             } else {
                 builder.append("오전 ");
             }
-            builder.append(calendar.get(Calendar.HOUR)+ "시");
+            builder.append(targetTime.get(Calendar.HOUR)+ "시");
             builder.append(" ");
-            builder.append(calendar.get(Calendar.MINUTE) + "분");
-        } else if ( day < diff && diff < year ) {
-            builder.append(calendar.get(Calendar.MONTH) + "월");
+            builder.append(targetTime.get(Calendar.MINUTE) + "분");
+        } else {
+            builder.append((targetTime.get(Calendar.MONTH) + 1) + "월");
             builder.append(" ");
-            builder.append(calendar.get(Calendar.DAY_OF_MONTH));
+            builder.append(targetTime.get(Calendar.DAY_OF_MONTH));
             builder.append("일");
         }
         return builder.toString();
     }
-
 
     public static String getUserChatId (Context context, String userId ) {
         String chatId = null;
@@ -537,6 +613,7 @@ public class Utils {
         object.addProperty("chatType", chatType);
         return object.toString();
     }
+
     public static boolean checkUserInDb ( Context context, String userId ) {
         ContentResolver resolver = context.getContentResolver();
         Cursor cursor = resolver.query(
@@ -546,9 +623,7 @@ public class Utils {
                 new String[] { userId },
                 null);
 
-        if( cursor.getCount() > 0 )
-            return true;
-        else return false;
+        return cursor.getCount() > 0;
     }
     public static IO.Options getOptions( Context context ) {
         int timeoutLimit = 5000;
@@ -566,5 +641,15 @@ public class Utils {
         options.query = "jwt_token=" + token + "&" + "isTemporary=" + true;
         options.timeout = timeoutLimit;
         return options;
+    }
+    public static void updateChatRoomUsers (Context context, String chatId, String userId, boolean flag ) {
+        ContentValues values = new ContentValues();
+        values.put(TalkContract.ChatRoomUsers.IS_MEMBER, flag ? 1 : 0 );
+        context.getContentResolver().update(
+                TalkContract.ChatRoomUsers.CONTENT_URI,
+                values,
+                TalkContract.User.USER_ID + " = ? and " + TalkContract.ChatRooms.CHAT_ID + " = ? ",
+                new String[] { userId, chatId }
+        );
     }
 }

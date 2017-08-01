@@ -98,8 +98,8 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
             case EVENT_NEW_MESSAGE_ARRIVED :
                 getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
                 break;
-            default :
-                throw new RuntimeException("message not matched message : " + event.getMessage());
+//            default :
+//                throw new RuntimeException("message not matched message : " + event.getMessage());
         }
     }
     @Override

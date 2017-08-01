@@ -45,7 +45,7 @@ public class UserContentProvider extends ContentProvider {
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH, USERS);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, FRIENDS_PATH + "/*", USER_WITH_ID);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRooms.PATH, CHAT_LIST);
-        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatUserRooms.PATH, CHAT_MEMBERS);
+        uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.ChatRoomUsers.PATH, CHAT_MEMBERS);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Message.PATH, CHAT);
         uriMatcher.addURI(TalkContract.PROVIDER_AUTHORITY, TalkContract.Message.PATH + "/#", CHAT_ITEM);
         return uriMatcher;
@@ -54,7 +54,7 @@ public class UserContentProvider extends ContentProvider {
     @Nullable
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
-        Cursor cursor = null;
+        Cursor cursor;
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         switch (sUriMatcher.match(uri)) {
             case USERS :
@@ -67,7 +67,7 @@ public class UserContentProvider extends ContentProvider {
                 cursor = db.query(TalkContract.ChatRooms.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             case CHAT_MEMBERS :
-                cursor = db.query(TalkContract.ChatUserRooms.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor = db.query(TalkContract.ChatRoomUsers.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             default :
                 throw new RuntimeException("Uri not matched");
@@ -119,10 +119,10 @@ public class UserContentProvider extends ContentProvider {
                 }
                 break;
             case CHAT_MEMBERS :
-                id = db.insert(TalkContract.ChatUserRooms.TABLE_NAME, null, values);
+                id = db.insert(TalkContract.ChatRoomUsers.TABLE_NAME, null, values);
                 if( id > 0 ) {
                     returnUri = ContentUris.withAppendedId(TalkContract.BASE_URI.buildUpon()
-                            .appendPath(TalkContract.ChatUserRooms.PATH).build(), id);
+                            .appendPath(TalkContract.ChatRoomUsers.PATH).build(), id);
                 } else {
                     throw new android.database.SQLException("Failed to insert row into " + uri);
                 }
@@ -159,7 +159,7 @@ public class UserContentProvider extends ContentProvider {
                 tasksDeleted = db.delete(TalkContract.ChatRooms.TABLE_NAME, selection, selectionArgs);
                 break;
             case CHAT_MEMBERS:
-                tasksDeleted = db.delete(TalkContract.ChatUserRooms.TABLE_NAME, selection, selectionArgs);
+                tasksDeleted = db.delete(TalkContract.ChatRoomUsers.TABLE_NAME, selection, selectionArgs);
                 break;
             case CHAT :
                 tasksDeleted = db.delete(TalkContract.Message.TABLE_NAME, selection, selectionArgs);
@@ -185,7 +185,6 @@ public class UserContentProvider extends ContentProvider {
         switch( sUriMatcher.match(uri) ) {
             case USERS :
                 rowUpdated = db.update(TalkContract.User.TABLE_NAME, values, selection, selectionArgs);
-
                 break;
             case CHAT_ITEM :
                 String Segment = uri.getLastPathSegment();
@@ -196,6 +195,9 @@ public class UserContentProvider extends ContentProvider {
                 break;
             case CHAT :
                 rowUpdated = db.update(TalkContract.Message.TABLE_NAME, values, selection, selectionArgs);
+                break;
+            case CHAT_MEMBERS :
+                rowUpdated = db.update(TalkContract.ChatRoomUsers.TABLE_NAME, values, selection, selectionArgs);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);

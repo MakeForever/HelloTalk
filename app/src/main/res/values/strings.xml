@@ -13,7 +13,7 @@
     <string name="email_hint">이메일을 입력해주세요</string>
     <string name="hello_talk">Hello Talk</string>
     <string name="sign_up">sign_up</string>
-    <string name="sign_up_string">Already a member? Login</string>
+    <string name="sign_up_string">계정이 없으세요? 가입하기</string>
     <string name="male">남성</string>
     <string name="female">여성</string>
     <string name="login_dialog_title">축하합니다!</string>
@@ -47,4 +47,11 @@
     <string name="fab_add_chat">채팅방 만들기</string>
     <string name="fab_add_friend">친구 추가</string>
     <string name="general_setting_photo_permission">사진 접근 권한</string>
+    <string name="login_error_when_validate_email">잘못된 이메일 입니다.</string>
+    <string name="login_error_when_validate_password">비밀번호는 최소 4자 이상입니다</string>
+
+    <string name="change_password_dialog_start_button_text">확인</string>
+    <string name="change_password_dialog_cancel_button_text">취소</string>
+    <string name="text_for_change_password_validate_too_short">너무 길어요</string>
+    <string name="text_for_chagne_password_validate_not_matched">새로운 비밀번호가 서로 맞지 않습니다</string>
 </resources>

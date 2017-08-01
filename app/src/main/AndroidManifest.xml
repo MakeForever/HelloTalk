@@ -64,7 +64,8 @@
             android:theme="@android:style/Theme.Dialog" />
         <activity android:name=".activity.NewChatActivity" />
         <activity android:name=".activity.MyInfoActivity" />
-        <activity android:name=".activity.GeneralSettingActivity"></activity>
+        <activity android:name=".activity.GeneralSettingActivity" />
+        <activity android:name=".activity.MessagePopupDialog"></activity>
     </application>
 
 </manifest>

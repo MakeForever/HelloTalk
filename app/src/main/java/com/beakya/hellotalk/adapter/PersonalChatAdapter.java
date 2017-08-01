@@ -46,10 +46,9 @@ public class PersonalChatAdapter extends ChatAdapter {
 
     @Override
     public void onBindViewHolder(ChatItemViewHolder holder, int position) {
-        Message stringMessage = stringMessages.get( (stringMessages.size()-1) - position );
+        Message stringMessage = message.get( (message.size()-1) - position );
             switch (  holder.getItemViewType() ) {
                 case VIEW_TYPE_MY_CHAT:
-                    //TODO : 비트맵 얻는 메소드 실패 했을때 null 리턴하지 말고 기본 이미지 리턴 하도록
                     holder.bind(stringMessage, myInfo);
                     break;
                 case VIEW_TYPE_OTHER_CHAT:

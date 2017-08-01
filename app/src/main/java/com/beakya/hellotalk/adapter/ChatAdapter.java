@@ -19,7 +19,7 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHold
     public static final int VIEW_TYPE_MY_CHAT = 1;
     public static final int VIEW_TYPE_OTHER_CHAT = 2;
     public static final int VIEW_TYPE_SYSTEM = 3;
-    protected ArrayList<Message> stringMessages = new ArrayList<>();
+    protected ArrayList<Message> message = new ArrayList<>();
     User myInfo;
     Context mContext;
     private RecyclerView recyclerView;
@@ -36,15 +36,15 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHold
 
     @Override
     public int getItemCount() {
-        if (stringMessages != null)
-            return stringMessages.size();
+        if (message != null)
+            return message.size();
         else
             return 0;
     }
     @Override
     public int getItemViewType(int position) {
-        Message stringMessage = stringMessages.get( ( stringMessages.size() - 1 ) - position);
-        String id = stringMessage.getCreatorId();
+        Message message = this.message.get( ( this.message.size() - 1 ) - position);
+        String id = message.getCreatorId();
 
         if( id.equals( myInfo.getId() ) ) {
             return VIEW_TYPE_MY_CHAT;
@@ -55,15 +55,15 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHold
         }
     }
     public void swapCursor(ArrayList<Message> stringMessages) {
-        this.stringMessages = stringMessages;
+        this.message = stringMessages;
         notifyDataSetChanged();
     }
     public void addMessage ( Message stringMessage) {
-        stringMessages.add(stringMessage);
+        message.add(stringMessage);
         notifyItemInserted(0);
         recyclerView.smoothScrollToPosition(0);
     }
     public Message getMessage(int index) {
-        return stringMessages.get(index);
+        return message.get(index);
     }
 }

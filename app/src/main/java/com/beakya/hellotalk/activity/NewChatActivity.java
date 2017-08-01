@@ -30,7 +30,7 @@ import com.beakya.hellotalk.utils.HashMapSerializer;
 import com.beakya.hellotalk.utils.Serializers;
 import com.beakya.hellotalk.utils.SimpleDividerItemDecoration;
 import com.beakya.hellotalk.utils.Utils;
-import com.beakya.hellotalk.widget.ChatNameDialog;
+import com.beakya.hellotalk.dialog.ChatNameDialog;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -61,7 +61,7 @@ public class NewChatActivity extends ToolBarActivity implements LoaderManager.Lo
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         super.setToolbarContentView(R.layout.activity_new_chat);
-
+        super.setToolbar("새로운 채팅 만들기");
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
         mContext = this;
@@ -111,7 +111,6 @@ public class NewChatActivity extends ToolBarActivity implements LoaderManager.Lo
                     users.put(myInfo.getId(), myInfo);
                     createChatRoomAndSocketEmit(mContext, socket, myInfo, event, users, chatName);
                 } else if ( chatType == 2 ) {
-                    //TODO addFriend
                     String event = "invite_friend";
                     ArrayList<User> addedUsers = newChatAdapter.getAddedUsers();
                     storeNewFriendsAndSocketEmit(mContext, addedUsers, chatRoom.getChatId(), event, socket, chatRoom);

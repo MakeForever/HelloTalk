@@ -26,6 +26,7 @@ public class MemberListAdapter extends RecyclerView.Adapter<ChatMemberViewHolder
     public ChatMemberViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         return new ChatMemberViewHolder(inflater.inflate(R.layout.small_user_info, parent, false));
+
     }
 
 
@@ -33,6 +34,11 @@ public class MemberListAdapter extends RecyclerView.Adapter<ChatMemberViewHolder
     public void onBindViewHolder(ChatMemberViewHolder holder, int position) {
         User user = storage.get(position);
         holder.bind(user);
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return storage.get(position).isMember() ? 1 : 0 ;
     }
 
     @Override

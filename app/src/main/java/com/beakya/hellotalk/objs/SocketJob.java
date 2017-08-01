@@ -7,6 +7,7 @@ import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.activity.PersonalChatActivity;
 import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.utils.MsgUtils;
+import com.beakya.hellotalk.utils.SocketEmitFunctions;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -38,19 +39,20 @@ public class SocketJob extends Job {
 
     @Override
     public void run() {
-        if ( payLoad.getData() instanceof PersonalChatReadEventInfo ) {
-            handleActionReadMessage((PersonalChatReadEventInfo) payLoad.getData(), context);
+
+        if ( payLoad.getData() instanceof SocketEmitFunctions.bFunction ) {
+            ((SocketEmitFunctions.bFunction) payLoad.getData()).apply();
         }
     }
-    private void handleActionReadMessage ( PersonalChatReadEventInfo info, Context context ) {
-        ArrayList<String> notReadMessageList = MsgUtils.getNotReadMessages(context, info.getChatId());
-        if ( notReadMessageList.size() > 0 ) {
-            if ( info.getChatType() == ChatRoom.PERSONAL_CHAT_TYPE ) {
-                MsgUtils.readAllMessage(context, info.getChatType(), info.getChatId(), info.getReceiver(), notReadMessageList);
-            } else if ( info.getChatType() == ChatRoom.GROUP_CHAT_TYPE ) {
-                MsgUtils.readAllMessage(context, info.getChatType(), info.getChatId(), notReadMessageList);
-            }
-        }
-        EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
-    }
+//    private static void handleActionReadMessage ( PersonalChatReadEventInfo info, Context context ) {
+//        ArrayList<String> notReadMessageList = MsgUtils.getNotReadMessages(context, info.getChatId());
+//        if ( notReadMessageList.size() > 0 ) {
+//            if ( info.getChatType() == ChatRoom.PERSONAL_CHAT_TYPE ) {
+//                MsgUtils.readAllMessage(context, info.getChatType(), info.getChatId(), info.getReceiver(), notReadMessageList);
+//            } else if ( info.getChatType() == ChatRoom.GROUP_CHAT_TYPE ) {
+//                MsgUtils.readAllMessage(context, info.getChatType(), info.getChatId(), notReadMessageList);
+//            }
+//        }
+//        EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
+//    }
 }

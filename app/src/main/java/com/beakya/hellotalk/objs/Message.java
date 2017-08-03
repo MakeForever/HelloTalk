@@ -134,26 +134,4 @@ public class Message extends Test<String> implements Parcelable {
         dest.writeInt(readCount);
         dest.writeByte( (byte) (isSend ? 1 : 0));
     }
-    public void printAll() {
-        System.out.println( "Chat ID : " + chatId );
-        System.out.println( "Message ID : " + messageId );
-        System.out.println( "Message type :"  + messageType );
-        System.out.println( "Message messageContent" + messageContent );
-        System.out.println( "Creator ID : " + creatorId );
-    }
-    public JSONObject toJson() {
-        JSONObject object = new JSONObject();
-        try {
-            object.put(TalkContract.ChatRooms.CHAT_ID, getChatId());
-            object.put(TalkContract.Message.MESSAGE_ID, getMessageId());
-            object.put(TalkContract.Message.CREATOR_ID, getCreatorId());
-            object.put(TalkContract.Message.MESSAGE_CONTENT, getMessageContent());
-            object.put(TalkContract.Message.MESSAGE_TYPE, getMessageType());
-            object.put(TalkContract.Message.READING_COUNT, getReadCount());
-            object.put(TalkContract.Message.CREATED_TIME, getCreatedTime());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return object;
-    }
 }

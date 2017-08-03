@@ -19,6 +19,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 
 import android.util.Log;
+import android.view.View;
 
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.GroupChatActivity;
@@ -68,23 +69,6 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
         String key = data.get("key");
         try {
             final Socket socket =  IO.socket(SocketManager.IP, Utils.getTemporaryOptions(getApplicationContext()));
-//            final Runnable runnable = new Runnable() {
-//                @Override
-//                public void run() {
-//                    try {
-//                        this.wait();
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                    if (socket.connected() ) {
-//                        socket.off("send_Notification_data");
-//                        socket.off("end");
-//                        socket.disconnect();
-//                    }
-//                }
-//            };
-//            Thread thread =  new Thread(runnable);
-//
             Emitter.Listener transferEndListener = new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
@@ -200,7 +184,7 @@ public class MyFireBaseMessagingService extends FirebaseMessagingService {
     private Notification messageNotificationBuilder(User user, Message message, Intent intent ) {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, message.hashCode(), intent, PendingIntent.FLAG_ONE_SHOT);
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-               NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setLargeIcon(user.getProfileImg(this))
                 .setSmallIcon(R.drawable.ic_menu_camera)
                 .setColor(ContextCompat.getColor(this, R.color.colorPrimary))

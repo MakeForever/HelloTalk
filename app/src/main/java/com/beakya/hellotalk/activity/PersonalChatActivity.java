@@ -139,7 +139,7 @@ public class PersonalChatActivity extends ChatActivity implements LoaderManager.
         memberListAdapter = new MemberListAdapter();
         memberRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
         memberRecyclerView.setAdapter(memberListAdapter);
-        memberListAdapter.swapData(Arrays.asList(new User[] { mChatRoom.getTalkTo(), Utils.getMyInfo(mContext)}));
+        memberListAdapter.swapData(Arrays.asList(mChatRoom.getTalkTo(), Utils.getMyInfo(mContext)));
 
         addFriendButton.setOnClickListener(new View.OnClickListener() {
             @Override

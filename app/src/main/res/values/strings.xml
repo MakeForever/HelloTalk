@@ -54,4 +54,8 @@
     <string name="change_password_dialog_cancel_button_text">취소</string>
     <string name="text_for_change_password_validate_too_short">너무 길어요</string>
     <string name="text_for_chagne_password_validate_not_matched">새로운 비밀번호가 서로 맞지 않습니다</string>
+    <string name="title_activity_test">testActivity</string>
+
+
+    <string name="broad_cast_new_message_receive_action">new_message_receive</string>
 </resources>

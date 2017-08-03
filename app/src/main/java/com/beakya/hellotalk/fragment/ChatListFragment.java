@@ -60,13 +60,17 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
         super.onStart();
         Log.d(TAG, "onStart: ");
         getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
-        EventBus.getDefault().register(this);
+        if ( !EventBus.getDefault().isRegistered(this) ) {
+            EventBus.getDefault().register(this);
+        }
     }
     @Override
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause: ");
-        EventBus.getDefault().unregister(this);
+        if ( EventBus.getDefault().isRegistered(this) ) {
+            EventBus.getDefault().unregister(this);
+        }
     }
 
     @Override

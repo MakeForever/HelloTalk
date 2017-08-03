@@ -2,7 +2,10 @@ package com.beakya.hellotalk.utils;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.services.ChatService;
@@ -29,7 +32,7 @@ public class SocketManager {
     public static final String INVITE_GROUP_CHAT ="invite_group_chat";
     public static final String INVITE_FRIEND = "invite_friend";
     public static final String RECEIVE_ALL_EVENT = "read_all_event";
-    public static final String IP = "http://192.168.0.100:8888";
+    public static final String IP = "http://10.0.2.2:8888";
 
     private Context context;
     public SocketManager(Context context) {
@@ -155,6 +158,7 @@ public class SocketManager {
                 Log.d(TAG, "call: someone_leave_chat_room");
             }
         });
+
         socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {

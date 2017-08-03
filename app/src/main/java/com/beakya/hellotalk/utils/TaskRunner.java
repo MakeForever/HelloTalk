@@ -37,7 +37,7 @@ public class TaskRunner {
     }
     public void execute () {
 
-        if ( socketState == true && state == false ) {
+        if (socketState && !state) {
             state = true;
             while ( jobsQueue.hasNext() ) {
                 service.execute(jobsQueue.next());

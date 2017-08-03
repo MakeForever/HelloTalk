@@ -1,15 +1,29 @@
 package com.beakya.hellotalk.utils;
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Handler;
+import android.os.Looper;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
+import com.beakya.hellotalk.MyApp;
+import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.GroupChatActivity;
 import com.beakya.hellotalk.activity.MessagePopupDialog;
 import com.beakya.hellotalk.activity.PersonalChatActivity;
+import com.beakya.hellotalk.activity.ToolBarActivity;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
@@ -89,6 +103,7 @@ public class ChatTask {
                 Log.d(TAG, "task: ACTION_STORAGE_PERSONAL_CHAT_DATA");
                 arg = intent.getStringExtra("info");
                 handleStorePersonalChatData(arg, context);
+
                 break;
             case  ACTION_HANDLE_READ_CHAT:
                 Log.d(TAG, "task: ACTION_HANDLE_READ_CHAT");
@@ -219,11 +234,8 @@ public class ChatTask {
             chatRoomQueryCursor.close();
         }
         Utils.insertMessage(context, message, chatRoom.getChatId(), false);
-
         EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
-
-        Intent intent = new Intent(context, MessagePopupDialog.class);
-        context.startActivity(intent);
+        popUpMessage(context, message);
     }
 
 
@@ -397,5 +409,36 @@ public class ChatTask {
         cursor1.close();
         cursor2.close();
         db.close();
+    }
+    private void popUpMessage (final Context context, final Message message ) {
+
+        /*  1. getCurrnetActivity
+        *   2. check is chatId
+        *   3.  if not so pop
+        */
+        MyApp myApp = ((MyApp)context.getApplicationContext());
+        boolean isForeground = myApp.isForeground();
+        final Activity activity = myApp.getCurrentActivity();
+        if ( isForeground && activity instanceof ToolBarActivity ) {
+//            Intent intent = new Intent(context, MessagePopupDialog.class);
+//            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+//            activity.getBaseContext().startActivity(intent);
+//            activity.overridePendingTransition(R.anim.anim_come_from_top, 0);
+//            final MessagePopupDialog fragment = new MessagePopupDialog();
+
+//                window.showAsDropDown(view, 100, 100);
+//            Handler handler = new Handler();
+//            handler.postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//                    window.dismiss();
+//                }
+//            }, 2000);
+//            ((ToolBarActivity) activity).addNotification();
+            Intent param = new Intent();
+            param.setAction(context.getString(R.string.broad_cast_new_message_receive_action));
+            LocalBroadcastManager.getInstance(context).sendBroadcast(param);
+        }
+//        View popupView = getLayoutInflater().inflate(R.layout.popup_window, null);
     }
 }

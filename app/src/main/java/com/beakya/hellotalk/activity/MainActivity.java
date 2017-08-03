@@ -2,13 +2,22 @@ package com.beakya.hellotalk.activity;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -17,11 +26,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,7 +60,7 @@ import retrofit2.Response;
 
 import static com.beakya.hellotalk.retrofit.RetrofitCreator.retrofit;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends ToolBarActivity implements NavigationView.OnNavigationItemSelectedListener {
     public static final int ACTION_CHAT_LIST_ASYNC = 0;
     public static final int ID_USER_CURSOR_LOADER = 1;
     private DrawerLayout mDrawer;
@@ -75,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        super.setContentView(R.layout.activity_main);
+        super.setToolbar();
         boolean token = Utils.checkToken(this);
         if( !token ) {
             Intent loginIntent = new Intent(MainActivity.this, LoginActivity.class);
@@ -84,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mContext = this;
         String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
         Log.d(TAG, "onCreate: " + fireBaseToken);
-        setContentView(R.layout.activity_main);
+
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
@@ -122,11 +137,47 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mainFabBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if( !isFabRunning ) {
-                    setFabBackground();
-                    isFabRunning = true;
-                }
-
+//                if( !isFabRunning ) {
+//                    setFabBackground();
+//                    isFabRunning = true;
+//                }
+//                final MessagePopupDialog fragment = new MessagePopupDialog();
+//                getSupportFragmentManager()
+//                        .beginTransaction()
+//                        .setCustomAnimations(R.anim.anim_come_from_top, 0)
+//                        .add(android.R.id.content, fragment)
+//                        .commit();
+//                Handler handler = new Handler();
+//                handler.postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        getSupportFragmentManager().beginTransaction().remove(fragment).commit();
+//                    }
+//                }, 2000);
+//                addNotification();
+//                Intent intent = new Intent();
+//                PendingIntent intent1 = PendingIntent.getActivity(mContext, 100, intent, PendingIntent.FLAG_ONE_SHOT);
+//                Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+//                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(mContext)
+//                        .setLargeIcon(BitmapFactory.decodeResource(mContext.getResources(),
+//                                R.mipmap.new_ic_launcher))
+//                        .setSmallIcon(R.drawable.ic_menu_camera)
+//                        .setColor(ContextCompat.getColor(mContext, R.color.colorPrimary))
+//                        .setPriority(NotificationCompat.PRIORITY_MAX)
+//                        .setFullScreenIntent(intent1, true)
+//                        .setContentTitle("Hello Talk")
+//                        .setContentText("test")
+//                        .setAutoCancel(true)
+//                        .setSound(defaultSoundUri);
+//
+//                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+//                notificationManager.notify( 222, notificationBuilder.build());
+                LayoutInflater inflater = getLayoutInflater();
+                View popupView = inflater.inflate(R.layout.activity_dialog, null);
+                final PopupWindow window = new PopupWindow(popupView, RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+                View view = getWindow().getDecorView().findViewById(android.R.id.content);
+                window.setAnimationStyle(R.style.animationName);
+                window.showAtLocation(view, Gravity.TOP, 0, 1000);
 
             }
         });
@@ -163,6 +214,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     protected void onStart() {
         super.onStart();
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -21,7 +22,13 @@ public class MyApp extends Application {
 
     private Socket mSocket = null;
     private AppStatus mAppStatus = AppStatus.FOREGROUND;
-
+    private Activity currentActivity = null;
+    public Activity getCurrentActivity () {
+        return  currentActivity;
+    }
+    public void setCurrentActivity (Activity activity) {
+        this.currentActivity = activity;
+    }
     public void setSocket( Socket socket ) {
         if(socket != null) {
             Log.d(TAG, "setSocket: ");

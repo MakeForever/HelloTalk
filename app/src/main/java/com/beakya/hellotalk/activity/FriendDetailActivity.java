@@ -21,7 +21,7 @@ import com.beakya.hellotalk.utils.Utils;
 
 import java.util.Arrays;
 
-public class FriendDetailActivity extends AppCompatActivity {
+public class FriendDetailActivity extends ToolBarActivity {
     public static final String TAG = FriendDetailActivity.class.getSimpleName();
     private TextView textView;
     private User user = null;

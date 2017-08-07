@@ -1,10 +1,10 @@
 package com.beakya.hellotalk.viewholder;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,7 +12,6 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
@@ -20,11 +19,11 @@ import com.beakya.hellotalk.activity.PersonalChatActivity;
 import com.beakya.hellotalk.adapter.ChatListAdapter;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.PersonalChatRoom;
+import com.beakya.hellotalk.utils.JsonUtils;
 import com.beakya.hellotalk.utils.Utils;
 import com.daimajia.swipe.SwipeLayout;
 import com.google.gson.JsonObject;
 
-import io.socket.client.Ack;
 import io.socket.client.Socket;
 
 /**
@@ -38,9 +37,9 @@ public class PersonalChatViewHolder extends ChatListItemViewHolder<ChatListItem>
     private TextView nameTextView;
     private TextView notReadCountView;
     private TextView dateTextView;
-    private Context context;
+    private Context mContext;
     private SwipeLayout swipeLayout;
-    private ConstraintLayout constraintLayout;
+    private ConstraintLayout rootLayout;
     private ImageButton deleteButton;
     private PersonalChatRoom chatRoom;
     private boolean isSwiped = false;
@@ -53,8 +52,8 @@ public class PersonalChatViewHolder extends ChatListItemViewHolder<ChatListItem>
 
     public PersonalChatViewHolder(View v) {
         super(v);
-        context = v.getContext();
-        constraintLayout = (ConstraintLayout) v.findViewById(R.id.personal_chat_constraint_layout);
+        mContext = v.getContext();
+        rootLayout = (ConstraintLayout) v.findViewById(R.id.personal_chat_constraint_layout);
         lastChatItemView = (TextView) v.findViewById(R.id.last_chat_view);
         userImageView = (ImageView) v.findViewById(R.id.user_profile_image_view);
         nameTextView = (TextView) v.findViewById(R.id.name_text_view);
@@ -68,7 +67,6 @@ public class PersonalChatViewHolder extends ChatListItemViewHolder<ChatListItem>
 //                    Log.d(TAG, "onClose: ");
                 //when the SurfaceView totally cover the BottomView.
                 isSwiped = false;
-                constraintLayout.setEnabled(true);
             }
 
             @Override
@@ -87,7 +85,6 @@ public class PersonalChatViewHolder extends ChatListItemViewHolder<ChatListItem>
 //                    Log.d(TAG, "onOpen: ");
                 //when the BottomView totally show.
                 isSwiped = true;
-                constraintLayout.setEnabled(false);
             }
 
             @Override
@@ -108,8 +105,8 @@ public class PersonalChatViewHolder extends ChatListItemViewHolder<ChatListItem>
     @Override
     public void bind(final ChatListItem chatListItem, final ChatListAdapter.onDeleteBtnClickListener listener ) {
 
-        final PersonalChatRoom chatRoom = (PersonalChatRoom) chatListItem.getChatRoom();
-        this.chatRoom = chatRoom;
+        final PersonalChatRoom mChatRoom = (PersonalChatRoom) chatListItem.getChatRoom();
+        this.chatRoom = mChatRoom;
         if(chatListItem.getNotReadCount() == 0 ) {
             notReadCountView.setVisibility(View.INVISIBLE);
         } else {
@@ -117,40 +114,45 @@ public class PersonalChatViewHolder extends ChatListItemViewHolder<ChatListItem>
             notReadCountView.setText(String.valueOf(chatListItem.getNotReadCount()));
         }
         lastChatItemView.setText(chatListItem.getLastMessage());
-        nameTextView.setText(chatRoom.getTalkTo().getName());
+        nameTextView.setText(mChatRoom.getTalkTo().getName());
 
 
         dateTextView.setText(Utils.changeMessageString(chatListItem.getLastMessageCreatedTime()));
-        userImageView.setImageBitmap(chatRoom.getTalkTo().getProfileImg(context));
+        userImageView.setImageBitmap(mChatRoom.getTalkTo().getProfileImg(mContext));
 
-        constraintLayout.setOnClickListener(new View.OnClickListener() {
+        rootLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(context, PersonalChatActivity.class);
-                intent.putExtra("chatRoom", chatRoom);
-                intent.putExtra("is_stored", true);
-                context.startActivity(intent);
+                if ( isSwiped ) {
+                    Snackbar snackbar = Snackbar.make(rootLayout, "스와이프를 닫고 터치해주세요", Snackbar.LENGTH_LONG);
+                    snackbar.show();
+                } else {
+                    Intent intent = new Intent(mContext, PersonalChatActivity.class);
+                    intent.putExtra("chatRoom", mChatRoom);
+                    intent.putExtra("is_stored", true);
+                    mContext.startActivity(intent);
+                }
             }
         });
 
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
                 builder.setTitle("채팅방 나가기");
                 builder.setMessage("이 채팅방을 나가시겠습니까?");
                 builder.setPositiveButton("나가기", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        JsonObject object = new JsonObject();
-                        JsonObject chatRoomObj = new JsonObject();
-                        chatRoomObj.addProperty("chatId", chatRoom.getChatId());
-                        chatRoomObj.addProperty("chatType", chatRoom.getChatRoomType());
-                        object.add("chatRoom", chatRoomObj );
-                        object.addProperty("userId", Utils.getMyInfo(context).getId());
-                        Socket socket = ((MyApp)context.getApplicationContext()).getSocket();
+                        JsonObject object = JsonUtils.makeLeaveRoomObj(
+                                mContext,
+                                mChatRoom.getChatId(),
+                                mChatRoom.getChatRoomType(),
+                                Utils.getMyInfo(mContext).getId()
+                        );
+                        Socket socket = ((MyApp) mContext.getApplicationContext()).getSocket();
                         socket.emit("someone_leave_chat_room", object.toString());
-                        Utils.deleteChatRoom(context, chatRoom.getChatId());
+                        Utils.deleteChatRoom(mContext, mChatRoom.getChatId());
                         listener.onClick(getAdapterPosition());
                     }
                 });

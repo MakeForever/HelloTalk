@@ -28,7 +28,7 @@
     </android.support.design.widget.AppBarLayout>
 
     <Switch
-        android:id="@+id/camera_permission_switch"
+        android:id="@+id/message_vibrate_switch"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"

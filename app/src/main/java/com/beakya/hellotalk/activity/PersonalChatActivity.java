@@ -76,6 +76,7 @@ public class PersonalChatActivity extends ChatActivity implements LoaderManager.
     private PersonalChatRoom mChatRoom;
     private LinearLayout chatEditTextView;
     private DrawerLayout mDrawer;
+    //TODO : personalChatActivity 채팅 삭제 구현 할것
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -223,6 +224,11 @@ public class PersonalChatActivity extends ChatActivity implements LoaderManager.
         EventBus.getDefault().unregister(this);
 //        personalChatAdapter.swapCursor(null);
         super.onPause();
+    }
+
+    @Override
+    public String getCurrentChatId() {
+        return mChatRoom.getChatId();
     }
 
     @Override

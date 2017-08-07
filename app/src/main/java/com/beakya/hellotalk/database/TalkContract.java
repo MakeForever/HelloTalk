@@ -32,7 +32,7 @@ public class TalkContract {
 
     }
     public static final class Message implements BaseColumns{
-
+        public static final String MESSAGE_UPDATE_TRIGGER = "message_trigger";
         public static final int TYPE_TEXT = 1;
         public static final String TYPE_IMAGE = "image";
 
@@ -60,6 +60,13 @@ public class TalkContract {
                         READING_COUNT + " INTEGER DEFAULT 0, " +
                         IS_READ + " BOOLEAN DEFAULT 0" +
                             " ); ";
+        public static final String MESSAGE_UPDATE_TRIGGER_STATEMENT =
+                "CREATE TRIGGER " + MESSAGE_UPDATE_TRIGGER + " AFTER INSERT ON " + TABLE_NAME +
+                        " BEGIN " +
+                            " UPDATE " + ChatRooms.TABLE_NAME +
+                            " SET " + ChatRooms.LAST_MESSAGE_RECEIVE_TIME + " = " + " NEW."+CREATED_TIME +
+                            " WHERE " + ChatRooms.CHAT_ID + " = NEW."+ ChatRooms.CHAT_ID + " ; " +
+                        " END ";
     }
     public static final class ChatRooms {
         public static final String TABLE_NAME = "chat_list";
@@ -68,6 +75,7 @@ public class TalkContract {
         public static final String CHAT_ID = "chat_id";
         public static final String CHAT_NAME = "chat_name";
         public static final String CREATED_TIME = "created_time";
+        public static final String LAST_MESSAGE_RECEIVE_TIME ="last_message_receive_time";
         public static final String CHAT_ROOM_TYPE = "chat_type";
         public static final String IS_SYNCHRONIZED = "is_synchronized";
         public static final String CHAT_LIST_TABLE_CREATE_STATEMENT =
@@ -76,6 +84,7 @@ public class TalkContract {
                         CHAT_NAME + " TEXT, " +
                         CHAT_ROOM_TYPE + " INTEGER DEFAULT 1, " +
                         CREATED_TIME + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                        LAST_MESSAGE_RECEIVE_TIME + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                         IS_SYNCHRONIZED + " BOOLEAN DEFAULT 0 " +
                         " ); ";
     }

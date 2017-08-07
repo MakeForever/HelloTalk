@@ -16,7 +16,6 @@ tools:openDrawer="start">
         android:layout_height="match_parent">
 
 
-
         <io.codetail.widget.RevealFrameLayout
             app:layout_behavior="com.beakya.hellotalk.utils.MoveUpwardBehavior"
             android:id="@+id/fab_reveal_frame_layout"
@@ -99,13 +98,14 @@ tools:openDrawer="start">
                 android:layout_marginRight="@dimen/fab_margin"
                 app:fabSize="normal"
                 app:srcCompat="@drawable/ic_add_black_24dp" />
+
         </io.codetail.widget.RevealFrameLayout>
 
     </android.support.design.widget.CoordinatorLayout>
 
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"
-        android:layout_width="wrap_content"
+        android:layout_width="280dp"
         android:layout_height="match_parent"
         android:layout_gravity="start"
         android:fitsSystemWindows="true"

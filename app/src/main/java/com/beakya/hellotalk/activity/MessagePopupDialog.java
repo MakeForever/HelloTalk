@@ -1,25 +1,19 @@
 package com.beakya.hellotalk.activity;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.beakya.hellotalk.R;
-import com.beakya.hellotalk.utils.TaskRunner;
 
 public class MessagePopupDialog extends Fragment implements LoaderManager.LoaderCallbacks<Boolean> {
     public static final String TAG = MessagePopupDialog.class.getSimpleName();
@@ -57,7 +51,7 @@ public class MessagePopupDialog extends Fragment implements LoaderManager.Loader
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
-        View rootView = inflater.inflate(R.layout.activity_dialog,  container, false);
+        View rootView = inflater.inflate(R.layout.toast_message,  container, false);
         return rootView;
 
     }

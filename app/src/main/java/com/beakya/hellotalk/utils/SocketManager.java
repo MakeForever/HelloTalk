@@ -32,7 +32,7 @@ public class SocketManager {
     public static final String INVITE_GROUP_CHAT ="invite_group_chat";
     public static final String INVITE_FRIEND = "invite_friend";
     public static final String RECEIVE_ALL_EVENT = "read_all_event";
-    public static final String IP = "http://10.0.2.2:8888";
+    public static final String IP = "http://192.168.0.100:8888";
 
     private Context context;
     public SocketManager(Context context) {

@@ -10,9 +10,15 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.webkit.MimeTypeMap;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
@@ -49,6 +55,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
+import de.hdodenhof.circleimageview.CircleImageView;
 import io.socket.client.IO;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -651,5 +658,8 @@ public class Utils {
                 TalkContract.User.USER_ID + " = ? and " + TalkContract.ChatRooms.CHAT_ID + " = ? ",
                 new String[] { userId, chatId }
         );
+    }
+    public static void showInAppNotification(Context mContext, @NonNull Message message ) {
+
     }
 }

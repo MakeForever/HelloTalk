@@ -45,13 +45,10 @@ public class TaskRunner {
             state = false;
         }
     }
-
-
     public void addJob ( Job job ) {
         jobsQueue.addJob(job);
         execute();
     }
-
     public static void setSocketState(boolean socketState) {
         TaskRunner.socketState = socketState;
     }

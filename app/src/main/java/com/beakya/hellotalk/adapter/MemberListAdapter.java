@@ -58,5 +58,13 @@ public class MemberListAdapter extends RecyclerView.Adapter<ChatMemberViewHolder
         storage.addAll(users);
         notifyItemRangeInserted(startPoint, users.size());
     }
-
+    public void deleteMember ( String userId ) {
+        for ( int i = 0 ; storage.size() > i; i++ ) {
+            User user = storage.get(i);
+            if ( userId.equals(user.getId()) ) {
+                storage.remove(i);
+                notifyItemRemoved(i);
+            }
+        }
+    }
 }

@@ -98,12 +98,12 @@ public class ChatTask {
                 Log.d(TAG, "task: ACTION_STORAGE_GROUP_CHAT_DATA");
                 arg = intent.getStringExtra("info");
                 storeChatData(arg, context);
+
                 break;
             case ACTION_STORAGE_PERSONAL_CHAT_DATA:
                 Log.d(TAG, "task: ACTION_STORAGE_PERSONAL_CHAT_DATA");
                 arg = intent.getStringExtra("info");
                 handleStorePersonalChatData(arg, context);
-
                 break;
             case  ACTION_HANDLE_READ_CHAT:
                 Log.d(TAG, "task: ACTION_HANDLE_READ_CHAT");
@@ -116,8 +116,8 @@ public class ChatTask {
                     String item = element.getAsString();
                     messageIdList.add(item);
                 }
-                /*TODO : 채팅방에 초대 되었을때 내가 없을때 온 채팅 업데이트 메세지 처리 할것. 서버에서 처리하는게 맞을듯 임시방면
-                * 으로 내 채팅에 없으면 업데이트 안하게 설정함
+                /*
+                TODO : 채팅방에 클라이언트가 초대 되었을때 클라이언트 없을때 온 채팅 업데이트 메세지가 오지 않게 처리 할것. 서버에서 처리하는게 맞을듯 임시방면으로 내 채팅에 없으면 업데이트 안하게 설정함
                 * */
                 MsgUtils.bulkUpdateCountOfMessage(context, messageIdList);
                 EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
@@ -174,6 +174,7 @@ public class ChatTask {
         JsonElement element = object.get("message");
         Message message = new Gson().fromJson(element, Message.class);
         Utils.insertMessage(context, message, message.getChatId(), false);
+        popUpMessage(context, message);
         EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, message));
     }
     private void handleStorePersonalChatData(String arg, Context context) {
@@ -190,13 +191,10 @@ public class ChatTask {
         User sender = null;
         PersonalChatRoom chatRoom = null;
         Message message = null;
-        try {
-            sender = gson.fromJson(senderJsonObj, User.class);
-            chatRoom = gson.fromJson(chatRoomElement, PersonalChatRoom.class);
-            message = gson.fromJson(messageElement, Message.class);
-        } catch ( JsonSyntaxException e ) {
-            e.printStackTrace();
-        }
+        sender = gson.fromJson(senderJsonObj, User.class);
+        chatRoom = gson.fromJson(chatRoomElement, PersonalChatRoom.class);
+        message = gson.fromJson(messageElement, Message.class);
+
         ContentResolver resolver = context.getContentResolver();
         Cursor chatRoomQueryCursor = null;
         if (chatRoom != null) {
@@ -364,7 +362,7 @@ public class ChatTask {
                 null
         );
         // 내친구인지
-        Cursor cursor1 = db.query(
+        Cursor friendCheckCursor = db.query(
                 TalkContract.User.TABLE_NAME,
                 new String [] { TalkContract.User.IS_MY_FRIEND },
                 TalkContract.User.USER_ID + " = ? ",
@@ -386,8 +384,14 @@ public class ChatTask {
 
         int count = cursor.getCount();
         int count2 = cursor2.getCount();
-        cursor1.moveToFirst();
-        boolean isMyFriend = cursor1.getInt(cursor1.getColumnIndex(TalkContract.User.IS_MY_FRIEND)) > 0;
+        boolean isMyFriend = false;
+        if ( friendCheckCursor.getCount() > 0 ) {
+            friendCheckCursor.moveToFirst();
+            isMyFriend = friendCheckCursor.getInt(friendCheckCursor.getColumnIndex(TalkContract.User.IS_MY_FRIEND)) > 0;
+        }
+
+
+
         if ( count == 0 && count2 == 0  ) {
             db.delete(
                     TalkContract.ChatRoomUsers.TABLE_NAME,
@@ -406,9 +410,10 @@ public class ChatTask {
         }
         userCursor.close();
         cursor.close();
-        cursor1.close();
+        friendCheckCursor.close();
         cursor2.close();
         db.close();
+        EventBus.getDefault().post(new Events.UserLeaveEvent(GroupChatActivity.EVENT_SOME_ONE_LEAVE_ROOM, userId ));
     }
     private void popUpMessage (final Context context, final Message message ) {
 
@@ -419,26 +424,19 @@ public class ChatTask {
         MyApp myApp = ((MyApp)context.getApplicationContext());
         boolean isForeground = myApp.isForeground();
         final Activity activity = myApp.getCurrentActivity();
-        if ( isForeground && activity instanceof ToolBarActivity ) {
-//            Intent intent = new Intent(context, MessagePopupDialog.class);
-//            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-//            activity.getBaseContext().startActivity(intent);
-//            activity.overridePendingTransition(R.anim.anim_come_from_top, 0);
-//            final MessagePopupDialog fragment = new MessagePopupDialog();
-
-//                window.showAsDropDown(view, 100, 100);
-//            Handler handler = new Handler();
-//            handler.postDelayed(new Runnable() {
-//                @Override
-//                public void run() {
-//                    window.dismiss();
-//                }
-//            }, 2000);
-//            ((ToolBarActivity) activity).addNotification();
+        if ( isForeground && activity instanceof  ChatActivity ) {
+            ChatActivity chatActivity = (ChatActivity) activity;
+            if ( !message.getChatId().equals( chatActivity.getCurrentChatId() ) ) {
+                Intent param = new Intent();
+                param.putExtra("message", message);
+                param.setAction(context.getString(R.string.broad_cast_new_message_receive_action));
+                LocalBroadcastManager.getInstance(context).sendBroadcast(param);
+            }
+        } else {
             Intent param = new Intent();
+            param.putExtra("message", message);
             param.setAction(context.getString(R.string.broad_cast_new_message_receive_action));
             LocalBroadcastManager.getInstance(context).sendBroadcast(param);
         }
-//        View popupView = getLayoutInflater().inflate(R.layout.popup_window, null);
     }
 }

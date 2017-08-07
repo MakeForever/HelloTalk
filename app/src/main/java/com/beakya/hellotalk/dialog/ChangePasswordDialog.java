@@ -23,7 +23,7 @@ import com.beakya.hellotalk.R;
  * Created by goodlife on 2017. 7. 16..
  */
 
-public class ChangePasswordDialog extends Dialog {
+public class ChangePasswordDialog extends AlertDialog {
     private static String TAG = ChangePasswordDialog.class.getSimpleName();
     private TextInputEditText currentPasswordEditText;
     private TextInputEditText newPasswordEditText;
@@ -102,7 +102,11 @@ public class ChangePasswordDialog extends Dialog {
         initialize();
     }
     private boolean isTextSatisfy () {
-        return ( !currentPasswordLayout.isErrorEnabled() && !newPasswordConfirmLayout.isErrorEnabled() && !newPasswordLayout.isErrorEnabled() ) ? true : false;
+        return (
+                !currentPasswordLayout.isErrorEnabled() &&
+                !newPasswordConfirmLayout.isErrorEnabled() &&
+                !newPasswordLayout.isErrorEnabled()
+        );
 
 
     }

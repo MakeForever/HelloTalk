@@ -165,12 +165,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                             values,
                             TalkContract.User.USER_ID + " = ?",
                             new String[] { user.getId() });
-                    if( userInfo.hasProfileImg() != false ) {
-                        //TODO test 할것
+                    if(userInfo.hasProfileImg()) {
                         Utils.deleteFile(mContext,
                                 mContext.getString(R.string.setting_friends_profile_img_name),
                                 mContext.getString(R.string.setting_profile_img_extension),
-                                Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), user.getId() }));
+                                Arrays.asList(mContext.getString(R.string.setting_friends_img_directory), user.getId()));
                     }
                     Socket socket = ((MyApp) mContext.getApplicationContext()).getSocket();
                     socket.emit("delete_friend", user.getId());

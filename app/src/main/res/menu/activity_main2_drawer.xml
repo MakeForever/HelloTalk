@@ -8,6 +8,10 @@
             android:icon="@drawable/ic_menu_camera"
             android:title="@string/menu_string_my_options" />
         <item
+            android:id="@+id/general_setting"
+            android:icon="@mipmap/ic_setting"
+            android:title="@string/navigation_drawer_action_setting" />
+        <item
             android:id="@+id/nav_logout"
             android:icon="@drawable/ic_menu_manage"
             android:title="@string/navigation_drawer_action_logout" />

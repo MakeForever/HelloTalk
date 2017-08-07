@@ -17,6 +17,7 @@ import com.beakya.hellotalk.objs.PersonalChatRoom;
 import com.beakya.hellotalk.objs.User;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -65,7 +66,7 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
                 null,
                 null,
                 null,
-                TalkContract.ChatRooms.CREATED_TIME + " desc",
+                TalkContract.ChatRooms.LAST_MESSAGE_RECEIVE_TIME + " desc",
                 null
                 );
         while( cursor.moveToNext()) {
@@ -168,6 +169,7 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
 
         cursor.close();
         db.close();
+
         return chatRoomList;
     }
 

@@ -22,6 +22,7 @@ public class DbHelper extends SQLiteOpenHelper {
         db.execSQL(TalkContract.ChatRooms.CHAT_LIST_TABLE_CREATE_STATEMENT);
         db.execSQL(TalkContract.ChatRoomUsers.CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT);
         db.execSQL(TalkContract.Message.CHAT_TABLE_CREATE_STATEMENT);
+        db.execSQL(TalkContract.Message.MESSAGE_UPDATE_TRIGGER_STATEMENT);
     }
 
     @Override

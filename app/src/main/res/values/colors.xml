@@ -13,4 +13,5 @@
     <color name="white">#FFFFFF</color>
     <color name="indigo">#4b0082</color>
     <color name="tran">#00FFFFFF</color>
+    <color name="inAppNotificationBackground">#90FF5722</color>
 </resources>

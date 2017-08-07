@@ -76,6 +76,25 @@ public class Events {
             return storage;
         }
     }
+    public static class UserLeaveEvent implements Event<String> {
+        private String event;
+        private String message;
+
+        public UserLeaveEvent(String event, String message) {
+            this.event = event;
+            this.message = message;
+        }
+
+        @Override
+        public String getMessage() {
+            return event;
+        }
+
+        @Override
+        public String getStorage() {
+            return message;
+        }
+    }
     public static class UserInviteEvent implements Event<ArrayList<User>> {
         private ArrayList<User> users;
         private String message;

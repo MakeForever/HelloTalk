@@ -61,7 +61,7 @@ public class NewChatActivity extends ToolBarActivity implements LoaderManager.Lo
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         super.setToolbarContentView(R.layout.activity_new_chat);
-        super.setToolbar("새로운 채팅 만들기");
+        super.setToolbar(" 친구 추가 ");
         MyApp app = (MyApp) getApplicationContext();
         socket = app.getSocket();
         mContext = this;

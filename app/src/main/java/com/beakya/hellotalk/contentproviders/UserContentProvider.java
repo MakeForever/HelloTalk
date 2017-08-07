@@ -56,6 +56,7 @@ public class UserContentProvider extends ContentProvider {
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
         Cursor cursor;
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
         switch (sUriMatcher.match(uri)) {
             case USERS :
                 cursor = db.query(TalkContract.User.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);

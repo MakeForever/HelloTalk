@@ -4,11 +4,15 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Toast;
 
 import com.beakya.hellotalk.services.SocketService;
+import com.beakya.hellotalk.utils.PopUpNotificationManager;
 import com.beakya.hellotalk.utils.SocketTask;
 
 import io.socket.client.Socket;
@@ -62,7 +66,16 @@ public class MyApp extends Application {
         intent.setAction(SocketTask.ACTION_SOCKET_CREATE);
         startService(intent);
 
-
+        //Toast setup
+        if (PopUpNotificationManager.getInstance().isPopupWindowNull() ) {
+            LayoutInflater inflate = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            View layout = inflate.inflate(R.layout.toast_message, null);
+            Toast toast = new Toast(getApplicationContext());
+            toast.setView(layout);
+            toast.setGravity(Gravity.TOP,0,200);
+            toast.setDuration(Toast.LENGTH_SHORT);
+            PopUpNotificationManager.getInstance().setToast(getApplicationContext(), toast);
+        }
     }
     public MyApp get(Context context) {
         return (MyApp) context.getApplicationContext();

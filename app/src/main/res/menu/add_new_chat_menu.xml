@@ -4,7 +4,7 @@
 
 
     <item
-        android:title="Item"
+        android:title="@string/new_chat_activity_menu_1"
         android:id="@+id/new_chat_button"
         app:showAsAction="ifRoom" />
 </menu>

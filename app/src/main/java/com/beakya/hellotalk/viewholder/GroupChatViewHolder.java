@@ -5,16 +5,15 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
@@ -23,12 +22,10 @@ import com.beakya.hellotalk.adapter.ChatListAdapter;
 import com.beakya.hellotalk.objs.ChatListItem;
 import com.beakya.hellotalk.objs.GroupChatRoom;
 import com.beakya.hellotalk.objs.User;
+import com.beakya.hellotalk.utils.JsonUtils;
 import com.beakya.hellotalk.utils.Utils;
 import com.daimajia.swipe.SwipeLayout;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonWriter;
 
 import java.util.HashMap;
 
@@ -50,7 +47,7 @@ public class GroupChatViewHolder extends ChatListItemViewHolder<ChatListItem> im
     private Context mContext;
     private GroupChatRoom groupChatRoom;
     private SwipeLayout swipeLayout;
-    private ConstraintLayout constraintLayout;
+    private ConstraintLayout rootLayout;
     private ImageButton deleteButton;
     private boolean isSwiped = false;
     public static GroupChatViewHolder newInstance(ViewGroup parent) {
@@ -64,13 +61,13 @@ public class GroupChatViewHolder extends ChatListItemViewHolder<ChatListItem> im
     public GroupChatViewHolder(View itemView, final Context context) {
         super(itemView);
         mContext = context;
-        constraintLayout = (ConstraintLayout) itemView.findViewById(R.id.group_constraint_layout);
+        rootLayout = (ConstraintLayout) itemView.findViewById(R.id.group_constraint_layout);
         profileImageArea = (LinearLayout) itemView.findViewById(R.id.group_image_view_area);
         memberCountView = (TextView) itemView.findViewById(R.id.group_members_count);
         notReadCountView = (TextView) itemView.findViewById(R.id.not_read_count_view);
         dateTextView = (TextView) itemView.findViewById(R.id.date_text_view);
         chatNameTextView = (TextView) itemView.findViewById(R.id.name_text_view);
-        constraintLayout.setOnClickListener(this);
+        rootLayout.setOnClickListener(this);
         swipeLayout =  (SwipeLayout)itemView.findViewById(R.id.my_swipe_layout);
         swipeLayout.setShowMode(SwipeLayout.ShowMode.PullOut);
         swipeLayout.addSwipeListener(new SwipeLayout.SwipeListener() {
@@ -79,7 +76,7 @@ public class GroupChatViewHolder extends ChatListItemViewHolder<ChatListItem> im
 //                    Log.d(TAG, "onClose: ");
                 //when the SurfaceView totally cover the BottomView.
                 isSwiped = false;
-                constraintLayout.setEnabled(true);
+//                rootLayout.setEnabled(true);
             }
 
             @Override
@@ -98,7 +95,7 @@ public class GroupChatViewHolder extends ChatListItemViewHolder<ChatListItem> im
 //                    Log.d(TAG, "onOpen: ");
                 //when the BottomView totally show.
                 isSwiped = true;
-                constraintLayout.setEnabled(false);
+//                rootLayout.setEnabled(false);
             }
 
             @Override
@@ -136,17 +133,22 @@ public class GroupChatViewHolder extends ChatListItemViewHolder<ChatListItem> im
 
     @Override
     public void onClick(View v) {
-        Intent intent = new Intent(mContext, GroupChatActivity.class);
-        intent.putExtra("chatRoom", groupChatRoom);
-        intent.putExtra("is_stored", true);
-        mContext.startActivity(intent);
+        if ( isSwiped ) {
+            Snackbar snackbar = Snackbar.make(rootLayout, "스와이프를 닫고 터치해주세요", Snackbar.LENGTH_LONG);
+            snackbar.show();
+        } else {
+            Intent intent = new Intent(mContext, GroupChatActivity.class);
+            intent.putExtra("chatRoom", groupChatRoom);
+            intent.putExtra("is_stored", true);
+            mContext.startActivity(intent);
+        }
     }
 
     @Override
     public void bind(ChatListItem chatListItem, final ChatListAdapter.onDeleteBtnClickListener mListener) {
         int userCount = 0;
         groupChatRoom = (GroupChatRoom) chatListItem.getChatRoom();
-        HashMap<String, User> map = groupChatRoom.getUsers();
+        final HashMap<String, User> map = groupChatRoom.getUsers();
         int childCount = profileImageArea.getChildCount();
         for ( int i = 0;  i < childCount; i++ ) {
 
@@ -188,12 +190,12 @@ public class GroupChatViewHolder extends ChatListItemViewHolder<ChatListItem> im
                 builder.setPositiveButton("나가기", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        JsonObject object = new JsonObject();
-                        JsonObject chatRoomObj = new JsonObject();
-                        chatRoomObj.addProperty("chatId", groupChatRoom.getChatId());
-                        chatRoomObj.addProperty("chatType", groupChatRoom.getChatRoomType());
-                        object.add("chatRoom", chatRoomObj );
-                        object.addProperty("userId", Utils.getMyInfo(mContext).getId());
+                        JsonObject object = JsonUtils.makeLeaveRoomObj(
+                                mContext,
+                                groupChatRoom.getChatId(),
+                                groupChatRoom.getChatRoomType(),
+                                Utils.getMyInfo(mContext).getId()
+                        );
                         Socket socket = ((MyApp)mContext.getApplicationContext()).getSocket();
                         socket.emit("someone_leave_chat_room", object.toString());
                         Utils.deleteChatRoom(mContext, groupChatRoom.getChatId());

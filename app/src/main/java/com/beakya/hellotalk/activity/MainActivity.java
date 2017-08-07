@@ -2,39 +2,30 @@ package com.beakya.hellotalk.activity;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.BitmapFactory;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.os.Handler;
+import android.graphics.PixelFormat;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +37,7 @@ import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.retrofit.LogoutBody;
 import com.beakya.hellotalk.retrofit.LogoutService;
 import com.beakya.hellotalk.services.SocketService;
+import com.beakya.hellotalk.utils.PopUpNotificationManager;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -84,6 +76,7 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
     private boolean is_login;
     private Socket mSocket;
     private User myInfo;
+    AlertDialog dialog;
     public static final String TAG = MainActivity.class.getSimpleName();
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -100,8 +93,6 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
         String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
         Log.d(TAG, "onCreate: " + fireBaseToken);
 
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(mToolbar);
 
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
@@ -121,11 +112,10 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
         headerEmailTextView.setText(myInfo.getId());
         navigationDrawerImageView.setImageBitmap(myInfo.getProfileImg(this));
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        mDrawer.addDrawerListener(toggle);
-        toggle.syncState();
-
+//        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+//                this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+//        mDrawer.addDrawerListener(toggle);
+//        toggle.syncState();
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         revealFrameLayout = (RevealFrameLayout) findViewById(R.id.fab_reveal_frame_layout);
         mainFabBtn = (FloatingActionButton) findViewById(R.id.main_fab);
@@ -137,48 +127,10 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
         mainFabBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                if( !isFabRunning ) {
-//                    setFabBackground();
-//                    isFabRunning = true;
-//                }
-//                final MessagePopupDialog fragment = new MessagePopupDialog();
-//                getSupportFragmentManager()
-//                        .beginTransaction()
-//                        .setCustomAnimations(R.anim.anim_come_from_top, 0)
-//                        .add(android.R.id.content, fragment)
-//                        .commit();
-//                Handler handler = new Handler();
-//                handler.postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        getSupportFragmentManager().beginTransaction().remove(fragment).commit();
-//                    }
-//                }, 2000);
-//                addNotification();
-//                Intent intent = new Intent();
-//                PendingIntent intent1 = PendingIntent.getActivity(mContext, 100, intent, PendingIntent.FLAG_ONE_SHOT);
-//                Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-//                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(mContext)
-//                        .setLargeIcon(BitmapFactory.decodeResource(mContext.getResources(),
-//                                R.mipmap.new_ic_launcher))
-//                        .setSmallIcon(R.drawable.ic_menu_camera)
-//                        .setColor(ContextCompat.getColor(mContext, R.color.colorPrimary))
-//                        .setPriority(NotificationCompat.PRIORITY_MAX)
-//                        .setFullScreenIntent(intent1, true)
-//                        .setContentTitle("Hello Talk")
-//                        .setContentText("test")
-//                        .setAutoCancel(true)
-//                        .setSound(defaultSoundUri);
-//
-//                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-//                notificationManager.notify( 222, notificationBuilder.build());
-                LayoutInflater inflater = getLayoutInflater();
-                View popupView = inflater.inflate(R.layout.activity_dialog, null);
-                final PopupWindow window = new PopupWindow(popupView, RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
-                View view = getWindow().getDecorView().findViewById(android.R.id.content);
-                window.setAnimationStyle(R.style.animationName);
-                window.showAtLocation(view, Gravity.TOP, 0, 1000);
-
+                if( !isFabRunning ) {
+                    setFabBackground();
+                    isFabRunning = true;
+                }
             }
         });
         fabBackground.setOnClickListener(new View.OnClickListener() {
@@ -248,7 +200,11 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
             Toast.makeText(this, "menu test", Toast.LENGTH_SHORT).show();
             return true;
         }
-
+        if (id == android.R.id.home ) {
+            if ( !mDrawer.isDrawerOpen(GravityCompat.START) ) {
+                mDrawer.openDrawer(GravityCompat.START);
+            }
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -289,7 +245,9 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
                     //TODO : Snackbar
                 }
             });
-
+        } else if ( id == R.id.general_setting ) {
+            Intent intent = new Intent(mContext, GeneralSettingActivity.class);
+            startActivity(intent);
         }
         boolean flag = item.isChecked();
         item.setChecked(false);

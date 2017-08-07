@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.beakya.hellotalk">
 
-    <uses-permission android:name="android.permission.INTERNET" />
+
 
     <application
         android:name=".MyApp"
@@ -33,14 +33,17 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".activity.MainActivity">
+        <activity
+            android:name=".activity.MainActivity"
+            android:hardwareAccelerated="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.FriendAddActivity" />
+        <activity android:name=".activity.FriendAddActivity"
+            android:hardwareAccelerated="true"/>
         <activity android:name=".activity.FriendDetailActivity" />
         <activity android:name=".activity.LoginActivity" />
         <activity android:name=".activity.RegisterActivity" />
@@ -48,11 +51,17 @@
         <activity
             android:name="com.linchaolong.android.imagepicker.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat" />
-        <activity android:name=".activity.PersonalChatActivity" />
-        <activity android:name=".activity.GroupChatActivity" />
-        <activity android:name=".activity.NewChatActivity" />
+        <activity android:name=".activity.PersonalChatActivity"
+            android:hardwareAccelerated="true"/>
+        <activity android:name=".activity.GroupChatActivity"
+            android:hardwareAccelerated="true"/>
+        <activity android:name=".activity.NewChatActivity"
+            android:hardwareAccelerated="true"/>
         <activity android:name=".activity.MyInfoActivity" />
         <activity android:name=".activity.GeneralSettingActivity" />
-    </application>
 
+    </application>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
 </manifest>

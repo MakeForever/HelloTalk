@@ -10,8 +10,8 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 
 public class DbHelper extends SQLiteOpenHelper {
-    private static String dbName = "helloTalk.db";
-    private static int version = 1 ;
+    private static final String dbName = "helloTalk.db";
+    private static final int version = 1 ;
     public DbHelper(Context context) {
         super(context, dbName, null, version);
     }
@@ -20,8 +20,9 @@ public class DbHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(TalkContract.User.USER_TABLE_CREATE_STATEMENT);
         db.execSQL(TalkContract.ChatRooms.CHAT_LIST_TABLE_CREATE_STATEMENT);
-        db.execSQL(TalkContract.ChatUserRooms.CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT);
+        db.execSQL(TalkContract.ChatRoomUsers.CHAT_ROOM_MEMBERS_TABLE_CREATE_STATEMENT);
         db.execSQL(TalkContract.Message.CHAT_TABLE_CREATE_STATEMENT);
+        db.execSQL(TalkContract.Message.MESSAGE_UPDATE_TRIGGER_STATEMENT);
     }
 
     @Override

@@ -4,28 +4,26 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorPrimaryDark"
+    android:background="@color/colorPrimary"
     android:orientation="horizontal"
     android:weightSum="10">
 
-
     <EditText
         android:id="@+id/chat_content_edit_text"
-        android:layout_weight="8"
         android:layout_width="0dp"
         android:layout_height="match_parent"
+        android:layout_weight="8"
         android:ems="10"
-        android:lines="2"
-        android:textColor="#FFFFFF"
-        android:inputType="textMultiLine"
         android:gravity="bottom"
-        android:text="Name" />
+        android:inputType="textMultiLine"
+        android:lines="2"
+        android:textColor="#FFFFFF" />
 
     <Button
         android:id="@+id/chat_send_button"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="2"
-        android:text="send" />
+        android:text="@string/chat_edit_text_send_button" />
 
 </LinearLayout>

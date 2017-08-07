@@ -1,7 +1,5 @@
 package com.beakya.hellotalk.fragment;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -18,21 +16,17 @@ import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.MainActivity;
 import com.beakya.hellotalk.adapter.ChatListAdapter;
 import com.beakya.hellotalk.asynctaskloader.ChatListAsyncTaskLoader;
-import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.objs.ChatListItem;
-import com.beakya.hellotalk.objs.Message;
-import com.beakya.hellotalk.objs.PersonalChatRoom;
-import com.beakya.hellotalk.utils.Utils;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import static com.beakya.hellotalk.activity.ChatActivity.EVENT_NEW_MESSAGE_ARRIVED;
+import static com.beakya.hellotalk.activity.GroupChatActivity.EVENT_INVITED_USER;
+import static com.beakya.hellotalk.activity.PersonalChatActivity.EVENT_NEW_MESSAGE_ARRIVED;
 
 /**
  * Created by goodlife on 2017. 5. 5..
@@ -66,13 +60,17 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
         super.onStart();
         Log.d(TAG, "onStart: ");
         getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
-        EventBus.getDefault().register(this);
+        if ( !EventBus.getDefault().isRegistered(this) ) {
+            EventBus.getDefault().register(this);
+        }
     }
     @Override
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause: ");
-        EventBus.getDefault().unregister(this);
+        if ( EventBus.getDefault().isRegistered(this) ) {
+            EventBus.getDefault().unregister(this);
+        }
     }
 
     @Override
@@ -86,14 +84,26 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
         }
 
     }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UserInviteEvent event) {
+        switch ( event.getMessage() ) {
+            case EVENT_INVITED_USER :
+                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
+                break;
+            default :
+                throw new RuntimeException("message not matched : " + event.getMessage());
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.MessageEvent event) {
         switch ( event.getMessage() ) {
             case EVENT_NEW_MESSAGE_ARRIVED :
                 getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
                 break;
-            default :
-                throw new RuntimeException("message not matched");
+//            default :
+//                throw new RuntimeException("message not matched message : " + event.getMessage());
         }
     }
     @Override

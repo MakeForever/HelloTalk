@@ -1,11 +1,10 @@
 package com.beakya.hellotalk.adapter;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,10 +12,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.User;
@@ -26,6 +24,7 @@ import com.daimajia.swipe.SwipeLayout;
 import java.util.Arrays;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.socket.client.Socket;
 
 import static android.content.Context.MODE_PRIVATE;
 
@@ -56,7 +55,6 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         String name = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_NAME));
         String id = mCursor.getString(mCursor.getColumnIndex(TalkContract.User.USER_ID));
         boolean hasPic = mCursor.getInt(mCursor.getColumnIndex(TalkContract.User.HAVE_PROFILE_IMAGE)) > 0;
-
         User user = new User( id, name, hasPic );
         holder.bind( user );
     }
@@ -82,7 +80,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         private SwipeLayout swipeLayout;
         private ImageButton deleteButton;
         private boolean isSwiped = false;
-        private boolean hasProfileImg = false;
+
+        private User userInfo;
         public ViewHolder(final View itemView) {
             super(itemView);
 
@@ -138,9 +137,9 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
         public void bind( final User user ) {
             isSwiped = false;
+            this.userInfo = user;
             nameTextView.setText(user.getName());
             emailTextView.setText(user.getId());
-            hasProfileImg = user.hasProfileImg();
             userProfileImage.setImageBitmap(user.getProfileImg(mContext));
             deleteButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -155,18 +154,25 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
                     if( chatTableName != null ) {
                         int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] {chatTableName});
                         int deletedRow2 = resolver.delete(TalkContract.Message.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ? ", new String[] {chatTableName});
-                        int deletedRow3 = resolver.delete(TalkContract.ChatUserRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatTableName});
+                        int deletedRow3 = resolver.delete(TalkContract.ChatRoomUsers.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatTableName});
                         Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
                     }
 
-                    Uri uri = TalkContract.User.CONTENT_URI.buildUpon().appendPath(user.getId()).build();
-                    int deletedRow = resolver.delete(uri, TalkContract.User.USER_ID+ "=?",new String[]{ user.getId() });
-                    if( hasProfileImg != false ) {
+                    ContentValues values = new ContentValues();
+                    values.put(TalkContract.User.IS_MY_FRIEND, 0);
+                    int deletedRow = resolver.update(
+                            TalkContract.User.CONTENT_URI,
+                            values,
+                            TalkContract.User.USER_ID + " = ?",
+                            new String[] { user.getId() });
+                    if(userInfo.hasProfileImg()) {
                         Utils.deleteFile(mContext,
                                 mContext.getString(R.string.setting_friends_profile_img_name),
                                 mContext.getString(R.string.setting_profile_img_extension),
-                                Arrays.asList(new String[] { mContext.getString(R.string.setting_friends_img_directory), user.getId() }));
+                                Arrays.asList(mContext.getString(R.string.setting_friends_img_directory), user.getId()));
                     }
+                    Socket socket = ((MyApp) mContext.getApplicationContext()).getSocket();
+                    socket.emit("delete_friend", user.getId());
                     isSwiped = false;
                 }
             });
@@ -175,20 +181,15 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         public void onClick(View v) {
             Log.d(TAG, "onClick: ");
             if ( !isSwiped ) {
-                String id = emailTextView.getText().toString();
-                String name = nameTextView.getText().toString();
-                Bitmap bitmap = userProfileImage.getDrawingCache(true);
-                User user = new User(id, name, bitmap);
-                mListener.onListItemClick(user);
+                mListener.onListItemClick(userInfo);
             } else {
-                Toast.makeText(mContext, "스와이프를 닫아주세요", Toast.LENGTH_SHORT).show();
+                mListener.onSwipeOn();
             }
         }
-        private void deleteFriend() {
 
-        }
     }
     public interface mOnClickListener {
         void onListItemClick(User user);
+        void onSwipeOn();
     }
 }

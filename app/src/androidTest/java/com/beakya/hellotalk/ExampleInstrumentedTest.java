@@ -3,15 +3,11 @@ package com.beakya.hellotalk;
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
-import android.util.Log;
 
 import com.beakya.hellotalk.utils.Utils;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.io.File;
-import java.util.Arrays;
 
 /**
  * Instrumentation test, which will execute on an Android device.
@@ -45,7 +41,6 @@ public class ExampleInstrumentedTest {
 //                Uri.parse(TalkContract.BASE_URI + "/" + TalkContract.User.FRIENDS_PATH), result );
 //
 //        assertEquals("not inserted",1,insertResult);
-        File file = Utils.generateDirectory(appContext, Arrays.asList(new String[] {"test" ,"alpha", "beta"}));
-        Log.d(TAG, "useAppContext: " + file.getAbsolutePath());
+
     }
 }

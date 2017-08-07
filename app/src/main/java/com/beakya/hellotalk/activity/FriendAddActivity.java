@@ -12,6 +12,8 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
@@ -37,6 +39,7 @@ public class FriendAddActivity extends AppCompatActivity {
     private FriendAddAdapter friendAddAdapter;
     private RecyclerView SearchResultRecyclerView;
     private Socket socket;
+    private ImageButton backButton;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         //initialize socket
@@ -75,7 +78,13 @@ public class FriendAddActivity extends AppCompatActivity {
             }
         });
 
-
+        backButton = (ImageButton) findViewById(R.id.back_button);
+        backButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
         friendAddAdapter = new FriendAddAdapter(this);
         SearchResultRecyclerView = (RecyclerView) findViewById(R.id.search_result_recyclerView);
         SearchResultRecyclerView.setAdapter(friendAddAdapter);
@@ -113,7 +122,6 @@ public class FriendAddActivity extends AppCompatActivity {
             users = new User[array.length()];
             for ( int i = 0; i< array.length(); i++) {
                 JSONObject o = array.getJSONObject(i);
-
                 String imgStringData = o.getString("img");
                 Bitmap decodedImage = null;
                 if( imgStringData != null) {
@@ -123,8 +131,16 @@ public class FriendAddActivity extends AppCompatActivity {
                 User user = new User(o.getString("id"), o.getString("name"), decodedImage);
                 ContentResolver resolver = getContentResolver();
                 Cursor cursor = resolver.query(targetUri, null, USER_ID+"=?", new String[]{o.getString("id")}, null );
+
+                boolean isMyFriend = false;
+                while( cursor.moveToNext() ) {
+                    isMyFriend = cursor.getInt(cursor.getColumnIndex(TalkContract.User.IS_MY_FRIEND)) > 0;
+                }
                 if( cursor.getCount() > 0 ) {
                     user.setAdded(true);
+                }
+                if ( isMyFriend ) {
+                    user.setMyFriend(isMyFriend);
                 }
                 users[i] = user;
             }

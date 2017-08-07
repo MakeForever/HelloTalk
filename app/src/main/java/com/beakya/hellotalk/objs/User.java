@@ -23,6 +23,8 @@ public class User implements Parcelable {
     private Bitmap profileImage;
     private boolean hasProfileImg;
     private boolean isAdded = false;
+    private boolean isMyFriend = false;
+    private boolean isMember = true;
     public User(String id, String name, Bitmap profileImage) {
         this.id = id;
         this.name = name;
@@ -34,12 +36,28 @@ public class User implements Parcelable {
         this.name = name;
         this.hasProfileImg = hasProfileImg;
     }
+    public User(String id, String name, boolean hasProfileImg, boolean isMember) {
+        this.id = id;
+        this.name = name;
+        this.hasProfileImg = hasProfileImg;
+        this.isMember = isMember;
+    }
     public User(Parcel in) {
         this.id = in.readString();
         this.name = in.readString();
         this.isAdded = in.readInt() == 1;
         this.hasProfileImg = in.readByte() != 0;
+        this.isMember = in.readByte() != 0;
     }
+
+    public boolean isMyFriend() {
+        return isMyFriend;
+    }
+
+    public void setMyFriend(boolean myFriend) {
+        isMyFriend = myFriend;
+    }
+
     public boolean isAdded() {
         return isAdded;
     }
@@ -66,6 +84,10 @@ public class User implements Parcelable {
 
     public void setProfileImage(Bitmap profileImage) {
         this.profileImage = profileImage;
+    }
+
+    public boolean isMember() {
+        return isMember;
     }
 
     @Override
@@ -104,5 +126,6 @@ public class User implements Parcelable {
         dest.writeString(name);
         dest.writeInt( isAdded ? 1 : 0);
         dest.writeByte((byte) (hasProfileImg ? 1 : 0));
+        dest.writeByte((byte) (isMember ? 1 : 0));
     }
 }

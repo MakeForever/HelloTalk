@@ -116,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
         String password = passwordEditText.getText().toString();
 
         if( email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailEditText.setError("enter a valid email address");
+            emailEditText.setError(getString(R.string.login_error_when_validate_email));
             valid = false;
 
         } else {
@@ -124,7 +124,7 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         if (password.isEmpty() || password.length() < 4 ) {
-            passwordEditText.setError("more then 4 alphanumeric characters");
+            passwordEditText.setError(getString(R.string.login_error_when_validate_password));
             valid = false;
         } else {
             passwordEditText.setError(null);
@@ -156,31 +156,30 @@ public class LoginActivity extends AppCompatActivity {
             public void onResponse(Call<LoginResponseBody> call, Response<LoginResponseBody> response) {
 
                 if ( response.isSuccessful() ) {
+                    String id = emailEditText.getText().toString();
                     LoginResponseBody body = response.body();
                     int login = body.getLogin();
                     boolean isFirstLogin = false;
                     if( login == 0) {
                         isFirstLogin = true;
                     }
-
                     if ( body.getImg() != null ) {
-                        String fileName = getString(R.string.setting_profile_img_name);
+                        String fileName =  getString(R.string.setting_friends_profile_img_name);
                         String extension = getString(R.string.setting_profile_img_extension);
-                        String directory = getString(R.string.setting_profile_img_directory);
+                        String directory = getString(R.string.setting_friends_img_directory);
                         Context context = LoginActivity.this;
                         Bitmap mBitmap = Utils.decodeImgStringBase64(body.getImg());
-                        Utils.saveToInternalStorage(context, mBitmap, fileName, extension, Arrays.asList(directory));
+                        Utils.saveToInternalStorage(context, mBitmap, fileName, extension, Arrays.asList(new String[] { directory, id }));
                     }
-
                     SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
                     SharedPreferences.Editor editor = tokenStorage.edit();
                     editor.putString(getString(R.string.token), body.getToken());
-                    editor.putString(getString(R.string.user_id), emailEditText.getText().toString());
+                    editor.putString(getString(R.string.user_id), id);
                     editor.putString(getString(R.string.user_name), body.getName());
                     editor.putBoolean(getString(R.string.user_img_boolean), !isFirstLogin);
                     editor.commit();
                     Intent socketIntent = new Intent(LoginActivity.this, SocketService.class);
-                    socketIntent.setAction(SocketTask.ACTION_SOCKET_CREATE);
+                    socketIntent.setAction(SocketTask.ACTION_SOCKET_CREATE_AND_EMIT);
                     startService(socketIntent);
 
 
@@ -191,8 +190,8 @@ public class LoginActivity extends AppCompatActivity {
                         mainIntent = new Intent(LoginActivity.this, ImageSelectionActivity.class);
                     } else {
                         mainIntent = new Intent(LoginActivity.this, MainActivity.class);
+                        mainIntent.putExtra("is_login", true);
                     }
-
                     startActivity(mainIntent);
                     finish();
                 }

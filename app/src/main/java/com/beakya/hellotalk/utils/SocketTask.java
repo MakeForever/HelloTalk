@@ -19,7 +19,7 @@ public class SocketTask {
     public static final String ACTION_SOCKET_CREATE = "socket_create";
     public static final String ACTION_SOCKET_CONNECT = "socket_connect";
     public static final String ACTION_SOCKET_DISCONNECT = "socket_disconnect";
-
+    public static final String ACTION_SOCKET_CREATE_AND_EMIT ="socket_create_and_emit";
     public static void task(String action, Context context) {
         switch ( action ) {
             case ACTION_SOCKET_CONNECT :
@@ -32,7 +32,11 @@ public class SocketTask {
                 break;
             case ACTION_SOCKET_CREATE :
                 Log.d(TAG, "task: ACTION_SOCKET_CREATE");
-                createSocketTask(context);
+                createSocketTask(context, false);
+                break;
+            case ACTION_SOCKET_CREATE_AND_EMIT:
+                Log.d(TAG, "task: ACTION_SOCKET_CREATE_AND_EMIT");
+                createSocketTask(context, true);
                 break;
             default :
                 throw new RuntimeException("no matched action");
@@ -51,15 +55,18 @@ public class SocketTask {
         app.disconnectSocket();
 
     }
-    private static void createSocketTask(Context context) {
+    private static void createSocketTask(Context context, boolean flag) {
         if( Utils.checkToken(context) ) {
-            String token = Utils.getToken(context);
             try {
                 Log.d(TAG, "createSocketTask: ");
-                Socket socket = new SocketCreator(context).createSocket(token);
+                SocketManager manager = new SocketManager(context);
+                Socket socket = manager.createSocket();
                 MyApp app = Utils.getMyApp(context);
                 app.setSocket(socket);
                 socket.connect();
+                if ( flag ) {
+                    socket.emit("if_login");
+                }
             } catch (URISyntaxException e) {
                 e.printStackTrace();
             }

@@ -12,48 +12,34 @@ import org.json.JSONObject;
  * Created by goodlife on 2017. 5. 27..
  */
 
-public class Message implements Parcelable {
-    private String messageId;
-    private String creatorId;
-    private String messageContent;
-    private String chatId;
-    private int messageType;
-    private String createdTime;
-    private boolean isSend;
-    private int readCount;
-    /* TODO // important
-        Parcelable 만들때 하나의 constructor 가 존재해야 하기 때문에 Parcelable 만드는 메소드 수정 및
-    *   메세지 데이터 오고 보낼때 전부 다 보내도록 할것 Message 동기화 할것
-    */
-    public Message(String messageId, String creatorId, String messageContent, String chatId, int messageType, String createdTime, int readCount) {
-        this.messageId = messageId;
-        this.creatorId = creatorId;
-        this.messageContent = messageContent;
-        this.chatId = chatId;
-        this.messageType = messageType;
-        this.readCount = readCount;
-        this.createdTime = createdTime;
-    }
-
-    public Message(String messageId, String creatorId, String messageContent, String chatId, int messageType, String createdTime, boolean isSend, int readCount) {
-        this.messageId = messageId;
-        this.creatorId = creatorId;
-        this.messageContent = messageContent;
-        this.chatId = chatId;
-        this.messageType = messageType;
-        this.createdTime = createdTime;
-        this.isSend = isSend;
-        this.readCount = readCount;
+public class Message extends Test<String> implements Parcelable {
+    public Message(String messageId, String creatorId, String messageContent,
+                   String chatId, int messageType, String createdTime, boolean isSend, int readCount) {
+        super(
+                messageId,
+                creatorId,
+                messageContent,
+                chatId,
+                messageType,
+                createdTime,
+                isSend,
+                readCount
+        );
     }
 
     protected Message(Parcel in) {
-        messageId = in.readString();
-        creatorId = in.readString();
-        messageContent = in.readString();
-        chatId = in.readString();
-        messageType = in.readInt();
-        readCount = in.readInt();
-        createdTime = in.readString();
+        super(
+                in.readString(),
+                in.readString(),
+                in.readString(),
+                in.readString(),
+                in.readInt(),
+                in.readString(),
+                in.readByte() != 0,
+                in.readInt()
+        );
+
+
     }
 
     public static final Creator<Message> CREATOR = new Creator<Message>() {
@@ -124,7 +110,7 @@ public class Message implements Parcelable {
         isSend = send;
     }
 
-    public int isReadCount() {
+    public int getReadCount() {
         return readCount;
     }
 
@@ -144,29 +130,8 @@ public class Message implements Parcelable {
         dest.writeString(messageContent);
         dest.writeString(chatId);
         dest.writeInt(messageType);
-        dest.writeInt(readCount);
         dest.writeString(createdTime);
-    }
-    public void printAll() {
-        System.out.println( "Chat ID : " + chatId );
-        System.out.println( "Message ID : " + messageId );
-        System.out.println( "Message type :"  + messageType );
-        System.out.println( "Message messageContent" + messageContent );
-        System.out.println( "Creator ID : " + creatorId );
-    }
-    public JSONObject toJson() {
-        JSONObject object = new JSONObject();
-        try {
-            object.put(TalkContract.ChatRooms.CHAT_ID, getChatId());
-            object.put(TalkContract.Message.MESSAGE_ID, getMessageId());
-            object.put(TalkContract.Message.CREATOR_ID, getCreatorId());
-            object.put(TalkContract.Message.MESSAGE_CONTENT, getMessageContent());
-            object.put(TalkContract.Message.MESSAGE_TYPE, getMessageType());
-            object.put(TalkContract.Message.READING_COUNT, isReadCount());
-            object.put(TalkContract.Message.CREATED_TIME, getCreatedTime());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return object;
+        dest.writeInt(readCount);
+        dest.writeByte( (byte) (isSend ? 1 : 0));
     }
 }

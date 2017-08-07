@@ -20,9 +20,8 @@ import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 
 import java.util.Arrays;
-import java.util.HashMap;
 
-public class FriendDetailActivity extends AppCompatActivity {
+public class FriendDetailActivity extends ToolBarActivity {
     public static final String TAG = FriendDetailActivity.class.getSimpleName();
     private TextView textView;
     private User user = null;
@@ -55,9 +54,7 @@ public class FriendDetailActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if( user != null ) {
                     int chatType = 1;
-                    HashMap<String, User> receiveList = new HashMap<>();
-                    receiveList.put(user.getId(), user);
-                    Intent intent = new Intent( mContext, ChatActivity.class );
+                    Intent intent = new Intent( mContext, PersonalChatActivity.class );
                     boolean isSynchronized;
                     boolean isStored;
                     String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String [] { myId, user.getId()}));
@@ -67,10 +64,9 @@ public class FriendDetailActivity extends AppCompatActivity {
                             new String[] { TalkContract.ChatRooms.CHAT_ROOM_TYPE, TalkContract.ChatRooms.IS_SYNCHRONIZED },
                             TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] { chatTableName },
                             null);
-
                     if (chatCursor.getCount() > 0 ) {
                         chatCursor.moveToFirst();
-                        isSynchronized = chatCursor.getInt(chatCursor.getColumnIndex(TalkContract.ChatRooms.IS_SYNCHRONIZED)) > 0;
+                        isSynchronized = true;
                         isStored = true;
                     } else {
                         isSynchronized = false;

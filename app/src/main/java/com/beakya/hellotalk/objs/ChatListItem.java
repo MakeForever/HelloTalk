@@ -1,10 +1,16 @@
 package com.beakya.hellotalk.objs;
 
+import android.support.annotation.NonNull;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
 /**
  * Created by goodlife on 2017. 6. 1..
  */
 
-public class ChatListItem {
+public class ChatListItem implements Comparable<String> {
     private ChatRoom chatRoom;
     private String lastMessage;
     private int lastMessageType;
@@ -43,5 +49,18 @@ public class ChatListItem {
 
     public int getNotReadCount() {
         return notReadCount;
+    }
+
+    @Override
+    public int compareTo(@NonNull String o) {
+        Calendar target = Calendar.getInstance();
+        Calendar current = Calendar.getInstance();
+        try {
+            target.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(o));
+            current.setTime(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(lastMessageCreatedTime));
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return target.compareTo(current);
     }
 }

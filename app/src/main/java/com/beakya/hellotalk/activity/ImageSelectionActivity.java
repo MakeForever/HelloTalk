@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -22,7 +23,9 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.beakya.hellotalk.Manifest;
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.retrofit.PhotoProfileService;
 import com.beakya.hellotalk.utils.Utils;
 import com.linchaolong.android.imagepicker.ImagePicker;
@@ -94,6 +97,7 @@ public class ImageSelectionActivity extends AppCompatActivity {
         imagePicker.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
     }
     void startChooser() {
+
         imagePicker.startChooser(this, new ImagePicker.Callback() {
             @Override
             public void onPickImage(Uri imageUri) {
@@ -110,7 +114,6 @@ public class ImageSelectionActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-
             @Override
             public void cropConfig(CropImage.ActivityBuilder builder) {
                 builder.setMultiTouchEnabled(false)
@@ -170,15 +173,18 @@ public class ImageSelectionActivity extends AppCompatActivity {
         @Override
         protected Response<ResponseBody> doInBackground(Bitmap... params) {
             Bitmap mBitmap = params[0];
-            String fileName = getString(R.string.setting_profile_img_name);
+            String fileName = getString(R.string.setting_friends_profile_img_name);
             String extension = getString(R.string.setting_profile_img_extension);
-            String directory = getString(R.string.setting_profile_img_directory);
+            String directory = getString(R.string.setting_friends_img_directory);
             Context context = ImageSelectionActivity.this;
-            Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory }));
-
-
-            File directoryFile = context.getDir(directory, Context.MODE_PRIVATE);
-            File originalImageFile = new File(directoryFile, fileName + '.' + extension);
+            User myInfo = Utils.getMyInfo(context);
+            if ( mBitmap.getWidth() > 256 ) {
+                mBitmap = Utils.resizeBitmapImage(bitmap, 256);
+            }
+            Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory, myInfo.getId()}));
+            File directoryFile = new File ( context.getFilesDir(), directory);
+            File test = new File ( directoryFile, myInfo.getId());
+            File originalImageFile = new File(test, fileName + '.' + extension);
             Uri mUri = Uri.fromFile(originalImageFile);
             Log.d(TAG, "doInBackground: " + mUri.toString());
             String mimeType = Utils.getMimeType(ImageSelectionActivity.this, mUri);

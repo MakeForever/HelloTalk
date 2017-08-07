@@ -1,10 +1,14 @@
 package com.beakya.hellotalk.objs;
 
+import android.content.Context;
+
+import org.json.JSONObject;
+
 /**
  * Created by goodlife on 2017. 5. 31..
  */
 
-public class ChatRoom {
+public abstract class ChatRoom {
 
     public static final int PERSONAL_CHAT_TYPE = 1;
     public static final int GROUP_CHAT_TYPE = 2;
@@ -45,4 +49,5 @@ public class ChatRoom {
     public void setSynchronized(boolean aSynchronized) {
         isSynchronized = aSynchronized;
     }
+
 }

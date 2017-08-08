@@ -28,14 +28,14 @@
     </android.support.design.widget.AppBarLayout>
 
     <Switch
-        android:id="@+id/message_vibrate_switch"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/general_setting_photo_permission"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/app_bar_layout" />
+    android:id="@+id/message_vibrate_switch"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginLeft="8dp"
+    android:layout_marginRight="8dp"
+    android:layout_marginTop="8dp"
+    android:text="@string/general_setting_vibrate_permission"
+    app:layout_constraintLeft_toLeftOf="parent"
+    app:layout_constraintRight_toRightOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/app_bar_layout" />
 </android.support.constraint.ConstraintLayout>

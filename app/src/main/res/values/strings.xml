@@ -36,7 +36,7 @@
     <string name="menu_string_my_options">계정 설정</string>
     <string name="setting_change_password">비밀번호 변경</string>
     <string name="setting_remove_profile">계정 삭제</string>
-    <string name="setting_chagne_profile_image">변경</string>
+    <string name="setting_change_profile_image">변경</string>
     <string name="navigation_drawer_action_logout">로그아웃</string>
     <string name="navigation_drawer_action_setting">앱 설정</string>
     <string name="invite_to_personal_chat">invite_to_personal_chat</string>
@@ -47,7 +47,8 @@
     <string name="move_upward_behavior">com.beakya.hellotalk.utils.MoveUpwardBehavior</string>
     <string name="fab_add_chat">채팅방 만들기</string>
     <string name="fab_add_friend">친구 추가</string>
-    <string name="general_setting_photo_permission">메시지 알람 소리</string>
+    <string name="general_setting_vibrate_permission">메시지 알람 소리</string>
+    <string name="general_setting_photo_permission">카메라 사용</string>
     <string name="login_error_when_validate_email">잘못된 이메일 입니다.</string>
     <string name="login_error_when_validate_password">비밀번호는 최소 4자 이상입니다</string>
 
@@ -63,4 +64,5 @@
     <string name="friend_list_recycler_view_item_1">친구추가</string>
     <string name="friend_list_recycler_view_item_2">채팅방 나가기</string>
     <string name="chat_edit_text_send_button">send</string>
+    <string name="friend_detail_text_view">1:1 대화신청하기</string>
 </resources>

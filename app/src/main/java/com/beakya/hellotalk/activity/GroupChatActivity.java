@@ -52,6 +52,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import io.socket.client.Socket;
@@ -151,12 +152,7 @@ public class GroupChatActivity extends ChatActivity  {
         memberListAdapter = new MemberListAdapter();
         memberRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
         memberRecyclerView.setAdapter(memberListAdapter);
-        ArrayList<User> users = new ArrayList<>(mChatRoom.getUsers().values());
-        List<User> newUsers = new ArrayList<>();
-        for ( User user : users ) {
-            if ( user.isMember()) newUsers.add(user);
-        }
-        memberListAdapter.swapData(newUsers);
+        memberListAdapter.swapData(getMember(mChatRoom.getUsers().values()));
         addFriendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -294,7 +290,13 @@ public class GroupChatActivity extends ChatActivity  {
         }
         return false;
     }
-
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UpdateEvent event ) {
+        if ( event.getMessage().equals( EVENT_USER_CHANGE_PROFILE_IMG ) ) {
+            memberListAdapter.swapData(getMember(mChatRoom.getUsers().values()));
+            groupChatAdapter.updateAllViewHolders();
+        }
+    }
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.UserInviteEvent event ) {
         if ( event.getMessage().equals( EVENT_INVITED_USER ) ) {
@@ -344,5 +346,12 @@ public class GroupChatActivity extends ChatActivity  {
             default:
                 throw new RuntimeException("stringMessage not matched");
         }
+    }
+    private List<User> getMember( Collection<User> users ) {
+        List<User> newUsers = new ArrayList<>();
+        for ( User user : users ) {
+            if ( user.isMember()) newUsers.add(user);
+        }
+        return newUsers;
     }
 }

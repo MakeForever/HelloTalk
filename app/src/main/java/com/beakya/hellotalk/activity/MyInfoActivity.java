@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.dialog.ChangePasswordDialog;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.Utils;
 import com.bumptech.glide.Glide;
@@ -63,7 +64,8 @@ public class MyInfoActivity extends AppCompatActivity {
         changePasswordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                ChangePasswordDialog dialog = new ChangePasswordDialog(mContext);
+                dialog.show();
             }
         });
         btnForChangeProfileImg = (Button) findViewById(R.id.btn_for_change_image_profile);
@@ -94,10 +96,8 @@ public class MyInfoActivity extends AppCompatActivity {
             }
             @Override
             public void onCropImage(Uri imageUri) {
-                //                    Bitmap bm = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
                 RequestOptions options = new RequestOptions();
-                options.centerCrop();
-                options.override(128, 128);
+                options.centerCrop().override(128, 128);
                 Glide.with(MyInfoActivity.this).asBitmap().load(imageUri).apply(options).into(new SimpleTarget<Bitmap>() {
                     @Override
                     public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {

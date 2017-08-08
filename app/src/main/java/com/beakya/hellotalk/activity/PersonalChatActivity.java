@@ -252,6 +252,14 @@ public class PersonalChatActivity extends ChatActivity implements LoaderManager.
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UpdateEvent event ) {
+        if ( event.getMessage().equals( EVENT_USER_CHANGE_PROFILE_IMG ) ) {
+            memberListAdapter.swapData(Arrays.asList(mChatRoom.getTalkTo(), Utils.getMyInfo(mContext)));
+            personalChatAdapter.updateAllViewHolders();
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.MessageEvent event) {
         switch (event.getMessage()) {
             case EVENT_NEW_MESSAGE_ARRIVED:
@@ -285,6 +293,7 @@ public class PersonalChatActivity extends ChatActivity implements LoaderManager.
             case EVENT_SOMEONE_READ_MESSAGE:
                 getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, this);
                 break;
+
             default:
                 throw new RuntimeException("message not matched");
         }

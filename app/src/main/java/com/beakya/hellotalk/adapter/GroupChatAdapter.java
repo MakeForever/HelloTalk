@@ -68,12 +68,12 @@ public class GroupChatAdapter extends ChatAdapter {
     }
 
     @Override
-    public void swapCursor(ArrayList<Message> stringMessages) {
-        super.swapCursor(stringMessages);
+    public void swapCursor(ArrayList<Message> message) {
+        super.swapCursor(message);
     }
 
     @Override
-    public void addMessage(Message stringMessage) {
-        super.addMessage(stringMessage);
+    public void addMessage(Message message) {
+        super.addMessage(message);
     }
 }

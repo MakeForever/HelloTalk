@@ -108,7 +108,7 @@ public class FriendAddAdapter extends RecyclerView.Adapter<FriendAddAdapter.View
                             Utils.saveToInternalStorage(mContext, mBitmap,
                                     mContext.getString(R.string.setting_friends_profile_img_name),
                                     mContext.getString(R.string.setting_profile_img_extension),
-                                    Arrays.asList( new String[]{ mContext.getString(R.string.setting_friends_img_directory), id }));
+                                    Arrays.asList(mContext.getString(R.string.setting_friends_img_directory), id));
                         }
 
                         isAdded = true;

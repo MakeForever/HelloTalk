@@ -14,7 +14,7 @@ public abstract class ChatActivity extends ToolBarActivity {
     public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
     public static final String EVENT_SOMEONE_READ_MESSAGE = "event_someone_read_message";
     public static final String EVENT_INVITED_USER = "event_invited_user";
-
+    public static final String EVENT_USER_CHANGE_PROFILE_IMG = "event_user_change_profile_img";
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

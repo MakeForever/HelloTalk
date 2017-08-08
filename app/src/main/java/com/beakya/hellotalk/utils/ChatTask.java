@@ -6,24 +6,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Handler;
-import android.os.Looper;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Base64;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.GroupChatActivity;
-import com.beakya.hellotalk.activity.MessagePopupDialog;
 import com.beakya.hellotalk.activity.PersonalChatActivity;
-import com.beakya.hellotalk.activity.ToolBarActivity;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
@@ -39,7 +32,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.internal.ObjectConstructor;
 import com.google.gson.reflect.TypeToken;
 
 import org.greenrobot.eventbus.EventBus;
@@ -67,6 +60,7 @@ public class ChatTask {
     public static final String ACTION_INVITE_TO_GROUP_CHAT = "invite_to_group_chat";
     public static final String ACTION_SOMEONE_LEAVE_CHAT_ROOM = "action_someone_leave_chat_room";
     public static final String ACTION_READ_INITIAL_STATE = "action_read_all_chat";
+    static final String ACTION_FRIEND_CHANGE_NEW_PROFILE_IMAGE = "action_friend_change_new_profile_image";
     String chatTableName;
     ContentResolver resolver;
     String arg;
@@ -165,6 +159,11 @@ public class ChatTask {
                 Log.d(TAG, "task: ");
                 arg = intent.getStringExtra("info");
                 handleSomeoneLeaveChatRoom(context, arg);
+                break;
+            case ACTION_FRIEND_CHANGE_NEW_PROFILE_IMAGE:
+                Log.d(TAG, "task: ACTION_FRIEND_CHANGE_NEW_PROFILE_IMAGE");
+                arg = intent.getStringExtra("info");
+                storeNewProfileImage(context, arg);
                 break;
         }
     }
@@ -308,23 +307,26 @@ public class ChatTask {
         Utils.insertChatMembers(context.getContentResolver(), chatId, users);
         EventBus.getDefault().post(new Events.UserInviteEvent(GroupChatActivity.EVENT_INVITED_USER, users));
     }
+    private void storeNewProfileImage (Context context, String resource) {
+        JsonObject object = new JsonParser().parse(resource).getAsJsonObject();
+        String bitmapBase64 = object.get("data").getAsString();
+        String id = object.get("id").getAsString();
+        byte[] imageBytes = Base64.decode(bitmapBase64, Base64.DEFAULT);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+        Utils.setFriendProfileImage(context, bitmap, id);
+        EventBus.getDefault().post(new Events.UpdateEvent(ChatActivity.EVENT_USER_CHANGE_PROFILE_IMG, id));
+        Log.d(TAG, "storeNewProfileImage: ");
+    }
     private void handleSomeoneLeaveChatRoom( Context context, String info  ) {
-
         /*  채팅창에서 누가 나갔을때
         *   나간친구가 메세지를 보낸 흔적이 있는지
         *   그리고 다른 채팅방에서 사용되고 있는지
         *   내 친구인지
-        *
         *   3가지 체크
-        *
-        *
-        *
-        */
 
         /*
         * user 삭제
         * chatMember 삭제
-        *
         * */
         JsonObject object = new JsonParser().parse(info).getAsJsonObject();
         Log.d(TAG, "handleSomeoneLeaveChatRoom: " + object.toString());
@@ -439,4 +441,5 @@ public class ChatTask {
             LocalBroadcastManager.getInstance(context).sendBroadcast(param);
         }
     }
+
 }

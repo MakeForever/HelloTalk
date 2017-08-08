@@ -138,6 +138,12 @@ public class Utils {
         User myInfo = getMyInfo(c);
         saveToInternalStorage(c, bitmap, fileName, extension, Arrays.asList(directory, myInfo.getId()));
     }
+    public static void setFriendProfileImage(Context mContext, Bitmap bitmap, String id) {
+        saveToInternalStorage(mContext, bitmap,
+                mContext.getString(R.string.setting_friends_profile_img_name),
+                mContext.getString(R.string.setting_profile_img_extension),
+                Arrays.asList(mContext.getString(R.string.setting_friends_img_directory), id));
+    }
     public static File generateDirectory(Context c, List<String> directories) {
         StringBuilder builder = new StringBuilder();
         Iterator<String> iterator = directories.iterator();

@@ -143,6 +143,7 @@ public class FriendAddActivity extends AppCompatActivity {
                     user.setMyFriend(isMyFriend);
                 }
                 users[i] = user;
+                cursor.close();
             }
             friendAddAdapter.swapData(users);
         } catch (JSONException e) {

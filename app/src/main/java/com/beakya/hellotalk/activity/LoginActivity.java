@@ -20,7 +20,7 @@ import android.widget.TextView;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.retrofit.LoginResponseBody;
 import com.beakya.hellotalk.retrofit.LoginRequestBody;
-import com.beakya.hellotalk.retrofit.LoginService;
+import com.beakya.hellotalk.retrofit.UserServices;
 import com.beakya.hellotalk.services.SocketService;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
@@ -149,8 +149,8 @@ public class LoginActivity extends AppCompatActivity {
 
         loginInvisible();
 
-        LoginService loginService = retrofit.create(LoginService.class);
-        Call<LoginResponseBody> call = loginService.repoTest(body);
+        UserServices userServices = retrofit.create(UserServices.class);
+        Call<LoginResponseBody> call = userServices.login(body);
         call.enqueue(new Callback<LoginResponseBody>() {
             @Override
             public void onResponse(Call<LoginResponseBody> call, Response<LoginResponseBody> response) {

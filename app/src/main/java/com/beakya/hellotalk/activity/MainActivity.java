@@ -110,7 +110,6 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
         myInfo =  Utils.getMyInfo(this);
         headerNameTextView.setText(myInfo.getName());
         headerEmailTextView.setText(myInfo.getId());
-        navigationDrawerImageView.setImageBitmap(myInfo.getProfileImg(this));
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 //        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
 //                this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -165,7 +164,7 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
     @Override
     protected void onStart() {
         super.onStart();
-
+        navigationDrawerImageView.setImageBitmap(myInfo.getProfileImg(this));
     }
 
     @Override

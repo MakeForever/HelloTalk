@@ -131,6 +131,13 @@ public class Utils {
         }
         return myPath.getAbsolutePath();
     }
+    public static void setMyProfileImage(Context c, Bitmap bitmap ) {
+        String fileName = c.getString(R.string.setting_friends_profile_img_name);
+        String extension = c.getString(R.string.setting_profile_img_extension);
+        String directory = c.getString(R.string.setting_friends_img_directory);
+        User myInfo = getMyInfo(c);
+        saveToInternalStorage(c, bitmap, fileName, extension, Arrays.asList(directory, myInfo.getId()));
+    }
     public static File generateDirectory(Context c, List<String> directories) {
         StringBuilder builder = new StringBuilder();
         Iterator<String> iterator = directories.iterator();

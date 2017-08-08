@@ -97,7 +97,6 @@ public class ImageSelectionActivity extends AppCompatActivity {
         imagePicker.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
     }
     void startChooser() {
-
         imagePicker.startChooser(this, new ImagePicker.Callback() {
             @Override
             public void onPickImage(Uri imageUri) {
@@ -181,7 +180,7 @@ public class ImageSelectionActivity extends AppCompatActivity {
             if ( mBitmap.getWidth() > 256 ) {
                 mBitmap = Utils.resizeBitmapImage(bitmap, 256);
             }
-            Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory, myInfo.getId()}));
+            Utils.setMyProfileImage(context, mBitmap);
             File directoryFile = new File ( context.getFilesDir(), directory);
             File test = new File ( directoryFile, myInfo.getId());
             File originalImageFile = new File(test, fileName + '.' + extension);

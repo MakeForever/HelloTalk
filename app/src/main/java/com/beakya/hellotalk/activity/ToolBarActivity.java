@@ -94,15 +94,6 @@ public class ToolBarActivity extends AppCompatActivity {
         if (this.equals(currActivity))
             myApp.setCurrentActivity(null);
     }
-    /*private void showPopup(Message message) {
-        LayoutInflater inflater = getLayoutInflater();
-        View popupView = inflater.inflate(R.layout.toast_message, null);
-        window = new PopupWindow(popupView, RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
-        View targetView = getWindow().getDecorView().findViewById(android.R.id.content);
-        window.setAnimationStyle(R.style.animationName);
-        window.showAtLocation(targetView, Gravity.TOP, 0, 200);
-    }*/
-
     class MessageReceiveBroadCastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(final Context context, Intent intent) {

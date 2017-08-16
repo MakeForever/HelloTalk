@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.MainActivity;
 import com.beakya.hellotalk.adapter.ChatListAdapter;
 import com.beakya.hellotalk.asynctaskloader.ChatListAsyncTaskLoader;
@@ -95,7 +96,16 @@ public class ChatListFragment extends Fragment implements LoaderManager.LoaderCa
                 throw new RuntimeException("message not matched : " + event.getMessage());
         }
     }
-
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UpdateEvent event) {
+        switch ( event.getMessage() ) {
+            case ChatActivity.EVENT_USER_CHANGE_PROFILE_IMG :
+                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ACTION_CHAT_LIST_ASYNC, null, this);
+                break;
+            default :
+                throw new RuntimeException("message not matched message : " + event.getMessage());
+        }
+    }
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.MessageEvent event) {
         switch ( event.getMessage() ) {

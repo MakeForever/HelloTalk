@@ -61,7 +61,7 @@ public class NewChatAdapter extends RecyclerView.Adapter<NewChatViewHolder> {
     public void deleteMember(User user)
     {
         users.remove(user.getId());
-        newUsers.remove(user);
+        newUsers.remove(user.getId());
     }
     public HashMap getUsers() {
         return users;

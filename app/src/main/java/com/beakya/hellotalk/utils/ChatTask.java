@@ -32,7 +32,6 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.google.gson.internal.ObjectConstructor;
 import com.google.gson.reflect.TypeToken;
 
 import org.greenrobot.eventbus.EventBus;
@@ -68,7 +67,6 @@ public class ChatTask {
     int chatType;
     Cursor cursor;
     Gson gson;
-    ArrayList<String> messageIdList;
     public void task(Intent intent, Context context ) throws JSONException {
         switch ( intent.getAction() )  {
             case ACTION_STORAGE_GROUP_CHAT_INVITE:
@@ -89,7 +87,7 @@ public class ChatTask {
                 EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
                 break;
             case ACTION_STORAGE_GROUP_CHAT_DATA:
-                Log.d(TAG, "task: ACTION_STORAGE_GROUP_CHAT_DATA");
+                Logger.d(TAG, "task: ACTION_STORAGE_GROUP_CHAT_DATA");
                 arg = intent.getStringExtra("info");
                 storeChatData(arg, context);
 
@@ -100,21 +98,9 @@ public class ChatTask {
                 handleStorePersonalChatData(arg, context);
                 break;
             case  ACTION_HANDLE_READ_CHAT:
-                Log.d(TAG, "task: ACTION_HANDLE_READ_CHAT");
-                messageIdList = new ArrayList<>();
-                String info = intent.getStringExtra("info");
-                JsonObject obj = new JsonParser().parse(info).getAsJsonObject();
-                chatId = obj.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
-                JsonArray array = obj.get("messages").getAsJsonArray();
-                for ( JsonElement element : array ) {
-                    String item = element.getAsString();
-                    messageIdList.add(item);
-                }
-                /*
-                TODO : 채팅방에 클라이언트가 초대 되었을때 클라이언트 없을때 온 채팅 업데이트 메세지가 오지 않게 처리 할것. 서버에서 처리하는게 맞을듯 임시방면으로 내 채팅에 없으면 업데이트 안하게 설정함
-                * */
-                MsgUtils.bulkUpdateCountOfMessage(context, messageIdList);
-                EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
+                Logger.d(TAG, "task: ACTION_HANDLE_READ_CHAT");
+                arg = intent.getStringExtra("info");
+                handleChatReadMessages(context, arg);
                 break;
 
             case ACTION_CHANGE_ALL_MESSAGE_READ_STATE :
@@ -167,7 +153,21 @@ public class ChatTask {
                 break;
         }
     }
-
+    private void handleChatReadMessages(Context context, String args) {
+        JsonObject obj = new JsonParser().parse(args).getAsJsonObject();
+        ArrayList<String>messageIdList = new ArrayList<>();
+        chatId = obj.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
+        JsonArray array = obj.get("messages").getAsJsonArray();
+        for ( JsonElement element : array ) {
+            String item = element.getAsString();
+            messageIdList.add(item);
+        }
+                /*
+                TODO : 채팅방에 클라이언트가 초대 되었을때 클라이언트 없을때 온 채팅 업데이트 메세지가 오지 않게 처리 할것. 서버에서 처리하는게 맞을듯 임시방면으로 내 채팅에 없으면 업데이트 안하게 설정함
+                * */
+        MsgUtils.bulkUpdateCountOfMessage(context, messageIdList);
+        EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
+    }
     public void storeChatData(String stringify, Context context) {
         JsonObject object = new JsonParser().parse(stringify).getAsJsonObject();
         JsonElement element = object.get("message");
@@ -281,7 +281,8 @@ public class ChatTask {
             JsonObject payload = rootObject.get("payload").getAsJsonObject();
             String chatId = payload.get("chat_id").getAsString();
             String userId = payload.get("user_id").getAsString();
-            Utils.insertChatMembers(resolver, chatId, Arrays.asList(new User[] { new User(userId, null, null)}));
+            boolean isMember = payload.get("is_member").getAsInt() > 0;
+            Utils.insertChatMembers(resolver, chatId, Arrays.asList(new User[] { new User(userId, null, false, isMember)}));
         } else if ( event.equals("end") ) {
             EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
         }
@@ -393,7 +394,7 @@ public class ChatTask {
         }
 
 
-
+        Logger.d(TAG, "count : " + count + " | " + "count2 : " + count2 + " | " + "isMyFriend : " + isMyFriend );
         if ( count == 0 && count2 == 0  ) {
             db.delete(
                     TalkContract.ChatRoomUsers.TABLE_NAME,

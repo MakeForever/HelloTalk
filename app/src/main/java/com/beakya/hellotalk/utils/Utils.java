@@ -202,7 +202,10 @@ public class Utils {
                 );
             }
             chatRoom = new GroupChatRoom(chatName, userList, chatId, 2, true);
+            roomUsers.close();
         }
+        cursor.close();
+        db.close();
         return chatRoom;
     }
     public static boolean deleteDirectory( Context c, List<String> directories ) {
@@ -320,17 +323,17 @@ public class Utils {
     }
 
 
-    public static int insertMessage (Context context, Message stringMessage, String chatId, boolean isRead ) {
+    public static int insertMessage (Context context, Message message, String chatId, boolean isRead ) {
         ContentResolver resolver = context.getContentResolver();
         ContentValues chatParams = new ContentValues();
         chatParams.put(TalkContract.ChatRooms.CHAT_ID, chatId);
-        chatParams.put(TalkContract.Message.MESSAGE_ID, stringMessage.getMessageId());
-        chatParams.put(TalkContract.Message.CREATOR_ID, stringMessage.getCreatorId());
-        chatParams.put(TalkContract.Message.MESSAGE_CONTENT, stringMessage.getMessageContent());
-        chatParams.put(TalkContract.Message.MESSAGE_TYPE, stringMessage.getMessageType());
-        chatParams.put(TalkContract.Message.READING_COUNT, stringMessage.getReadCount());
-        chatParams.put(TalkContract.Message.CREATED_TIME, stringMessage.getCreatedTime());
-        if ( isRead ){
+        chatParams.put(TalkContract.Message.MESSAGE_ID, message.getMessageId());
+        chatParams.put(TalkContract.Message.CREATOR_ID, message.getCreatorId());
+        chatParams.put(TalkContract.Message.MESSAGE_CONTENT, message.getMessageContent());
+        chatParams.put(TalkContract.Message.MESSAGE_TYPE, message.getMessageType());
+        chatParams.put(TalkContract.Message.READING_COUNT, message.getReadCount());
+        chatParams.put(TalkContract.Message.CREATED_TIME, message.getCreatedTime());
+        if ( isRead || message.getCreatorId().equals("system")){
             chatParams.put(TalkContract.Message.IS_READ, 1);
         } else {
             chatParams.put(TalkContract.Message.IS_READ, 0);
@@ -462,9 +465,7 @@ public class Utils {
         }
     }
     public static void insertUser( Context c, User user ) {
-        DbHelper dbHelper = new DbHelper(c);
         ContentResolver resolver = c.getContentResolver();
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor cursor = resolver.query(
                 TalkContract.User.CONTENT_URI,
                 null,
@@ -516,6 +517,7 @@ public class Utils {
             ContentValues params = new ContentValues();
             params.put(TalkContract.ChatRooms.CHAT_ID, chatId);
             params.put(TalkContract.User.USER_ID, user.getId());
+            params.put(TalkContract.ChatRoomUsers.IS_MEMBER, user.isMember());
             chatMemberContentValues.add( params );
         }
         for( ContentValues value : chatMemberContentValues ) {

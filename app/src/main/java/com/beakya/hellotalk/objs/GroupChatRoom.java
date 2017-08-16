@@ -9,7 +9,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by goodlife on 2017. 5. 11..
@@ -81,10 +84,12 @@ public class GroupChatRoom extends ChatRoom implements Parcelable{
 
     }
 
-    public int getMembersCount () {
+    public int getUsersSize() {
         return (users == null) ? 0 : users.size();
     }
-
+    public int getMembersSize() {
+        return ( users == null) ? 0 : getMembers().size();
+    }
     public HashMap<String, User> getUsers() {
         return users;
     }
@@ -120,5 +125,11 @@ public class GroupChatRoom extends ChatRoom implements Parcelable{
     public int describeContents() {
         return 0;
     }
-
+    public List<User> getMembers() {
+        List<User> newUsers = new ArrayList<>();
+        for ( User user : users.values() ) {
+            if ( user.isMember()) newUsers.add(user);
+        }
+        return newUsers;
+    }
 }

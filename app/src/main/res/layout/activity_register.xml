@@ -114,6 +114,8 @@
         </android.support.design.widget.TextInputLayout>
 
         <android.support.v7.widget.AppCompatButton
+            android:background="@drawable/shape_for_login_button"
+            android:textColor="@color/white"
             android:id="@+id/sign_up_btn"
             android:layout_width="298dp"
             android:layout_height="50dp"

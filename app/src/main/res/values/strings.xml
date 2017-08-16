@@ -65,4 +65,5 @@
     <string name="friend_list_recycler_view_item_2">채팅방 나가기</string>
     <string name="chat_edit_text_send_button">send</string>
     <string name="friend_detail_text_view">1:1 대화신청하기</string>
+    <string name="login_button_string">Sign in</string>
 </resources>

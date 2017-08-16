@@ -77,8 +77,8 @@ public class NewChatActivity extends ToolBarActivity implements LoaderManager.Lo
             chatType = extras.getInt("chatType");
             if ( chatType == ChatRoom.GROUP_CHAT_TYPE ) {
                 chatRoom = extras.getParcelable("chatRoom");
-                newChatAdapter.setMembers(chatRoom.getUsers().values());
-                originalChatMemberCount = chatRoom.getUsers().size();
+                newChatAdapter.setMembers(chatRoom.getMembers());
+                originalChatMemberCount = chatRoom.getMembers().size();
             } else if (chatType == ChatRoom.PERSONAL_CHAT_TYPE ) {
                 ArrayList<User> users = extras.getParcelableArrayList("users");
                 newChatAdapter.setMembers(users);

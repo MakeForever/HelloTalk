@@ -183,6 +183,7 @@ public class UserContentProvider extends ContentProvider {
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         int rowUpdated = 0;
+        db.beginTransaction();
         switch( sUriMatcher.match(uri) ) {
             case USERS :
                 rowUpdated = db.update(TalkContract.User.TABLE_NAME, values, selection, selectionArgs);
@@ -206,6 +207,8 @@ public class UserContentProvider extends ContentProvider {
         if ( rowUpdated != 0 ) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
+        db.setTransactionSuccessful();
+        db.endTransaction();
         return rowUpdated;
     }
 
@@ -229,6 +232,7 @@ public class UserContentProvider extends ContentProvider {
                     Log.d(TAG, "bulkInsert: " + e);
                 } finally {
                     db.endTransaction();
+                    db.close();
                 }
                 return insertedRow;
             default :

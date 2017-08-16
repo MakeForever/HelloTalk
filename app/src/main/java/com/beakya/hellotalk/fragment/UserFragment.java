@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.FriendAddActivity;
 import com.beakya.hellotalk.activity.FriendDetailActivity;
 import com.beakya.hellotalk.activity.MainActivity;
@@ -106,15 +107,16 @@ public class UserFragment extends Fragment implements
                 throw new RuntimeException("Loader Not Implemented: " + id);
         }
     }
-
-//    @Subscribe(threadMode = ThreadMode.MAIN)
-//    public void onMessageEvent(Events.MessageEvent event) {
-//        switch ( event.getMessage() ) {
-//            case EVENT_NEW_MESSAGE_ARRIVED :
-//                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
-//                break;
-//        }
-//    }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UpdateEvent event) {
+        switch ( event.getMessage() ) {
+            case ChatActivity.EVENT_USER_CHANGE_PROFILE_IMG :
+                getActivity().getSupportLoaderManager().restartLoader(MainActivity.ID_USER_CURSOR_LOADER, null, this);
+                break;
+            default :
+                throw new RuntimeException("message not matched message : " + event.getMessage());
+        }
+    }
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mUserAdapter.swapCursor(data);

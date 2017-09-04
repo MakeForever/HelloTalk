@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.beakya.hellotalk">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -21,7 +22,16 @@
             android:name=".contentproviders.UserContentProvider"
             android:authorities="com.beakya.hellotalk"
             android:exported="false" />
-
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.beakya.hellotalk.provider"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            tools:replace="android:authorities">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/image_path" />
+        </provider>
         <service
             android:name=".services.SocketService"
             android:exported="false" />
@@ -65,7 +75,10 @@
             android:hardwareAccelerated="true"/>
         <activity android:name=".activity.MyInfoActivity" />
         <activity android:name=".activity.GeneralSettingActivity" />
-
+        <activity android:name=".permission.PermissionActivity"
+            android:theme="@style/NoDisplay"/>
+        <activity android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
+            android:theme="@style/Base.Theme.AppCompat"/>
     </application>
 
 </manifest>

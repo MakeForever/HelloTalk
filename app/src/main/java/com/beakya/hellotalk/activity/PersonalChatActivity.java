@@ -1,15 +1,13 @@
 package com.beakya.hellotalk.activity;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.DrawerLayout;
-import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -21,7 +19,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.adapter.MemberListAdapter;
@@ -53,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import io.socket.client.Socket;
-
 
 public class PersonalChatActivity extends ChatActivity implements LoaderManager.LoaderCallbacks<ArrayList<Message>> {
     public static final String TAG = PersonalChatActivity.class.getSimpleName();
@@ -281,28 +277,6 @@ public class PersonalChatActivity extends ChatActivity implements LoaderManager.
                 Log.d(TAG, "onMessageEvent: new message arrived");
                 Message message = event.getStorage();
                 if (message.getChatId().equals(mChatRoom.getChatId())) {
-//                    PersonalChatRoom chatRoom = mChatRoom;
-//                    String t = Utils.personalChatReadObjCreator(
-//                            chatRoom.getChatRoomType(),
-//                            Utils.getMyInfo(mContext),
-//                            chatRoom.getTalkTo(),
-//                            chatRoom.getChatId(),
-//                            new ArrayList<>(Arrays.asList(new String[]{message.getMessageId()}))
-//                    );
-//                    socket.emit("chat_read", t);
-//                    int count = message.getReadCount();
-//                    ContentValues values = new ContentValues();
-//                    values.put(TalkContract.Message.READING_COUNT, --count);
-//                    values.put(TalkContract.Message.IS_READ, 1);
-//                    ContentResolver resolver = getContentResolver();
-//                    resolver.update(
-//                            TalkContract.Message.CONTENT_URI,
-//                            values,
-//                            TalkContract.Message.MESSAGE_ID + " = ?",
-//                            new String[]{message.getMessageId()});
-//                    message.setReadCount(count);
-//                    mChatRoom.setSynchronized(true);
-//                    personalChatAdapter.addMessage(message);
                     PayLoad<SocketEmitFunctions.bFunction> payLoad = new PayLoad<>(
                             SocketUtil.checkNotReadMessages(
                                     new PersonalChatReadEventInfo(

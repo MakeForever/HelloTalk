@@ -2,13 +2,12 @@ package com.beakya.hellotalk.utils;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.beakya.hellotalk.event.Events;
 import com.beakya.hellotalk.services.ChatService;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
@@ -32,7 +31,7 @@ public class SocketManager {
     public static final String INVITE_GROUP_CHAT ="invite_group_chat";
     public static final String INVITE_FRIEND = "invite_friend";
     public static final String RECEIVE_ALL_EVENT = "read_all_event";
-    public static final String IP = "http://192.168.0.100:8888";
+    public static final String IP = "http://10.0.2.2:8888";
 
     private Context context;
     public SocketManager(Context context) {
@@ -101,7 +100,7 @@ public class SocketManager {
         socket.on(SOMEONE_CHAT_READ, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                Log.d(TAG, "call: chat_read");
+                Logger.d(TAG, "some_one_chat_read");
                 Intent intent = new Intent(context, ChatService.class);
                 intent.putExtra("info", (String) args[0]);
                 intent.setAction(ChatTask.ACTION_HANDLE_READ_CHAT);
@@ -158,7 +157,23 @@ public class SocketManager {
                 Log.d(TAG, "call: someone_leave_chat_room");
             }
         });
-
+        socket.on("friend_change_new_profile_image", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JsonObject object = new JsonParser().parse((String) args[0]).getAsJsonObject();
+                String id = object.get("id").getAsString();
+                socket.emit("get_profile_img", id);
+            }
+        });
+        socket.on("get_profile_img", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Intent intent = new Intent(context, ChatService.class);
+                intent.putExtra("info", (String) args[0]);
+                intent.setAction(ChatTask.ACTION_FRIEND_CHANGE_NEW_PROFILE_IMAGE);
+                context.startService(intent);
+            }
+        });
         socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
             @Override
             public void call(Object... args) {

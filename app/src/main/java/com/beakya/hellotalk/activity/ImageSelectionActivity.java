@@ -28,9 +28,7 @@ import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.retrofit.PhotoProfileService;
 import com.beakya.hellotalk.utils.Utils;
-import com.linchaolong.android.imagepicker.ImagePicker;
-import com.linchaolong.android.imagepicker.cropper.CropImage;
-import com.linchaolong.android.imagepicker.cropper.CropImageView;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +51,7 @@ import static com.beakya.hellotalk.utils.Utils.getToken;
 
 public class ImageSelectionActivity extends AppCompatActivity {
     private static final String TAG = ImageSelectionActivity.class.getSimpleName();
-    private ImagePicker imagePicker;
+//    private ImagePicker imagePicker;
     private ImageView profileView;
     private Button imageChooserButton;
     private Bitmap bitmap = null;
@@ -68,15 +66,15 @@ public class ImageSelectionActivity extends AppCompatActivity {
         setContentView(R.layout.activity_image_selection);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
-        imagePicker = new ImagePicker();
+//        imagePicker = new ImagePicker();
 
         profileView = (ImageView) findViewById(R.id.default_profile_image_view);
         imageChooserButton = (Button) findViewById(R.id.profile_image_change_button);
         progressBar = (ProgressBar) findViewById(R.id.show_image_transfer);
         alertView = (TextView) findViewById(R.id.profile_skip_text_view);
 
-        imagePicker.setTitle(getString(R.string.image_chooser_title));
-        imagePicker.setCropImage(true);
+//        imagePicker.setTitle(getString(R.string.image_chooser_title));
+//        imagePicker.setCropImage(true);
 
         imageChooserButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,45 +86,44 @@ public class ImageSelectionActivity extends AppCompatActivity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        imagePicker.onActivityResult(this, requestCode, resultCode, data);
+//        imagePicker.onActivityResult(this, requestCode, resultCode, data);
     }
 
     @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                                      @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        imagePicker.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
+//        imagePicker.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
     }
     void startChooser() {
-
-        imagePicker.startChooser(this, new ImagePicker.Callback() {
-            @Override
-            public void onPickImage(Uri imageUri) {
-
-            }
-            @Override
-            public void onCropImage(Uri imageUri) {
-                try {
-
-                    Bitmap bm = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
-                    ImageSelectionActivity.this.bitmap = bm;
-                    profileView.setImageBitmap(bitmap);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            @Override
-            public void cropConfig(CropImage.ActivityBuilder builder) {
-                builder.setMultiTouchEnabled(false)
-                        .setGuidelines(CropImageView.Guidelines.OFF)
-                        .setCropShape(CropImageView.CropShape.RECTANGLE)
-                        .setRequestedSize(480, 480)
-                        .setAspectRatio(1, 1);
-            }
-            @Override
-            public void onPermissionDenied(int requestCode, String[] permissions, int[] grantResults) {
-                super.onPermissionDenied(requestCode, permissions, grantResults);
-            }
-        });
+//        imagePicker.startChooser(this, new ImagePicker.Callback() {
+//            @Override
+//            public void onPickImage(Uri imageUri) {
+//
+//            }
+//            @Override
+//            public void onCropImage(Uri imageUri) {
+//                try {
+//
+//                    Bitmap bm = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+//                    ImageSelectionActivity.this.bitmap = bm;
+//                    profileView.setImageBitmap(bitmap);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            @Override
+//            public void cropConfig(CropImage.ActivityBuilder builder) {
+//                builder.setMultiTouchEnabled(false)
+//                        .setGuidelines(CropImageView.Guidelines.OFF)
+//                        .setCropShape(CropImageView.CropShape.RECTANGLE)
+//                        .setRequestedSize(480, 480)
+//                        .setAspectRatio(1, 1);
+//            }
+//            @Override
+//            public void onPermissionDenied(int requestCode, String[] permissions, int[] grantResults) {
+//                super.onPermissionDenied(requestCode, permissions, grantResults);
+//            }
+//        });
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -181,7 +178,7 @@ public class ImageSelectionActivity extends AppCompatActivity {
             if ( mBitmap.getWidth() > 256 ) {
                 mBitmap = Utils.resizeBitmapImage(bitmap, 256);
             }
-            Utils.saveToInternalStorage(ImageSelectionActivity.this, mBitmap, fileName, extension, Arrays.asList(new String[]{ directory, myInfo.getId()}));
+            Utils.setMyProfileImage(context, mBitmap);
             File directoryFile = new File ( context.getFilesDir(), directory);
             File test = new File ( directoryFile, myInfo.getId());
             File originalImageFile = new File(test, fileName + '.' + extension);

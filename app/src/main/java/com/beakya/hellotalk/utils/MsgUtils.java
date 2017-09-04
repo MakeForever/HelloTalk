@@ -32,7 +32,8 @@ public class MsgUtils {
                 new String[] { TalkContract.Message.MESSAGE_ID },
                 "NOT " + TalkContract.Message.CREATOR_ID + " = ? " +" and NOT " + TalkContract.Message.CREATOR_ID + " = ? and " + TalkContract.ChatRooms.CHAT_ID + " = ? and " + TalkContract.Message.IS_READ + " = 0 ",
                 new String[] {"system", myInfo.getId(), chatId },
-                null);
+                null
+        );
 
         while( cursor.moveToNext() ) {
             result.add(cursor.getString(cursor.getColumnIndex(TalkContract.Message.MESSAGE_ID)));
@@ -61,7 +62,7 @@ public class MsgUtils {
         String emitParam = Utils.groupChatReadObjCreator(chatType, Utils.getMyInfo(context), chatId, messages );
 
         if ( socket != null && socket.connected() && messages.size() > 0 ) {
-            Log.d(TAG, "readAllMessage: " + messages.size());
+            Logger.d(TAG, "readAllMessage: " + messages.size());
             socket.emit("chat_read", emitParam, new Ack() {
                 @Override
                 public void call(Object... args) {
@@ -92,6 +93,7 @@ public class MsgUtils {
     public static void bulkUpdateCountOfMessage(Context context, ArrayList<String> messageIdList ) {
         DbHelper dbHelper = new DbHelper(context);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.beginTransaction();
         for( String messageId : messageIdList ) {
 
             Cursor cursor = db.query(TalkContract.Message.TABLE_NAME,
@@ -108,10 +110,13 @@ public class MsgUtils {
                     --count;
                     values.put(TalkContract.Message.READING_COUNT, count);
                     int result = db.update(TalkContract.Message.TABLE_NAME, values, TalkContract.Message.MESSAGE_ID + " = ? ", new String[] { messageId });
-                    Log.d(TAG, "bulkUpdateCountOfMessage: " + result);
+                    Logger.d(TAG, "bulkUpdateCountOfMessage: " + messageId + "result // " + result);
                 }
             }
+            cursor.close();
         }
+        db.setTransactionSuccessful();
+        db.endTransaction();
         db.close();
     }
 }

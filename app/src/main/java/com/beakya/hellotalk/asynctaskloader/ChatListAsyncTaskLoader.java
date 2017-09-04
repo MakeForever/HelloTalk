@@ -100,9 +100,6 @@ public class ChatListAsyncTaskLoader extends AsyncTaskLoader<ArrayList<ChatListI
 
             Log.d(TAG, "loadInBackground: " + mChatId);
             Log.d(TAG, "loadInBackground: " + roomUsersQuery);
-
-
-
 //            String lastMessageId = lastMessage.getString(lastMessage.getColumnIndex(TalkContract.Message.CREATOR_ID)););
             int notReadChatCount = 0;
             if( notReadChatCountQuery.moveToNext()) {

@@ -114,4 +114,23 @@ public class Events {
             return users;
         }
     }
+    public static class UpdateEvent implements Event<String> {
+        private String event;
+        private String storage;
+
+        public UpdateEvent(String event, String storage) {
+            this.event = event;
+            this.storage = storage;
+        }
+
+        @Override
+        public String getMessage() {
+            return event;
+        }
+
+        @Override
+        public String getStorage() {
+            return storage;
+        }
+    }
 }

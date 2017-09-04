@@ -54,16 +54,20 @@ public abstract class ChatAdapter  extends RecyclerView.Adapter<ChatItemViewHold
             return VIEW_TYPE_OTHER_CHAT;
         }
     }
-    public void swapCursor(ArrayList<Message> stringMessages) {
-        this.message = stringMessages;
+    public void swapCursor(ArrayList<Message> message) {
+        this.message = message;
         notifyDataSetChanged();
     }
-    public void addMessage ( Message stringMessage) {
-        message.add(stringMessage);
+    public void addMessage ( Message message) {
+        this.message.add(message);
         notifyItemInserted(0);
         recyclerView.smoothScrollToPosition(0);
     }
     public Message getMessage(int index) {
         return message.get(index);
+    }
+
+    public void updateAllViewHolders() {
+        notifyDataSetChanged();
     }
 }

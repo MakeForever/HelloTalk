@@ -18,6 +18,7 @@ import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.objs.User;
+import com.beakya.hellotalk.utils.Logger;
 import com.beakya.hellotalk.utils.Utils;
 import com.daimajia.swipe.SwipeLayout;
 
@@ -149,30 +150,51 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 //                    cursor.moveToFirst();
                     SharedPreferences tokenStorage = mContext.getSharedPreferences(mContext.getString(R.string.my_info), MODE_PRIVATE);
                     String myId = tokenStorage.getString( mContext.getString(R.string.user_id), null );
-                    String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(new String[] { user.getId(), myId }));
+                    String chatTableName = Utils.ChatTableNameCreator(Arrays.asList(user.getId(), myId));
                     Log.d(TAG, "chatTableName: " + chatTableName);
-                    if( chatTableName != null ) {
-                        int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] {chatTableName});
-                        int deletedRow2 = resolver.delete(TalkContract.Message.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ? ", new String[] {chatTableName});
-                        int deletedRow3 = resolver.delete(TalkContract.ChatRoomUsers.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatTableName});
-                        Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
+                    int deletedRow1 = resolver.delete(TalkContract.ChatRooms.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ?", new String[] {chatTableName});
+                    int deletedRow2 = resolver.delete(TalkContract.Message.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + " = ? ", new String[] {chatTableName});
+                    int deletedRow3 = resolver.delete(TalkContract.ChatRoomUsers.CONTENT_URI, TalkContract.ChatRooms.CHAT_ID + "=?", new String[] {chatTableName});
+                    Log.d(TAG, "delete user result " + deletedRow1 + " : " + deletedRow2 + " : " + deletedRow3);
+                    Cursor memberCheckCursor = resolver.query(
+                            TalkContract.ChatRoomUsers.CONTENT_URI,
+                            new String[] { "count(*) AS count"},
+                            TalkContract.User.USER_ID + " = ? ",
+                            new String[] { user.getId() },
+                            null
+                    );
+                    if (memberCheckCursor != null) {
+                        while ( memberCheckCursor.moveToNext() ) {
+                            int count = memberCheckCursor.getInt(0);
+                            if ( count == 0 ) {
+                                if(userInfo.hasProfileImg() ) {
+                                    Utils.deleteFile(mContext,
+                                            mContext.getString(R.string.setting_friends_profile_img_name),
+                                            mContext.getString(R.string.setting_profile_img_extension),
+                                            Arrays.asList(mContext.getString(R.string.setting_friends_img_directory), user.getId()));
+                                }
+                                resolver.delete(
+                                        TalkContract.User.CONTENT_URI,
+                                        TalkContract.User.USER_ID + " = ? ",
+                                        new String[] { user.getId() }
+                                );
+                            } else {
+                                ContentValues values = new ContentValues();
+                                values.put(TalkContract.User.IS_MY_FRIEND, 0);
+                                    int deletedRow = resolver.update(
+                                    TalkContract.User.CONTENT_URI,
+                                    values,
+                                    TalkContract.User.USER_ID + " = ?",
+                                    new String[] { user.getId() }
+                                );
+                            }
+                        }
                     }
-
-                    ContentValues values = new ContentValues();
-                    values.put(TalkContract.User.IS_MY_FRIEND, 0);
-                    int deletedRow = resolver.update(
-                            TalkContract.User.CONTENT_URI,
-                            values,
-                            TalkContract.User.USER_ID + " = ?",
-                            new String[] { user.getId() });
-                    if(userInfo.hasProfileImg()) {
-                        Utils.deleteFile(mContext,
-                                mContext.getString(R.string.setting_friends_profile_img_name),
-                                mContext.getString(R.string.setting_profile_img_extension),
-                                Arrays.asList(mContext.getString(R.string.setting_friends_img_directory), user.getId()));
-                    }
+//
+//
                     Socket socket = ((MyApp) mContext.getApplicationContext()).getSocket();
                     socket.emit("delete_friend", user.getId());
+                    memberCheckCursor.close();
                     isSwiped = false;
                 }
             });

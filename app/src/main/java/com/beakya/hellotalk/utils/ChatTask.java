@@ -6,24 +6,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Handler;
-import android.os.Looper;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Base64;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.beakya.hellotalk.MyApp;
 import com.beakya.hellotalk.R;
 import com.beakya.hellotalk.activity.ChatActivity;
 import com.beakya.hellotalk.activity.GroupChatActivity;
-import com.beakya.hellotalk.activity.MessagePopupDialog;
 import com.beakya.hellotalk.activity.PersonalChatActivity;
-import com.beakya.hellotalk.activity.ToolBarActivity;
 import com.beakya.hellotalk.database.DbHelper;
 import com.beakya.hellotalk.database.TalkContract;
 import com.beakya.hellotalk.event.Events;
@@ -39,7 +32,6 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import org.greenrobot.eventbus.EventBus;
@@ -67,6 +59,7 @@ public class ChatTask {
     public static final String ACTION_INVITE_TO_GROUP_CHAT = "invite_to_group_chat";
     public static final String ACTION_SOMEONE_LEAVE_CHAT_ROOM = "action_someone_leave_chat_room";
     public static final String ACTION_READ_INITIAL_STATE = "action_read_all_chat";
+    static final String ACTION_FRIEND_CHANGE_NEW_PROFILE_IMAGE = "action_friend_change_new_profile_image";
     String chatTableName;
     ContentResolver resolver;
     String arg;
@@ -74,7 +67,6 @@ public class ChatTask {
     int chatType;
     Cursor cursor;
     Gson gson;
-    ArrayList<String> messageIdList;
     public void task(Intent intent, Context context ) throws JSONException {
         switch ( intent.getAction() )  {
             case ACTION_STORAGE_GROUP_CHAT_INVITE:
@@ -95,7 +87,7 @@ public class ChatTask {
                 EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
                 break;
             case ACTION_STORAGE_GROUP_CHAT_DATA:
-                Log.d(TAG, "task: ACTION_STORAGE_GROUP_CHAT_DATA");
+                Logger.d(TAG, "task: ACTION_STORAGE_GROUP_CHAT_DATA");
                 arg = intent.getStringExtra("info");
                 storeChatData(arg, context);
 
@@ -106,21 +98,9 @@ public class ChatTask {
                 handleStorePersonalChatData(arg, context);
                 break;
             case  ACTION_HANDLE_READ_CHAT:
-                Log.d(TAG, "task: ACTION_HANDLE_READ_CHAT");
-                messageIdList = new ArrayList<>();
-                String info = intent.getStringExtra("info");
-                JsonObject obj = new JsonParser().parse(info).getAsJsonObject();
-                chatId = obj.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
-                JsonArray array = obj.get("messages").getAsJsonArray();
-                for ( JsonElement element : array ) {
-                    String item = element.getAsString();
-                    messageIdList.add(item);
-                }
-                /*
-                TODO : 채팅방에 클라이언트가 초대 되었을때 클라이언트 없을때 온 채팅 업데이트 메세지가 오지 않게 처리 할것. 서버에서 처리하는게 맞을듯 임시방면으로 내 채팅에 없으면 업데이트 안하게 설정함
-                * */
-                MsgUtils.bulkUpdateCountOfMessage(context, messageIdList);
-                EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
+                Logger.d(TAG, "task: ACTION_HANDLE_READ_CHAT");
+                arg = intent.getStringExtra("info");
+                handleChatReadMessages(context, arg);
                 break;
 
             case ACTION_CHANGE_ALL_MESSAGE_READ_STATE :
@@ -166,9 +146,28 @@ public class ChatTask {
                 arg = intent.getStringExtra("info");
                 handleSomeoneLeaveChatRoom(context, arg);
                 break;
+            case ACTION_FRIEND_CHANGE_NEW_PROFILE_IMAGE:
+                Log.d(TAG, "task: ACTION_FRIEND_CHANGE_NEW_PROFILE_IMAGE");
+                arg = intent.getStringExtra("info");
+                storeNewProfileImage(context, arg);
+                break;
         }
     }
-
+    private void handleChatReadMessages(Context context, String args) {
+        JsonObject obj = new JsonParser().parse(args).getAsJsonObject();
+        ArrayList<String>messageIdList = new ArrayList<>();
+        chatId = obj.get(TalkContract.ChatRooms.CHAT_ID).getAsString();
+        JsonArray array = obj.get("messages").getAsJsonArray();
+        for ( JsonElement element : array ) {
+            String item = element.getAsString();
+            messageIdList.add(item);
+        }
+                /*
+                TODO : 채팅방에 클라이언트가 초대 되었을때 클라이언트 없을때 온 채팅 업데이트 메세지가 오지 않게 처리 할것. 서버에서 처리하는게 맞을듯 임시방면으로 내 채팅에 없으면 업데이트 안하게 설정함
+                * */
+        MsgUtils.bulkUpdateCountOfMessage(context, messageIdList);
+        EventBus.getDefault().post(new Events.MessageEvent(PersonalChatActivity.EVENT_SOMEONE_READ_MESSAGE, null));
+    }
     public void storeChatData(String stringify, Context context) {
         JsonObject object = new JsonParser().parse(stringify).getAsJsonObject();
         JsonElement element = object.get("message");
@@ -282,7 +281,8 @@ public class ChatTask {
             JsonObject payload = rootObject.get("payload").getAsJsonObject();
             String chatId = payload.get("chat_id").getAsString();
             String userId = payload.get("user_id").getAsString();
-            Utils.insertChatMembers(resolver, chatId, Arrays.asList(new User[] { new User(userId, null, null)}));
+            boolean isMember = payload.get("is_member").getAsInt() > 0;
+            Utils.insertChatMembers(resolver, chatId, Arrays.asList(new User[] { new User(userId, null, false, isMember)}));
         } else if ( event.equals("end") ) {
             EventBus.getDefault().post(new Events.MessageEvent(EVENT_NEW_MESSAGE_ARRIVED, null));
         }
@@ -308,23 +308,26 @@ public class ChatTask {
         Utils.insertChatMembers(context.getContentResolver(), chatId, users);
         EventBus.getDefault().post(new Events.UserInviteEvent(GroupChatActivity.EVENT_INVITED_USER, users));
     }
+    private void storeNewProfileImage (Context context, String resource) {
+        JsonObject object = new JsonParser().parse(resource).getAsJsonObject();
+        String bitmapBase64 = object.get("data").getAsString();
+        String id = object.get("id").getAsString();
+        byte[] imageBytes = Base64.decode(bitmapBase64, Base64.DEFAULT);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+        Utils.setFriendProfileImage(context, bitmap, id);
+        EventBus.getDefault().post(new Events.UpdateEvent(ChatActivity.EVENT_USER_CHANGE_PROFILE_IMG, id));
+        Log.d(TAG, "storeNewProfileImage: ");
+    }
     private void handleSomeoneLeaveChatRoom( Context context, String info  ) {
-
         /*  채팅창에서 누가 나갔을때
         *   나간친구가 메세지를 보낸 흔적이 있는지
         *   그리고 다른 채팅방에서 사용되고 있는지
         *   내 친구인지
-        *
         *   3가지 체크
-        *
-        *
-        *
-        */
 
         /*
         * user 삭제
         * chatMember 삭제
-        *
         * */
         JsonObject object = new JsonParser().parse(info).getAsJsonObject();
         Log.d(TAG, "handleSomeoneLeaveChatRoom: " + object.toString());
@@ -391,7 +394,7 @@ public class ChatTask {
         }
 
 
-
+        Logger.d(TAG, "count : " + count + " | " + "count2 : " + count2 + " | " + "isMyFriend : " + isMyFriend );
         if ( count == 0 && count2 == 0  ) {
             db.delete(
                     TalkContract.ChatRoomUsers.TABLE_NAME,
@@ -439,4 +442,5 @@ public class ChatTask {
             LocalBroadcastManager.getInstance(context).sendBroadcast(param);
         }
     }
+
 }

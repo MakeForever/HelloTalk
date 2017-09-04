@@ -1,6 +1,5 @@
 package com.beakya.hellotalk.dialog;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -10,7 +9,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -18,6 +16,19 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.beakya.hellotalk.R;
+import com.beakya.hellotalk.retrofit.ChangePasswordBody;
+import com.beakya.hellotalk.retrofit.GeneralResponseBody;
+import com.beakya.hellotalk.retrofit.LoginResponseBody;
+import com.beakya.hellotalk.retrofit.UserServices;
+import com.beakya.hellotalk.utils.Utils;
+
+import java.io.IOException;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+import static com.beakya.hellotalk.retrofit.RetrofitCreator.retrofit;
 
 /**
  * Created by goodlife on 2017. 7. 16..
@@ -76,6 +87,9 @@ public class ChangePasswordDialog extends AlertDialog {
                 if ( !s.toString().equals(newPasswordEditText.getText().toString()) ) {
                     newPasswordConfirmLayout.setErrorEnabled(true);
                     newPasswordConfirmLayout.setError(mContext.getString(R.string.text_for_chagne_password_validate_not_matched));
+                } else if  ( currentPasswordEditText.getText().toString().equals(newPasswordEditText.getText().toString()) ) {
+                    newPasswordConfirmLayout.setErrorEnabled(true);
+                    newPasswordConfirmLayout.setError("현재 비밀번호와 새로운 비밀번호가 같습니다");
                 } else {
                     newPasswordConfirmLayout.setErrorEnabled(false);
                     newPasswordConfirmLayout.setError(null);
@@ -92,10 +106,42 @@ public class ChangePasswordDialog extends AlertDialog {
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 if ( isTextSatisfy() ) {
                     //TODO : network 처리
+                    String token = Utils.getToken(getContext());
+                    ChangePasswordBody body = new ChangePasswordBody(
+                            Utils.getMyInfo(getContext()).getId(),
+                            currentPasswordEditText.getText().toString(),
+                            newPasswordEditText.getText().toString()
+                    );
+                    UserServices userServices = retrofit.create(UserServices.class);
+                    Call<GeneralResponseBody> call = userServices.changePassword(token, body);
+                    call.enqueue(new Callback<GeneralResponseBody>() {
+                        @Override
+                        public void onResponse(Call<GeneralResponseBody> call, Response<GeneralResponseBody> response) {
+                            if (response.errorBody() != null ) {
+                                GeneralResponseBody restError = null;
+                                try {
+                                    restError = (GeneralResponseBody)retrofit.responseBodyConverter( GeneralResponseBody.class, GeneralResponseBody.class.getAnnotations()).convert(response.errorBody());
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                if ( restError != null ) {
+                                    Toast.makeText(mContext, restError.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                Toast.makeText(mContext, "비밀번호 변경이 완료 되었습니다.", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        @Override
+                        public void onFailure(Call<GeneralResponseBody> call, Throwable t) {
+                            Toast.makeText(mContext, "서버와 연결이 좋지 않습니다. 조금 뒤 다시 시도해주세요", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 } else {
                     //TODO : alert 처리
+                    Toast.makeText(mContext, "hello world", Toast.LENGTH_SHORT).show();
                 }
             }
         });

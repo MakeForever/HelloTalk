@@ -9,7 +9,7 @@ import com.beakya.hellotalk.objs.GroupChatReadEventInfo;
 import com.beakya.hellotalk.objs.PersonalChatReadEventInfo;
 
 import org.greenrobot.eventbus.EventBus;
-
+import com.beakya.hellotalk.utils.SocketEmitFunctions.*;
 import java.util.ArrayList;
 
 /**
@@ -17,7 +17,7 @@ import java.util.ArrayList;
  */
 
 public class SocketUtil {
-    public static final SocketEmitFunctions.bFunction handleNotReadMessageFunction (final PersonalChatReadEventInfo info, final Context context ) {
+    public static bFunction checkNotReadMessages(final PersonalChatReadEventInfo info, final Context context ) {
         return new SocketEmitFunctions.bFunction() {
             @Override
             public void apply() {
@@ -31,7 +31,7 @@ public class SocketUtil {
             }
         };
     }
-    public static final SocketEmitFunctions.bFunction handleNotReadMessageFunction (final GroupChatReadEventInfo info, final Context context ) {
+    public static bFunction checkNotReadMessages(final GroupChatReadEventInfo info, final Context context ) {
         return new SocketEmitFunctions.bFunction() {
             @Override
             public void apply() {

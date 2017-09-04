@@ -39,7 +39,6 @@ public class SocketJob extends Job {
 
     @Override
     public void run() {
-
         if ( payLoad.getData() instanceof SocketEmitFunctions.bFunction ) {
             ((SocketEmitFunctions.bFunction) payLoad.getData()).apply();
         }

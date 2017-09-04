@@ -46,13 +46,13 @@ public class PersonalChatAdapter extends ChatAdapter {
 
     @Override
     public void onBindViewHolder(ChatItemViewHolder holder, int position) {
-        Message stringMessage = message.get( (message.size()-1) - position );
+        Message message = this.message.get( (this.message.size()-1) - position );
             switch (  holder.getItemViewType() ) {
                 case VIEW_TYPE_MY_CHAT:
-                    holder.bind(stringMessage, myInfo);
+                    holder.bind(message, myInfo);
                     break;
                 case VIEW_TYPE_OTHER_CHAT:
-                    holder.bind(stringMessage, mChatRoom.getTalkTo());
+                    holder.bind(message, mChatRoom.getTalkTo());
                     break;
             }
     }

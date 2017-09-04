@@ -37,6 +37,7 @@ import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.retrofit.LogoutBody;
 import com.beakya.hellotalk.retrofit.LogoutService;
 import com.beakya.hellotalk.services.SocketService;
+import com.beakya.hellotalk.utils.Logger;
 import com.beakya.hellotalk.utils.PopUpNotificationManager;
 import com.beakya.hellotalk.utils.SocketTask;
 import com.beakya.hellotalk.utils.Utils;
@@ -90,10 +91,6 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
             finish();
         }
         mContext = this;
-        String fireBaseToken = FirebaseInstanceId.getInstance().getToken();
-        Log.d(TAG, "onCreate: " + fireBaseToken);
-
-
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         View headerView = navigationView.getHeaderView(0);
@@ -106,11 +103,9 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
         }
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
-        SharedPreferences userInfoStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myInfo =  Utils.getMyInfo(this);
         headerNameTextView.setText(myInfo.getName());
         headerEmailTextView.setText(myInfo.getId());
-        navigationDrawerImageView.setImageBitmap(myInfo.getProfileImg(this));
         mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
 //        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
 //                this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -165,7 +160,7 @@ public class MainActivity extends ToolBarActivity implements NavigationView.OnNa
     @Override
     protected void onStart() {
         super.onStart();
-
+        navigationDrawerImageView.setImageBitmap(myInfo.getProfileImg(this));
     }
 
     @Override

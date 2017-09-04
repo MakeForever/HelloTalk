@@ -1,7 +1,5 @@
 package com.beakya.hellotalk.activity;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,7 +12,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,6 +34,7 @@ import com.beakya.hellotalk.objs.PayLoad;
 import com.beakya.hellotalk.objs.SocketJob;
 import com.beakya.hellotalk.objs.User;
 import com.beakya.hellotalk.utils.JsonUtils;
+import com.beakya.hellotalk.utils.Logger;
 import com.beakya.hellotalk.utils.SocketEmitFunctions;
 import com.beakya.hellotalk.utils.SocketUtil;
 import com.beakya.hellotalk.utils.TaskRunner;
@@ -51,8 +49,6 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import io.socket.client.Socket;
 
@@ -61,7 +57,7 @@ import io.socket.client.Socket;
  */
 
 public class GroupChatActivity extends ChatActivity  {
-    public static final String TAG = PersonalChatActivity.class.getSimpleName();
+    public static final String TAG = GroupChatActivity.class.getSimpleName();
     public static final String EVENT_BUS_ACTION_INVITE_RESULT = "event_bus_action_invite_result";
     public static final String EVENT_NEW_MESSAGE_ARRIVED = "event_new_message_arrived";
     public static final String EVENT_SOMEONE_READ_MESSAGE = "event_someone_read_message";
@@ -125,7 +121,7 @@ public class GroupChatActivity extends ChatActivity  {
                 }
                 String messageId = Utils.hashFunction(myInfo.getId() + chatId + System.currentTimeMillis(), "SHA-1");
 
-                Message message = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), false, mChatRoom.getUsers().size() - 1);
+                Message message = new Message(messageId, myInfo.getId(), messageContent, chatId, TalkContract.Message.TYPE_TEXT, Utils.getCurrentTime(), false, mChatRoom.getMembersSize() - 1);
                 int insertedChatRowNumber = Utils.insertMessage(mContext, message, chatId, false);
                 String event = getString(R.string.send_group_message);
 //                String messageJson = mChatRoom.toJson(stringMessage, new User(myId, myName, null), event);
@@ -134,9 +130,9 @@ public class GroupChatActivity extends ChatActivity  {
                 JsonObject object = new JsonObject();
                 object.addProperty("event", event);
                 object.add("message", messageJson);
+                getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, messageLoaderCallBacks);
                 groupChatAdapter.addMessage(message);
                 mSocket.emit(event, object.toString());
-                Log.d(TAG, "onClick: send_group_message" + messageJson);
                 sendButton.setEnabled(true);
             }
         });
@@ -151,12 +147,7 @@ public class GroupChatActivity extends ChatActivity  {
         memberListAdapter = new MemberListAdapter();
         memberRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
         memberRecyclerView.setAdapter(memberListAdapter);
-        ArrayList<User> users = new ArrayList<>(mChatRoom.getUsers().values());
-        List<User> newUsers = new ArrayList<>();
-        for ( User user : users ) {
-            if ( user.isMember()) newUsers.add(user);
-        }
-        memberListAdapter.swapData(newUsers);
+        memberListAdapter.swapData(mChatRoom.getMembers());
         addFriendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -243,7 +234,7 @@ public class GroupChatActivity extends ChatActivity  {
         EventBus.getDefault().register(this);
         TaskRunner runner = TaskRunner.getInstance();
         PayLoad<SocketEmitFunctions.bFunction> payLoad = new PayLoad<>(
-                SocketUtil.handleNotReadMessageFunction(
+                SocketUtil.checkNotReadMessages(
                         new GroupChatReadEventInfo(
                                 myInfo,
                                 mChatRoom.getChatId(),
@@ -294,18 +285,33 @@ public class GroupChatActivity extends ChatActivity  {
         }
         return false;
     }
-
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(Events.UpdateEvent event ) {
+        if ( event.getMessage().equals( EVENT_USER_CHANGE_PROFILE_IMG ) ) {
+            memberListAdapter.swapData(mChatRoom.getMembers());
+            groupChatAdapter.updateAllViewHolders();
+        }
+    }
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.UserInviteEvent event ) {
         if ( event.getMessage().equals( EVENT_INVITED_USER ) ) {
             ArrayList<User> users = event.getStorage();
-            memberListAdapter.addMember(users);
+            for ( User user : users ) {
+                mChatRoom.addUser(user);
+            }
+            memberListAdapter.swapData(mChatRoom.getMembers());
+            getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, messageLoaderCallBacks);
         }
     }
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(Events.UserLeaveEvent event ) {
         if ( event.getMessage().equals( EVENT_SOME_ONE_LEAVE_ROOM ) ) {
             String userId = event.getStorage();
+            for ( User user : mChatRoom.getUsers().values() ) {
+                if ( user.getId().equals(userId) ) {
+                    user.setToMember(false);
+                }
+            }
             memberListAdapter.deleteMember(userId);
             getSupportLoaderManager().restartLoader(ID_CHAT_CURSOR_LOADER, null, messageLoaderCallBacks);
         }
@@ -314,25 +320,38 @@ public class GroupChatActivity extends ChatActivity  {
     public void onMessageEvent(Events.MessageEvent event) {
         switch (event.getMessage()) {
             case EVENT_NEW_MESSAGE_ARRIVED:
-                Log.d(TAG, "onMessageEvent: new message arrived");
+                Logger.d(TAG, "new message arrived");
                 Message message = event.getStorage();
                 if (message.getChatId().equals(mChatRoom.getChatId())) {
-                    int count = message.getReadCount();
-                    --count;
-                    ContentValues values = new ContentValues();
-                    values.put(TalkContract.Message.IS_READ, 1);
-                    values.put(TalkContract.Message.READING_COUNT, count);
-                    ContentResolver resolver = getContentResolver();
-                    resolver.update(
-                            TalkContract.Message.CONTENT_URI,
-                            values,
-                            TalkContract.Message.MESSAGE_ID + " = ?",
-                            new String[]{message.getMessageId()});
-                    groupChatAdapter.addMessage(message);
-                    message.setReadCount(count);
-                    mChatRoom.setSynchronized(true);
-                    String emitParam = Utils.groupChatReadObjCreator(mChatRoom.getChatRoomType(), myInfo, mChatRoom.getChatId(), Arrays.asList(new String[] { message.getMessageId() }) );
-                    mSocket.emit("chat_read", emitParam);
+//                    int count = message.getReadCount();
+//                    --count;
+//                    ContentValues values = new ContentValues();
+//                    values.put(TalkContract.Message.IS_READ, 1);
+//                    values.put(TalkContract.Message.READING_COUNT, count);
+//                    ContentResolver resolver = getContentResolver();
+//                    resolver.update(
+//                            TalkContract.Message.CONTENT_URI,
+//                            values,
+//                            TalkContract.Message.MESSAGE_ID + " = ?",
+//                            new String[]{message.getMessageId()});
+//                    groupChatAdapter.addMessage(message);
+//                    message.setReadCount(count);
+//                    mChatRoom.setSynchronized(true);
+//                    String emitParam = Utils.groupChatReadObjCreator(mChatRoom.getChatRoomType(), myInfo, mChatRoom.getChatId(), Arrays.asList(new String[] { message.getMessageId() }) );
+//                    mSocket.emit("chat_read", emitParam);
+                    TaskRunner runner = TaskRunner.getInstance();
+                    PayLoad<SocketEmitFunctions.bFunction> payLoad = new PayLoad<>(
+                            SocketUtil.checkNotReadMessages(
+                                    new GroupChatReadEventInfo(
+                                            myInfo,
+                                            mChatRoom.getChatId(),
+                                            mChatRoom.getChatRoomType()
+                                    ),
+                                    this
+                            )
+
+                    );
+                    runner.addJob(new SocketJob("chat_read", payLoad, this));
                 }
                 break;
             case EVENT_SOMEONE_READ_MESSAGE:
@@ -345,4 +364,5 @@ public class GroupChatActivity extends ChatActivity  {
                 throw new RuntimeException("stringMessage not matched");
         }
     }
+
 }

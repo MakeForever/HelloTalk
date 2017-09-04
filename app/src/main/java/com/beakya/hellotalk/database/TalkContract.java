@@ -100,6 +100,5 @@ public class TalkContract {
                         User.USER_ID + " TEXT, " +
                         IS_MEMBER + " BOOLEAN DEFAULT 1 " +
                         " ); ";
-
     }
 }

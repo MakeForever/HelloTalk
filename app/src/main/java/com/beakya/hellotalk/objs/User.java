@@ -86,6 +86,9 @@ public class User implements Parcelable {
         this.profileImage = profileImage;
     }
 
+    public void setToMember(boolean value) {
+        this.isMember = value;
+    }
     public boolean isMember() {
         return isMember;
     }

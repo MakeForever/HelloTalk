@@ -24,6 +24,7 @@ import java.util.Arrays;
 public class FriendDetailActivity extends ToolBarActivity {
     public static final String TAG = FriendDetailActivity.class.getSimpleName();
     private TextView textView;
+    private TextView nameTextView;
     private User user = null;
     private String myId = null;
     private ImageView profileImageView;
@@ -38,17 +39,12 @@ public class FriendDetailActivity extends ToolBarActivity {
             user = extras.getParcelable("object");
         }
         profileImageView = (ImageView) findViewById(R.id.user_profile_image_view);
-        final Bitmap bitmap = Utils.getImageBitmap(this,
-                getString(R.string.setting_friends_profile_img_name),
-                getString(R.string.setting_profile_img_extension),
-                Arrays.asList( new String[]{ getString(R.string.setting_friends_img_directory), user.getId() }));
-
-        profileImageView.setImageBitmap(bitmap);
-
+        profileImageView.setImageBitmap(user.getProfileImg(this));
         SharedPreferences tokenStorage = getSharedPreferences(getString(R.string.my_info), MODE_PRIVATE);
         myId = tokenStorage.getString( getString(R.string.user_id), null );
-
         textView = (TextView) findViewById(R.id.invite_chat_button);
+        nameTextView = (TextView) findViewById(R.id.friend_detail_name_text_view);
+        nameTextView.setText(user.getName());
         textView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -78,6 +74,7 @@ public class FriendDetailActivity extends ToolBarActivity {
                     intent.putExtra("is_stored", isStored);
                     startActivity(intent);
                     finish();
+                    chatCursor.close();
                 }
 
             }

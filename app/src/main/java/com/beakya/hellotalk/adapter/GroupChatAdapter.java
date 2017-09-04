@@ -51,12 +51,12 @@ public class GroupChatAdapter extends ChatAdapter {
     @Override
     public void onBindViewHolder(ChatItemViewHolder holder, int position) {
         if ( holder instanceof ChatViewHolder ) {
-            Message stringMessage = message.get((getItemCount() -1 ) - position );
-            User messageCreatorInfo = chatRoom.findUser(stringMessage.getCreatorId());
-            holder.bind(stringMessage, messageCreatorInfo);
+            Message message = this.message.get((getItemCount() -1 ) - position );
+            User messageCreatorInfo = chatRoom.findUser(message.getCreatorId());
+            holder.bind(message, messageCreatorInfo);
         } else if ( holder instanceof SystemAlertViewHolder ) {
-            Message stringMessage = message.get((getItemCount() -1 ) - position );
-            holder.bind(stringMessage, null);
+            Message message = this.message.get((getItemCount() -1 ) - position );
+            holder.bind(message, null);
         }
 
 
@@ -68,12 +68,12 @@ public class GroupChatAdapter extends ChatAdapter {
     }
 
     @Override
-    public void swapCursor(ArrayList<Message> stringMessages) {
-        super.swapCursor(stringMessages);
+    public void swapCursor(ArrayList<Message> message) {
+        super.swapCursor(message);
     }
 
     @Override
-    public void addMessage(Message stringMessage) {
-        super.addMessage(stringMessage);
+    public void addMessage(Message message) {
+        super.addMessage(message);
     }
 }
